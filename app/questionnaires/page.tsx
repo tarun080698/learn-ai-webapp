@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { RouteGuard } from "@/app/components/RouteGuard";
+import { Navigation } from "@/app/components/Navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -370,201 +372,208 @@ export default function QuestionnairePage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Questionnaires</h1>
-          <p className="text-muted-foreground">
-            Complete surveys and quizzes for your courses
-          </p>
-        </div>
-        <Link
-          href="/dashboard"
-          className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-        >
-          Back to Dashboard
-        </Link>
-      </div>
-
-      {/* Test Controls */}
-      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h3 className="font-semibold mb-2">Test Configuration</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Course ID:</label>
-            <input
-              type="text"
-              value={testCourseId}
-              onChange={(e) => setTestCourseId(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter course ID"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Module ID (optional):
-            </label>
-            <input
-              type="text"
-              value={testModuleId}
-              onChange={(e) => setTestModuleId(e.target.value)}
-              className="w-full p-2 border rounded"
-              placeholder="Enter module ID"
-            />
-          </div>
-        </div>
-        <button
-          onClick={loadAssignments}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          Load Assignments
-        </button>
-      </div>
-
-      {result && (
-        <div className="mb-6 p-4 border rounded-lg bg-muted">
-          <pre className="text-sm whitespace-pre-wrap">{result}</pre>
-        </div>
-      )}
-
-      {/* Current Questionnaire */}
-      {currentQuestionnaire && (
-        <div className="mb-8 p-6 border rounded-lg bg-white shadow-sm">
+    <RouteGuard>
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="container mx-auto py-8 max-w-4xl">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-bold">
-                {currentQuestionnaire.questionnaire.title}
-              </h2>
+              <h1 className="text-3xl font-bold">Questionnaires</h1>
               <p className="text-muted-foreground">
-                {currentQuestionnaire.questionnaire.purpose === "survey"
-                  ? "📊 Survey"
-                  : currentQuestionnaire.questionnaire.purpose === "quiz"
-                  ? "🧪 Quiz"
-                  : "📝 Mixed"}
-                {" • "}Version {currentQuestionnaire.questionnaire.version}
+                Complete surveys and quizzes for your courses
               </p>
             </div>
-            <button
-              onClick={() => setCurrentQuestionnaire(null)}
+            <Link
+              href="/dashboard"
               className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
             >
-              Cancel
-            </button>
+              Back to Dashboard
+            </Link>
           </div>
 
-          <div className="space-y-8">
-            {currentQuestionnaire.questionnaire.questions.map(
-              (question, index) => (
-                <div key={question.id} className="space-y-4">
-                  <div className="flex items-start space-x-2">
-                    <span className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                      {index + 1}
-                    </span>
-                    <div className="flex-1">
-                      <h3 className="font-semibold mb-2">
-                        {question.prompt}
-                        {question.required && (
-                          <span className="text-red-500 ml-1">*</span>
-                        )}
-                      </h3>
-                      {renderQuestion(question)}
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
-          </div>
-
-          <div className="mt-8 flex justify-end">
-            <button
-              onClick={submitQuestionnaire}
-              disabled={submitting}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? "Submitting..." : "Submit Questionnaire"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Available Assignments */}
-      {!currentQuestionnaire && (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Available Questionnaires</h2>
+          {/* Test Controls */}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="font-semibold mb-2">Test Configuration</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Course ID:
+                </label>
+                <input
+                  type="text"
+                  value={testCourseId}
+                  onChange={(e) => setTestCourseId(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter course ID"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Module ID (optional):
+                </label>
+                <input
+                  type="text"
+                  value={testModuleId}
+                  onChange={(e) => setTestModuleId(e.target.value)}
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter module ID"
+                />
+              </div>
+            </div>
             <button
               onClick={loadAssignments}
-              disabled={loadingAssignments}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
             >
-              {loadingAssignments ? "Loading..." : "Refresh"}
+              Load Assignments
             </button>
           </div>
 
-          {loadingAssignments ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Loading assignments...</p>
+          {result && (
+            <div className="mb-6 p-4 border rounded-lg bg-muted">
+              <pre className="text-sm whitespace-pre-wrap">{result}</pre>
             </div>
-          ) : assignments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>
-                No questionnaires available for the specified course/module.
-              </p>
-              <p className="text-sm mt-2">
-                Try creating sample data in the admin panel first.
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {assignments.map((assignment) => (
-                <div
-                  key={assignment.assignmentId}
-                  className="border rounded-lg p-6"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">
-                        {assignment.questionnaireTitle}
-                      </h3>
-                      <p className="text-muted-foreground">
-                        {assignment.scope.type === "course"
-                          ? "📚 Course-level"
-                          : "📖 Module-level"}{" "}
-                        •
-                        {assignment.timing === "pre"
-                          ? " Pre-completion"
-                          : " Post-completion"}{" "}
-                        survey
-                      </p>
-                    </div>
-                    <span
-                      className={`px-3 py-1 text-sm rounded-full ${
-                        assignment.completed
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {assignment.completed ? "Completed ✓" : "Pending"}
-                    </span>
-                  </div>
+          )}
 
-                  {!assignment.completed && (
-                    <button
-                      onClick={() =>
-                        startQuestionnaire(assignment.assignmentId)
-                      }
-                      className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    >
-                      Start Questionnaire
-                    </button>
-                  )}
+          {/* Current Questionnaire */}
+          {currentQuestionnaire && (
+            <div className="mb-8 p-6 border rounded-lg bg-white shadow-sm">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold">
+                    {currentQuestionnaire.questionnaire.title}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {currentQuestionnaire.questionnaire.purpose === "survey"
+                      ? "📊 Survey"
+                      : currentQuestionnaire.questionnaire.purpose === "quiz"
+                      ? "🧪 Quiz"
+                      : "📝 Mixed"}
+                    {" • "}Version {currentQuestionnaire.questionnaire.version}
+                  </p>
                 </div>
-              ))}
+                <button
+                  onClick={() => setCurrentQuestionnaire(null)}
+                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <div className="space-y-8">
+                {currentQuestionnaire.questionnaire.questions.map(
+                  (question, index) => (
+                    <div key={question.id} className="space-y-4">
+                      <div className="flex items-start space-x-2">
+                        <span className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1">
+                          <h3 className="font-semibold mb-2">
+                            {question.prompt}
+                            {question.required && (
+                              <span className="text-red-500 ml-1">*</span>
+                            )}
+                          </h3>
+                          {renderQuestion(question)}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={submitQuestionnaire}
+                  disabled={submitting}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? "Submitting..." : "Submit Questionnaire"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Available Assignments */}
+          {!currentQuestionnaire && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Available Questionnaires</h2>
+                <button
+                  onClick={loadAssignments}
+                  disabled={loadingAssignments}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {loadingAssignments ? "Loading..." : "Refresh"}
+                </button>
+              </div>
+
+              {loadingAssignments ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p>Loading assignments...</p>
+                </div>
+              ) : assignments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>
+                    No questionnaires available for the specified course/module.
+                  </p>
+                  <p className="text-sm mt-2">
+                    Try creating sample data in the admin panel first.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {assignments.map((assignment) => (
+                    <div
+                      key={assignment.assignmentId}
+                      className="border rounded-lg p-6"
+                    >
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {assignment.questionnaireTitle}
+                          </h3>
+                          <p className="text-muted-foreground">
+                            {assignment.scope.type === "course"
+                              ? "📚 Course-level"
+                              : "📖 Module-level"}{" "}
+                            •
+                            {assignment.timing === "pre"
+                              ? " Pre-completion"
+                              : " Post-completion"}{" "}
+                            survey
+                          </p>
+                        </div>
+                        <span
+                          className={`px-3 py-1 text-sm rounded-full ${
+                            assignment.completed
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {assignment.completed ? "Completed ✓" : "Pending"}
+                        </span>
+                      </div>
+
+                      {!assignment.completed && (
+                        <button
+                          onClick={() =>
+                            startQuestionnaire(assignment.assignmentId)
+                          }
+                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                        >
+                          Start Questionnaire
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
-    </div>
+      </div>
+    </RouteGuard>
   );
 }

@@ -22,8 +22,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
-    // Determine role if not set in custom claims
-    const role = user.role || "user";
+    console.log({ user });
+    // Determine role from custom claims first, then from user document
+    let role = user.role;
+
+    if (!role) {
+      // Check user document in Firestore for role
+      const { adminDb } = await import("@/lib/firebaseAdmin");
+      if (adminDb) {
+        try {
+          const userDoc = await adminDb.collection("users").doc(user.uid).get();
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            role = userData?.role;
+            console.log(
+              `Retrieved role from user document: ${role} for user: ${user.email}`
+            );
+
+            // Sync role to custom claims if found in document
+            if (role) {
+              const { adminAuth } = await import("@/lib/firebaseAdmin");
+              if (adminAuth) {
+                try {
+                  await adminAuth.setCustomUserClaims(user.uid, { role });
+                  console.log(
+                    `Synced role to custom claims: ${role} for user: ${user.email}`
+                  );
+                } catch (error) {
+                  console.error("Failed to sync role to custom claims:", error);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to check user document for role:", error);
+        }
+      }
+    }
+
+    // Final fallback - default to "user" if no role found anywhere
+    if (!role) {
+      role = "user";
+      console.log(`No role found, defaulting to 'user' for: ${user.email}`);
+    }
+
+    console.log(`Final role determination: ${role} for user: ${user.email}`);
 
     // Provider enforcement
     if (role === "user" && user.provider !== "google.com") {
@@ -42,11 +85,13 @@ export async function POST(req: NextRequest) {
         {
           ok: false,
           code: "provider_not_allowed",
-          message: `Admins must sign in with email and password (got provider: ${user.provider})`,
+          message: "Admins must sign in with email and password",
         },
         { status: 403 }
       );
-    } // Ensure user document exists
+    }
+
+    // Ensure user document exists
     await ensureUserDoc({
       uid: user.uid,
       email: user.email,

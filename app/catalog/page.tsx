@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Navigation } from "@/app/components/Navigation";
 
 // Force dynamic rendering for fresh course data
 export const dynamic = "force-dynamic";
@@ -44,68 +45,11 @@ export default async function CatalogPage() {
 
   return (
     <div className="min-h-screen">
-      {/* Navbar */}
-      <nav className="border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm">
-                    AI
-                  </span>
-                </div>
-                <span className="font-bold text-xl">Learn AI</span>
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/catalog" className="text-foreground font-medium">
-                Catalog
-              </Link>
-              <Link
-                href="/login"
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Login
-              </Link>
-              <Link
-                href="/admin/login"
-                className="px-4 py-2 text-sm font-medium bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-              >
-                Admin
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* Content */}
       <main className="max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Course Catalog</h1>
-
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-          <h2 className="text-lg font-semibold text-green-900 mb-2">
-            ✅ Phase 2 Complete - Live Course Catalog
-          </h2>
-          <p className="text-green-800 mb-4">
-            Course catalog is now fully functional and displays published
-            courses from Firestore.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-green-700">
-            <div className="space-y-1">
-              <div>✅ Admin can create courses</div>
-              <div>✅ Admin can add modules</div>
-              <div>✅ Admin can publish courses</div>
-              <div>✅ Course listing API endpoint</div>
-            </div>
-            <div className="space-y-1">
-              <div>✅ Real-time course display</div>
-              <div>✅ Course card components</div>
-              <div>✅ User enrollment system</div>
-              <div>✅ Progress tracking</div>
-            </div>
-          </div>
-        </div>
 
         {/* Course Listing */}
         <div className="mt-8">

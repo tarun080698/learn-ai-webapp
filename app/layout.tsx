@@ -4,7 +4,8 @@ import { AuthProvider } from "./(auth)/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Learn AI",
-  description: "MVP scaffold",
+  description:
+    "AI Learning Platform - Interactive courses and personalized learning paths",
 };
 
 export default function RootLayout({
@@ -15,9 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <AuthProvider>
-          <div className="max-w-6xl mx-auto p-4">{children}</div>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

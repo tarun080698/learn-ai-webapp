@@ -1,10 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export function proxy(request: NextRequest) {
-  // TODO: Replace with Firebase custom claims authentication
-  console.log("proxy Middleware processing:", request.nextUrl.pathname);
+// Define route patterns for authentication system
+const publicRoutes = ["/", "/catalog", "/login", "/admin/login"];
+const protectedRoutes = ["/dashboard", "/questionnaires"];
+const adminRoutes = ["/admin"];
 
-  // Example Basic Auth for /admin routes (commented out for MVP)
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  console.log("Proxy processing:", pathname);
+
+  // Allow API routes and static files
+  if (
+    pathname.startsWith("/api/") ||
+    pathname.startsWith("/_next/") ||
+    pathname.startsWith("/favicon.ico") ||
+    pathname.includes(".") ||
+    pathname.startsWith("/_vercel")
+  ) {
+    return NextResponse.next();
+  }
+
+  // Check if it's a public route
+  if (publicRoutes.includes(pathname)) {
+    return NextResponse.next();
+  }
+
+  // For protected routes, we'll let the client-side RouteGuard handle auth checks
+  // This is the recommended approach for Firebase Auth with Next.js App Router
+  // Server-side authentication would require additional Firebase Admin SDK setup
+
+  // Example Basic Auth for /admin routes (commented out - using client-side Firebase Auth instead)
   /*
   if (request.nextUrl.pathname.startsWith('/admin')) {
     const authHeader = request.headers.get('authorization');
@@ -48,7 +74,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - _vercel (Vercel internals)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|_vercel).*)",
   ],
 };

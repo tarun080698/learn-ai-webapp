@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { RouteGuard } from "@/app/components/RouteGuard";
+import { Navigation } from "@/app/components/Navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -53,6 +55,7 @@ export default function AdminPage() {
 
   // Load courses when user is authenticated
   useEffect(() => {
+    console.log({ firebaseUser, role });
     if (firebaseUser && role === "admin") {
       loadCourses();
       loadQuestionnaires();
@@ -335,331 +338,306 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Panel</h1>
-          <p className="text-muted-foreground">Welcome, {firebaseUser.email}</p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/admin/test"
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Advanced Testing
-          </Link>
-          <button
-            onClick={signOutAll}
-            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <button
-          onClick={createSeedData}
-          className="p-4 border rounded-lg hover:bg-muted transition-colors text-left"
-        >
-          <h3 className="font-semibold mb-2">🌱 Create Seed Data</h3>
-          <p className="text-sm text-muted-foreground">
-            Generate sample courses and modules for testing
-          </p>
-        </button>
-
-        <button
-          onClick={createSampleQuestionnaire}
-          className="p-4 border rounded-lg hover:bg-muted transition-colors text-left"
-        >
-          <h3 className="font-semibold mb-2">📝 Sample Survey</h3>
-          <p className="text-sm text-muted-foreground">
-            Create a sample questionnaire template
-          </p>
-        </button>
-
-        <Link
-          href="/catalog"
-          className="p-4 border rounded-lg hover:bg-muted transition-colors text-left block"
-        >
-          <h3 className="font-semibold mb-2">📚 View Catalog</h3>
-          <p className="text-sm text-muted-foreground">
-            See how courses appear to users
-          </p>
-        </Link>
-
-        <Link
-          href="/admin/test"
-          className="p-4 border rounded-lg hover:bg-muted transition-colors text-left block"
-        >
-          <h3 className="font-semibold mb-2">🧪 Advanced Tools</h3>
-          <p className="text-sm text-muted-foreground">
-            Full testing interface with API tools
-          </p>
-        </Link>
-      </div>
-
-      {/* Result Messages */}
-      {(seedResult || questionnaireResult) && (
-        <div className="mb-6 space-y-4">
-          {seedResult && (
-            <div className="p-4 border rounded-lg bg-muted">
-              <h4 className="font-semibold mb-2">Seed Data Result:</h4>
-              <pre className="text-sm whitespace-pre-wrap">{seedResult}</pre>
+    <RouteGuard>
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="container mx-auto py-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Admin Panel</h1>
+              <p className="text-muted-foreground">
+                Welcome, {firebaseUser.email}
+              </p>
             </div>
-          )}
-          {questionnaireResult && (
-            <div className="p-4 border rounded-lg bg-blue-50">
-              <h4 className="font-semibold mb-2">Questionnaire Result:</h4>
-              <pre className="text-sm whitespace-pre-wrap">
-                {questionnaireResult}
-              </pre>
+            <div className="flex gap-2">
+              <Link
+                href="/admin/test"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Advanced Testing
+              </Link>
+              <button
+                onClick={signOutAll}
+                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
+              >
+                Sign Out
+              </button>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Courses Section */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Courses</h2>
-          <button
-            onClick={loadCourses}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-
-        {loadingCourses ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading courses...</p>
           </div>
-        ) : courses.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-            <p className="text-muted-foreground mb-4">No courses found</p>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <button
               onClick={createSeedData}
-              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="p-4 border rounded-lg hover:bg-muted transition-colors text-left"
             >
-              Create Sample Course
+              <h3 className="font-semibold mb-2">🌱 Create Seed Data</h3>
+              <p className="text-sm text-muted-foreground">
+                Generate sample courses and modules for testing
+              </p>
             </button>
+
+            <button
+              onClick={createSampleQuestionnaire}
+              className="p-4 border rounded-lg hover:bg-muted transition-colors text-left"
+            >
+              <h3 className="font-semibold mb-2">📝 Sample Survey</h3>
+              <p className="text-sm text-muted-foreground">
+                Create a sample questionnaire template
+              </p>
+            </button>
+
+            <Link
+              href="/catalog"
+              className="p-4 border rounded-lg hover:bg-muted transition-colors text-left block"
+            >
+              <h3 className="font-semibold mb-2">📚 View Catalog</h3>
+              <p className="text-sm text-muted-foreground">
+                See how courses appear to users
+              </p>
+            </Link>
+
+            <Link
+              href="/admin/test"
+              className="p-4 border rounded-lg hover:bg-muted transition-colors text-left block"
+            >
+              <h3 className="font-semibold mb-2">🧪 Advanced Tools</h3>
+              <p className="text-sm text-muted-foreground">
+                Full testing interface with API tools
+              </p>
+            </Link>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {courses.map((course) => (
-              <div key={course.id} className="border rounded-lg p-6">
-                <div className="flex justify-between items-start mb-3">
-                  <h3 className="font-semibold">{course.title}</h3>
-                  <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      course.isPublished
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {course.isPublished ? "Published" : "Draft"}
-                  </span>
+
+          {/* Result Messages */}
+          {(seedResult || questionnaireResult) && (
+            <div className="mb-6 space-y-4">
+              {seedResult && (
+                <div className="p-4 border rounded-lg bg-muted">
+                  <h4 className="font-semibold mb-2">Seed Data Result:</h4>
+                  <pre className="text-sm whitespace-pre-wrap">
+                    {seedResult}
+                  </pre>
                 </div>
-
-                <p className="text-sm text-muted-foreground mb-4">
-                  {course.description}
-                </p>
-
-                <div className="text-xs text-muted-foreground mb-4 space-y-1">
-                  <div>📚 {course.moduleCount} modules</div>
-                  <div>⏱️ {course.estimatedDuration} minutes</div>
-                  <div>📊 {course.level}</div>
+              )}
+              {questionnaireResult && (
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <h4 className="font-semibold mb-2">Questionnaire Result:</h4>
+                  <pre className="text-sm whitespace-pre-wrap">
+                    {questionnaireResult}
+                  </pre>
                 </div>
+              )}
+            </div>
+          )}
 
-                <div className="flex gap-2">
-                  {!course.isPublished && (
-                    <button
-                      onClick={() => publishCourse(course.id)}
-                      className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                    >
-                      Publish
-                    </button>
+          {/* Courses Section */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Courses</h2>
+              <button
+                onClick={loadCourses}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {loadingCourses ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p>Loading courses...</p>
+              </div>
+            ) : courses.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
+                <p className="text-muted-foreground mb-4">No courses found</p>
+                <button
+                  onClick={createSeedData}
+                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                >
+                  Create Sample Course
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {courses.map((course) => (
+                  <div key={course.id} className="border rounded-lg p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-semibold">{course.title}</h3>
+                      <span
+                        className={`px-2 py-1 text-xs rounded ${
+                          course.isPublished
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {course.isPublished ? "Published" : "Draft"}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {course.description}
+                    </p>
+
+                    <div className="text-xs text-muted-foreground mb-4 space-y-1">
+                      <div>📚 {course.moduleCount} modules</div>
+                      <div>⏱️ {course.estimatedDuration} minutes</div>
+                      <div>📊 {course.level}</div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {!course.isPublished && (
+                        <button
+                          onClick={() => publishCourse(course.id)}
+                          className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                        >
+                          Publish
+                        </button>
+                      )}
+                      <button
+                        onClick={() => createSampleAssignment(course.id)}
+                        className="px-3 py-1 text-sm bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+                      >
+                        Add Survey
+                      </button>
+                      <Link
+                        href={`/admin/test`}
+                        className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                      >
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Questionnaires Section */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Questionnaires</h2>
+              <button
+                onClick={loadQuestionnaires}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Refresh
+              </button>
+            </div>
+
+            {loadingQuestionnaires ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p>Loading questionnaires...</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Templates ({questionnaires.length})
+                  </h3>
+                  {questionnaires.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No questionnaire templates found.</p>
+                      <p className="text-sm mt-2">
+                        Click &ldquo;Sample Survey&rdquo; above to create one.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {questionnaires.map((questionnaire) => (
+                        <div
+                          key={questionnaire.id}
+                          className="border rounded-lg p-4"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold">
+                              {questionnaire.title}
+                            </h4>
+                            <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">
+                              v{questionnaire.version}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {questionnaire.purpose === "survey"
+                              ? "📊 Survey"
+                              : questionnaire.purpose === "quiz"
+                              ? "🧪 Quiz"
+                              : "📝 Mixed"}{" "}
+                            •{questionnaire.questions?.length || 0} questions
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Created:{" "}
+                            {new Date(
+                              questionnaire.createdAt
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <button
-                    onClick={() => createSampleAssignment(course.id)}
-                    className="px-3 py-1 text-sm bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-                  >
-                    Add Survey
-                  </button>
-                  <Link
-                    href={`/admin/test`}
-                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                  >
-                    Edit
-                  </Link>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">
+                    Assignments ({assignments.length})
+                  </h3>
+                  {assignments.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No questionnaire assignments found.</p>
+                      <p className="text-sm mt-2">
+                        Click &ldquo;Add Survey&rdquo; on courses above to
+                        create assignments.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4">
+                      {assignments.map((assignment) => (
+                        <div
+                          key={assignment.id}
+                          className="border rounded-lg p-4"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-semibold">
+                              {assignment.scope.type === "course"
+                                ? "📚 Course"
+                                : "📖 Module"}{" "}
+                              Assignment
+                            </h4>
+                            <span
+                              className={`px-2 py-1 text-xs rounded ${
+                                assignment.active
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {assignment.active ? "Active" : "Inactive"}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {assignment.timing === "pre"
+                              ? "📝 Pre-completion"
+                              : "📋 Post-completion"}{" "}
+                            • Course: {assignment.scope.courseId}
+                            {assignment.scope.moduleId &&
+                              ` • Module: ${assignment.scope.moduleId}`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Questionnaire v{assignment.questionnaireVersion} •
+                            Created:{" "}
+                            {new Date(
+                              assignment.createdAt
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Questionnaires Section */}
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Questionnaires</h2>
-          <button
-            onClick={loadQuestionnaires}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            Refresh
-          </button>
-        </div>
-
-        {loadingQuestionnaires ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading questionnaires...</p>
-          </div>
-        ) : (
-          <div className="grid gap-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">
-                Templates ({questionnaires.length})
-              </h3>
-              {questionnaires.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No questionnaire templates found.</p>
-                  <p className="text-sm mt-2">
-                    Click &ldquo;Sample Survey&rdquo; above to create one.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {questionnaires.map((questionnaire) => (
-                    <div
-                      key={questionnaire.id}
-                      className="border rounded-lg p-4"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold">{questionnaire.title}</h4>
-                        <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">
-                          v{questionnaire.version}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {questionnaire.purpose === "survey"
-                          ? "📊 Survey"
-                          : questionnaire.purpose === "quiz"
-                          ? "🧪 Quiz"
-                          : "📝 Mixed"}{" "}
-                        •{questionnaire.questions?.length || 0} questions
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Created:{" "}
-                        {new Date(questionnaire.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <h3 className="text-lg font-semibold mb-4">
-                Assignments ({assignments.length})
-              </h3>
-              {assignments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No questionnaire assignments found.</p>
-                  <p className="text-sm mt-2">
-                    Click &ldquo;Add Survey&rdquo; on courses above to create
-                    assignments.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {assignments.map((assignment) => (
-                    <div key={assignment.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold">
-                          {assignment.scope.type === "course"
-                            ? "📚 Course"
-                            : "📖 Module"}{" "}
-                          Assignment
-                        </h4>
-                        <span
-                          className={`px-2 py-1 text-xs rounded ${
-                            assignment.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {assignment.active ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {assignment.timing === "pre"
-                          ? "📝 Pre-completion"
-                          : "📋 Post-completion"}{" "}
-                        • Course: {assignment.scope.courseId}
-                        {assignment.scope.moduleId &&
-                          ` • Module: ${assignment.scope.moduleId}`}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Questionnaire v{assignment.questionnaireVersion} •
-                        Created:{" "}
-                        {new Date(assignment.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Phase 2 & 3 Status */}
-      <div className="mt-12 space-y-6">
-        <div className="p-6 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            Phase 2 Status - All APIs Ready!
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
-            <div className="space-y-1">
-              <div>✅ POST /api/admin/course.upsert</div>
-              <div>✅ POST /api/admin/module.upsert</div>
-              <div>✅ POST /api/admin/course.publish</div>
-              <div>✅ POST /api/admin/seed.dev</div>
-            </div>
-            <div className="space-y-1">
-              <div>✅ POST /api/enroll</div>
-              <div>✅ POST /api/progress</div>
-              <div>✅ Authentication & Authorization</div>
-              <div>✅ Firestore Integration</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
-          <h3 className="text-lg font-semibold text-purple-900 mb-2">
-            Phase 3 Status - Questionnaire System Ready!
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-purple-700">
-            <div className="space-y-1">
-              <div>✅ POST /api/admin/questionnaire.upsert</div>
-              <div>✅ POST /api/admin/assignment.upsert</div>
-              <div>✅ POST /api/questionnaires/context</div>
-              <div>✅ POST /api/questionnaires/start</div>
-            </div>
-            <div className="space-y-1">
-              <div>✅ POST /api/questionnaires/submit</div>
-              <div>✅ POST /api/modules/access</div>
-              <div>✅ Gating System & Scoring</div>
-              <div>✅ Version Control & Freezing</div>
-            </div>
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }

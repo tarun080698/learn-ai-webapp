@@ -41,10 +41,11 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  // Start with loading false if auth is not available
   const [state, setState] = useState<AuthState>({
     firebaseUser: null,
     role: null,
-    loading: true,
+    loading: typeof window !== "undefined" && !!auth,
   });
 
   // Call mark-login endpoint after authentication
@@ -61,6 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log({ data });
         setState((prev) => ({
           ...prev,
           role: data.role,
@@ -81,22 +83,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Monitor auth state changes
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+      return;
+    }
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setState((prev) => ({ ...prev, loading: true }));
-
       if (user) {
-        // User signed in - call mark-login
-        await markLogin(user);
+        // Set user first
         setState((prev) => ({
           ...prev,
           firebaseUser: user,
           providerId: user.providerData[0]?.providerId,
+        }));
+
+        // Then call mark-login and wait for completion
+        try {
+          await markLogin(user);
+        } catch (error) {
+          console.error("AuthProvider: markLogin failed:", error);
+          // Still set loading to false even if markLogin fails
+        }
+
+        // Only set loading to false after mark-login completes
+        setState((prev) => ({
+          ...prev,
           loading: false,
         }));
       } else {
-        // User signed out
+        // User signed out or no user initially
         setState({
           firebaseUser: null,
           role: null,

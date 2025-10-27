@@ -1,6 +1,8 @@
 "use client";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { RouteGuard } from "@/app/components/RouteGuard";
+import { Navigation } from "@/app/components/Navigation";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -48,17 +50,16 @@ export default function DashboardPage() {
     if (firebaseUser) {
       loadEnrollments();
     }
-  }, [firebaseUser]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [firebaseUser]);
 
   const loadEnrollments = async () => {
     if (!firebaseUser) return;
 
-    setLoadingEnrollments(true);
     try {
-      const token = await firebaseUser.getIdToken();
+      setLoadingEnrollments(true);
       const response = await fetch("/api/enrollments", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
         },
       });
 
@@ -66,7 +67,7 @@ export default function DashboardPage() {
         const data = await response.json();
         setEnrollments(data.enrollments || []);
       } else {
-        console.error("Failed to load enrollments:", response.statusText);
+        console.error("Failed to load enrollments");
       }
     } catch (error) {
       console.error("Error loading enrollments:", error);
@@ -75,64 +76,79 @@ export default function DashboardPage() {
     }
   };
 
-  // Phase 2: Test enrollment function
+  // Test enrollment function
   const testEnrollment = async () => {
-    if (!firebaseUser || !testCourseId) {
-      setEnrollResult("Please enter a course ID and ensure you are logged in");
-      return;
-    }
+    if (!firebaseUser || !testCourseId) return;
 
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/enroll", {
+      const response = await fetch("/api/enrollments", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          "x-idempotency-key": `enroll-${testCourseId}-${Date.now()}`,
+          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
         },
         body: JSON.stringify({ courseId: testCourseId }),
       });
 
       const data = await response.json();
       setEnrollResult(JSON.stringify(data, null, 2));
+
+      if (response.ok) {
+        loadEnrollments(); // Refresh the list
+      }
     } catch (error) {
       setEnrollResult(`Error: ${error}`);
     }
   };
 
-  // Phase 2: Test progress completion function
+  // Test progress function
   const testProgress = async () => {
-    if (!firebaseUser || !testCourseId || !testModuleId) {
-      setProgressResult(
-        "Please enter course ID, module ID, and ensure you are logged in"
-      );
-      return;
-    }
+    if (!firebaseUser || !testCourseId || !testModuleId) return;
 
     try {
-      const token = await firebaseUser.getIdToken();
       const response = await fetch("/api/progress", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-          "x-idempotency-key": `progress-${testModuleId}-${Date.now()}`,
+          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
         },
         body: JSON.stringify({
           courseId: testCourseId,
           moduleId: testModuleId,
           moduleIndex: testModuleIndex,
+          completed: true,
         }),
       });
 
       const data = await response.json();
       setProgressResult(JSON.stringify(data, null, 2));
+
+      if (response.ok) {
+        loadEnrollments(); // Refresh to see updated progress
+      }
     } catch (error) {
       setProgressResult(`Error: ${error}`);
     }
   };
 
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const getLevelColor = (level: string) => {
+    switch (level.toLowerCase()) {
+      case "beginner":
+        return "bg-green-100 text-green-800";
+      case "intermediate":
+        return "bg-yellow-100 text-yellow-800";
+      case "advanced":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -144,17 +160,18 @@ export default function DashboardPage() {
     );
   }
 
+  // Show sign-in prompt if not authenticated
   if (!firebaseUser) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold">Welcome to Learn AI</h1>
+          <h2 className="text-2xl font-bold">Sign In Required</h2>
           <p className="text-muted-foreground">
-            Please sign in to access your dashboard.
+            Please sign in to access your dashboard
           </p>
           <Link
             href="/login"
-            className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
           >
             Sign In
           </Link>
@@ -164,280 +181,267 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Student Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back, {firebaseUser.displayName || firebaseUser.email}!
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/questionnaires"
-            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-          >
-            📝 Questionnaires
-          </Link>
-          <Link
-            href="/catalog"
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            📚 Catalog
-          </Link>
-          <button
-            onClick={signOutAll}
-            className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-
-      {/* Streak Display */}
-      <div className="bg-linear-to-r from-primary/10 to-secondary/10 p-6 rounded-lg mb-8">
-        <div className="flex items-center gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">
-              {currentStreakDays || 0}
+    <RouteGuard>
+      <div className="min-h-screen">
+        <Navigation />
+        <div className="container mx-auto py-8">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h1 className="text-3xl font-bold">Student Dashboard</h1>
+              <p className="text-muted-foreground">
+                Welcome back, {firebaseUser.displayName || firebaseUser.email}!
+              </p>
             </div>
-            <div className="text-sm text-muted-foreground">Current Streak</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-secondary">
-              {bestStreakDays || 0}
-            </div>
-            <div className="text-sm text-muted-foreground">Best Streak</div>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-muted-foreground">
-              🔥 Keep learning daily to maintain your streak!
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Phase 2: Learning System Testing Interface */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
-        <h2 className="text-lg font-semibold text-green-900 mb-4">
-          Phase 2: Learning System Testing
-        </h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Enrollment Testing */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-green-800">
-              Test Course Enrollment
-            </h3>
-            <input
-              type="text"
-              placeholder="Enter Course ID"
-              value={testCourseId}
-              onChange={(e) => setTestCourseId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <button
-              onClick={testEnrollment}
-              className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Enroll in Course
-            </button>
-            {enrollResult && (
-              <div className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-32">
-                <pre>{enrollResult}</pre>
-              </div>
-            )}
-          </div>
-
-          {/* Progress Testing */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-green-800">
-              Test Module Completion
-            </h3>
-            <input
-              type="text"
-              placeholder="Course ID"
-              value={testCourseId}
-              onChange={(e) => setTestCourseId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <input
-              type="text"
-              placeholder="Module ID"
-              value={testModuleId}
-              onChange={(e) => setTestModuleId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <input
-              type="number"
-              placeholder="Module Index (0, 1, 2...)"
-              value={testModuleIndex}
-              onChange={(e) =>
-                setTestModuleIndex(parseInt(e.target.value) || 0)
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-            <button
-              onClick={testProgress}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Complete Module
-            </button>
-            {progressResult && (
-              <div className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-32">
-                <pre>{progressResult}</pre>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h4 className="font-semibold text-yellow-800 mb-2">
-            Quick Test Instructions:
-          </h4>
-          <ol className="text-sm text-yellow-700 space-y-1 list-decimal list-inside">
-            <li>
-              First, create seed data: POST /api/admin/seed.dev (need admin
-              token)
-            </li>
-            <li>Publish the course: POST /api/admin/course.publish</li>
-            <li>
-              Use the returned courseId and moduleIds above to test enrollment
-              and progress
-            </li>
-            <li>Watch progress percentage increase as you complete modules!</li>
-          </ol>
-        </div>
-      </div>
-
-      {/* My Courses Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">My Courses</h2>
-
-        {loadingEnrollments ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading your courses...</p>
-          </div>
-        ) : enrollments.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-            <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
-              <span className="text-3xl">📚</span>
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No Courses Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Start your learning journey by enrolling in a course.
-            </p>
-            <Link
-              href="/catalog"
-              className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Browse Courses
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {enrollments.map((enrollment) => (
-              <div
-                key={enrollment.id}
-                className="border rounded-lg p-6 hover:shadow-md transition-shadow"
+            <div className="flex gap-2">
+              <Link
+                href="/questionnaires"
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold mb-1">
-                      {enrollment.course.title}
-                    </h3>
-                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {enrollment.course.level}
-                    </span>
-                  </div>
-                  {enrollment.completed && (
-                    <span className="text-green-600">✅</span>
-                  )}
+                Questionnaires
+              </Link>
+              <Link
+                href="/catalog"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Browse Catalog
+              </Link>
+              <button
+                onClick={signOutAll}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+
+          {/* Learning Streak Section */}
+          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-lg mb-8">
+            <div className="flex items-center gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary">
+                  {currentStreakDays || 0}
                 </div>
-
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                  {enrollment.course.description}
-                </p>
-
-                {/* Progress Bar */}
-                <div className="mb-4">
-                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                    <span>Progress</span>
-                    <span>{enrollment.progressPct}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${enrollment.progressPct}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {enrollment.completedCount} of{" "}
-                    {enrollment.course.moduleCount} modules completed
-                  </p>
+                <div className="text-sm text-muted-foreground">
+                  Current Streak
                 </div>
-
-                <div className="flex justify-between items-center text-xs text-muted-foreground mb-4">
-                  <span>⏱️ {enrollment.course.durationMinutes} min</span>
-                  <span>
-                    📅 Enrolled{" "}
-                    {new Date(enrollment.enrolledAt).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <button className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm">
-                  {enrollment.completed ? "Review" : "Continue Learning"}
-                </button>
               </div>
-            ))}
+              <div className="text-center">
+                <div className="text-2xl font-bold text-secondary">
+                  {bestStreakDays || 0}
+                </div>
+                <div className="text-sm text-muted-foreground">Best Streak</div>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-2">Keep Learning!</h3>
+                <p className="text-sm text-muted-foreground">
+                  Maintain your daily learning streak to build consistent habits
+                  and track your progress.
+                </p>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div className="p-6 border rounded-lg">
-          <h3 className="font-semibold mb-4">Quick Stats</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Enrolled Courses</span>
-              <span className="font-medium">{enrollments.length}</span>
+          {/* My Enrollments */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">My Enrollments</h2>
+              <button
+                onClick={loadEnrollments}
+                disabled={loadingEnrollments}
+                className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 disabled:opacity-50"
+              >
+                {loadingEnrollments ? "Loading..." : "Refresh"}
+              </button>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Completed Courses</span>
-              <span className="font-medium">
-                {enrollments.filter((e) => e.completed).length}
-              </span>
+
+            {loadingEnrollments ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                <p>Loading enrollments...</p>
+              </div>
+            ) : enrollments.length === 0 ? (
+              <div className="text-center py-12 bg-muted/50 rounded-lg">
+                <h3 className="text-lg font-semibold mb-2">
+                  No Enrollments Yet
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Start your learning journey by enrolling in a course
+                </p>
+                <Link
+                  href="/catalog"
+                  className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
+                >
+                  Browse Courses
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {enrollments.map((enrollment) => (
+                  <div
+                    key={enrollment.id}
+                    className="border rounded-lg p-6 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold mb-2">
+                          {enrollment.course.title}
+                        </h3>
+                        <p className="text-muted-foreground mb-2">
+                          {enrollment.course.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(
+                              enrollment.course.level
+                            )}`}
+                          >
+                            {enrollment.course.level}
+                          </span>
+                          <span className="text-muted-foreground">
+                            {enrollment.course.moduleCount} modules
+                          </span>
+                          <span className="text-muted-foreground">
+                            {enrollment.course.durationMinutes}min
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-primary mb-1">
+                          {Math.round(enrollment.progressPct)}%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {enrollment.completedCount} of{" "}
+                          {enrollment.course.moduleCount} modules
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-muted rounded-full h-2 mb-4">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${enrollment.progressPct}%` }}
+                      ></div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">
+                        Enrolled on {formatDate(enrollment.enrolledAt)}
+                      </span>
+                      <div className="flex gap-2">
+                        {enrollment.completed ? (
+                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                            Completed ✅
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/courses/${enrollment.courseId}`}
+                            className="px-3 py-1 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                          >
+                            Continue Learning
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Phase 2 Testing Section */}
+          <div className="mt-12 p-6 border rounded-lg bg-blue-50">
+            <h3 className="text-lg font-semibold mb-4">
+              Phase 2 Testing Tools (Development Only)
+            </h3>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Enrollment Testing */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Test Enrollment</h4>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Course ID"
+                    value={testCourseId}
+                    onChange={(e) => setTestCourseId(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                  <button
+                    onClick={testEnrollment}
+                    className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    Test Enroll
+                  </button>
+                </div>
+                {enrollResult && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                    {enrollResult}
+                  </pre>
+                )}
+              </div>
+
+              {/* Progress Testing */}
+              <div className="space-y-4">
+                <h4 className="font-medium">Test Progress</h4>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Course ID"
+                    value={testCourseId}
+                    onChange={(e) => setTestCourseId(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Module ID"
+                    value={testModuleId}
+                    onChange={(e) => setTestModuleId(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Module Index"
+                    value={testModuleIndex}
+                    onChange={(e) => setTestModuleIndex(Number(e.target.value))}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  />
+                  <button
+                    onClick={testProgress}
+                    className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                  >
+                    Update Progress
+                  </button>
+                </div>
+                {progressResult && (
+                  <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
+                    {progressResult}
+                  </pre>
+                )}
+              </div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">In Progress</span>
-              <span className="font-medium">
-                {
-                  enrollments.filter((e) => !e.completed && e.progressPct > 0)
-                    .length
-                }
-              </span>
+          </div>
+
+          {/* Learning Streak Detail */}
+          <div className="mt-8 p-6 border rounded-lg">
+            <h3 className="font-semibold mb-4">Learning Streak</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Current Streak</span>
+                <span className="font-medium">
+                  {currentStreakDays || 0} days
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Best Streak</span>
+                <span className="font-medium">{bestStreakDays || 0} days</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                🔥 Keep learning daily to maintain your streak!
+              </p>
             </div>
           </div>
         </div>
-
-        <div className="p-6 border rounded-lg">
-          <h3 className="font-semibold mb-4">Learning Streak</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Current Streak</span>
-              <span className="font-medium">{currentStreakDays || 0} days</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Best Streak</span>
-              <span className="font-medium">{bestStreakDays || 0} days</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              🔥 Keep learning daily to maintain your streak!
-            </p>
-          </div>
-        </div>
       </div>
-    </div>
+    </RouteGuard>
   );
 }
