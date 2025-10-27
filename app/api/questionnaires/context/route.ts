@@ -99,3 +99,37 @@ export async function GET(req: NextRequest) {
     return jsonError(error);
   }
 }
+
+// Also support POST method for the same functionality
+export async function POST(req: NextRequest) {
+  try {
+    // For POST, read body for courseId and moduleId
+    const body = await req.json();
+    const { courseId, moduleId } = body;
+
+    if (!courseId) {
+      return NextResponse.json(
+        { error: "courseId is required" },
+        { status: 400 }
+      );
+    }
+
+    // Create URL search params for the existing GET logic
+    const url = new URL(req.url);
+    url.searchParams.set("courseId", courseId);
+    if (moduleId) {
+      url.searchParams.set("moduleId", moduleId);
+    }
+
+    // Create a new request with the search params
+    const newRequest = new NextRequest(url, {
+      method: "GET",
+      headers: req.headers,
+    });
+
+    // Reuse the GET handler
+    return await GET(newRequest);
+  } catch (error) {
+    return jsonError(error);
+  }
+}

@@ -28,10 +28,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Get user's enrollments
+    // Note: Using simple query for development, orderBy handled in JavaScript
+    // For production, create composite index: uid + enrolledAt
     const enrollmentsRef = adminDb.collection("enrollments");
     const userEnrollmentsSnapshot = await enrollmentsRef
       .where("uid", "==", uid)
-      .orderBy("enrolledAt", "desc")
       .get();
 
     if (userEnrollmentsSnapshot.empty) {
@@ -42,9 +43,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // Sort enrollments by date in JavaScript for development compatibility
+    const sortedEnrollmentDocs = userEnrollmentsSnapshot.docs.sort((a, b) => {
+      const aDate = a.data().enrolledAt?.toDate() || new Date(0);
+      const bDate = b.data().enrolledAt?.toDate() || new Date(0);
+      return bDate.getTime() - aDate.getTime();
+    });
+
     // Get course details for each enrollment
     const enrollments = [];
-    for (const enrollmentDoc of userEnrollmentsSnapshot.docs) {
+    for (const enrollmentDoc of sortedEnrollmentDocs) {
       const enrollmentData = enrollmentDoc.data();
 
       // Fetch course details

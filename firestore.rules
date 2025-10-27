@@ -1,0 +1,100 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    /* ---------- Helpers ---------- */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function immut(field) {
+      // Prevent field changes on update (safe on create because resource may not exist)
+      return !('' + field in resource.data) || request.resource.data[field] == resource.data[field];
+    }
+
+    /* ---------- Public Catalog (read-only) ---------- */
+    // Anyone (even not signed in) can read published courses/modules.
+    match /courses/{courseId} {
+      allow read: if resource.data.published == true;
+      allow write: if false; // Admin writes via server (Admin SDK) only
+    }
+
+    // Store modules in "courseModules" collection (as per Phase 2)
+    match /courseModules/{moduleId} {
+      // We mirror published flag to modules when course.publish runs.
+      allow read: if resource.data.published == true;
+      allow write: if false; // server-only
+    }
+
+    /* ---------- Users (owner only) ---------- */
+    match /users/{uid} {
+      // MVP: let users read/write their profile & streak counters.
+      // If you want server-only writes later, change write to 'false'.
+      allow read, write: if isOwner(uid);
+    }
+
+    /* ---------- Enrollments (owner only) ---------- */
+    // Doc id convention: `${uid}_${courseId}` (not enforced here)
+    match /enrollments/{enrollmentId} {
+      // CREATE: verify ownership using request.resource
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+
+      // READ/UPDATE: only owner; keep ownership keys immutable
+      allow read, update: if isSignedIn()
+                          && resource.data.uid == request.auth.uid
+                          && immut('uid') && immut('courseId');
+
+      allow delete: if false; // prevent client deletes
+    }
+
+    /* ---------- Progress (owner only) ---------- */
+    // Doc id: `${uid}_${courseId}_${moduleId}`
+    match /progress/{progressId} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+
+      allow read, update: if isSignedIn()
+                          && resource.data.uid == request.auth.uid
+                          && immut('uid') && immut('courseId') && immut('moduleId');
+
+      allow delete: if false;
+    }
+
+    /* ---------- Questionnaire Responses (owner only) ---------- */
+    // Collection name uses camelCase per Phase 3 code: "questionnaireResponses"
+    match /questionnaireResponses/{responseId} {
+      allow create: if isSignedIn() && request.resource.data.uid == request.auth.uid;
+
+      allow read, update: if isSignedIn()
+                          && resource.data.uid == request.auth.uid
+                          && immut('uid') && immut('assignmentId') && immut('questionnaireId') && immut('questionnaireVersion');
+
+      allow delete: if false;
+    }
+
+    /* ---------- Admin-managed (server only) ---------- */
+    // Templates & assignments should NOT be readable by clients;
+    // your API returns the frozen template when /questionnaires/start is called.
+    match /questionnaires/{qid} {
+      allow read, write: if false;
+    }
+    match /questionnaireAssignments/{aid} {
+      allow read, write: if false;
+    }
+
+    // Auth audit & infra collections (server-only)
+    match /loginEvents/{eventId} {
+      allow read, write: if false;
+    }
+    match /idempotentWrites/{id} {
+      allow read, write: if false;
+    }
+
+    /* ---------- Catch-all deny ---------- */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

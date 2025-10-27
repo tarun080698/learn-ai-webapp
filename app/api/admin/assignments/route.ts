@@ -1,8 +1,8 @@
 /**
  * GET /api/admin/assignments
- * 
+ *
  * List all questionnaire assignments for admin management.
- * 
+ *
  * curl -X GET http://localhost:3000/api/admin/assignments \
  *   -H "Authorization: Bearer $ADMIN_TOKEN"
  */
@@ -22,32 +22,39 @@ export async function GET(req: NextRequest) {
     try {
       requireAdmin(user);
     } catch {
-      return NextResponse.json({ error: "admin role required" }, { status: 403 });
+      return NextResponse.json(
+        { error: "admin role required" },
+        { status: 403 }
+      );
     }
 
     if (!adminDb) {
       throw new Error("Firebase Admin not initialized");
     }
 
-    // Fetch all assignments, ordered by creation date
-    const assignmentsSnapshot = await adminDb
-      .collection(COL.assignments)
-      .orderBy("createdAt", "desc")
-      .get();
+    // Fetch all assignments
+    // Note: OrderBy removed for development compatibility, sorted in JavaScript
+    const assignmentsSnapshot = await adminDb.collection(COL.assignments).get();
 
-    const assignments = assignmentsSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate()?.toISOString(),
-      updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-    }));
+    const assignments = assignmentsSnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt:
+          doc.data().createdAt?.toDate()?.toISOString() ||
+          new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     return NextResponse.json({
       ok: true,
       assignments,
-      count: assignments.length
+      count: assignments.length,
     });
-
   } catch (error) {
     return jsonError(error);
   }

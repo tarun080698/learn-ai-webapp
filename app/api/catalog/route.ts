@@ -16,20 +16,29 @@ export async function GET() {
     }
 
     // Query published courses from Firestore
+    // Note: Using simple query for development, orderBy handled in JavaScript
+    // For production, create composite index: published + createdAt
     const coursesRef = adminDb.collection("courses");
     const publishedCoursesSnapshot = await coursesRef
       .where("published", "==", true)
-      .orderBy("createdAt", "desc")
       .get();
 
-    const courses = publishedCoursesSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      // Convert Firestore timestamps for JSON serialization
-      createdAt: doc.data().createdAt?.toDate()?.toISOString(),
-      updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-      publishedAt: doc.data().publishedAt?.toDate()?.toISOString(),
-    }));
+    // Sort in JavaScript for development compatibility
+    const courses = publishedCoursesSnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        // Convert Firestore timestamps for JSON serialization
+        createdAt:
+          doc.data().createdAt?.toDate()?.toISOString() ||
+          new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+        publishedAt: doc.data().publishedAt?.toDate()?.toISOString(),
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     console.log(`✅ Found ${courses.length} published courses`);
 

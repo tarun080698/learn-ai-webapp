@@ -1,8 +1,8 @@
 /**
  * GET /api/admin/questionnaires
- * 
+ *
  * List all questionnaire templates for admin management.
- * 
+ *
  * curl -X GET http://localhost:3000/api/admin/questionnaires \
  *   -H "Authorization: Bearer $ADMIN_TOKEN"
  */
@@ -22,32 +22,41 @@ export async function GET(req: NextRequest) {
     try {
       requireAdmin(user);
     } catch {
-      return NextResponse.json({ error: "admin role required" }, { status: 403 });
+      return NextResponse.json(
+        { error: "admin role required" },
+        { status: 403 }
+      );
     }
 
     if (!adminDb) {
       throw new Error("Firebase Admin not initialized");
     }
 
-    // Fetch all questionnaires, ordered by creation date
+    // Fetch all questionnaires
+    // Note: OrderBy removed for development compatibility, sorted in JavaScript
     const questionnairesSnapshot = await adminDb
       .collection(COL.questionnaires)
-      .orderBy("createdAt", "desc")
       .get();
 
-    const questionnaires = questionnairesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate()?.toISOString(),
-      updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-    }));
+    const questionnaires = questionnairesSnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt:
+          doc.data().createdAt?.toDate()?.toISOString() ||
+          new Date().toISOString(),
+        updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
 
     return NextResponse.json({
       ok: true,
       questionnaires,
-      count: questionnaires.length
+      count: questionnaires.length,
     });
-
   } catch (error) {
     return jsonError(error);
   }

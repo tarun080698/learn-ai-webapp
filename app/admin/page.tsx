@@ -158,29 +158,28 @@ export default function AdminPage() {
     setLoadingQuestionnaires(true);
     try {
       if (!firebaseUser) return;
-      
+
       const token = await firebaseUser.getIdToken();
-      
+
       // Load questionnaires
       const questionnairesResponse = await fetch("/api/admin/questionnaires", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (questionnairesResponse.ok) {
         const questionnairesData = await questionnairesResponse.json();
         setQuestionnaires(questionnairesData.questionnaires || []);
       }
-      
+
       // Load assignments
       const assignmentsResponse = await fetch("/api/admin/assignments", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (assignmentsResponse.ok) {
         const assignmentsData = await assignmentsResponse.json();
         setAssignments(assignmentsData.assignments || []);
       }
-      
     } catch (error) {
       console.error("Failed to load questionnaires:", error);
     } finally {
@@ -499,6 +498,122 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Questionnaires Section */}
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold">Questionnaires</h2>
+          <button
+            onClick={loadQuestionnaires}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Refresh
+          </button>
+        </div>
+
+        {loadingQuestionnaires ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading questionnaires...</p>
+          </div>
+        ) : (
+          <div className="grid gap-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">
+                Templates ({questionnaires.length})
+              </h3>
+              {questionnaires.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No questionnaire templates found.</p>
+                  <p className="text-sm mt-2">
+                    Click &ldquo;Sample Survey&rdquo; above to create one.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {questionnaires.map((questionnaire) => (
+                    <div
+                      key={questionnaire.id}
+                      className="border rounded-lg p-4"
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold">{questionnaire.title}</h4>
+                        <span className="px-2 py-1 text-xs rounded bg-purple-100 text-purple-800">
+                          v{questionnaire.version}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {questionnaire.purpose === "survey"
+                          ? "📊 Survey"
+                          : questionnaire.purpose === "quiz"
+                          ? "🧪 Quiz"
+                          : "📝 Mixed"}{" "}
+                        •{questionnaire.questions?.length || 0} questions
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Created:{" "}
+                        {new Date(questionnaire.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">
+                Assignments ({assignments.length})
+              </h3>
+              {assignments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No questionnaire assignments found.</p>
+                  <p className="text-sm mt-2">
+                    Click &ldquo;Add Survey&rdquo; on courses above to create
+                    assignments.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {assignments.map((assignment) => (
+                    <div key={assignment.id} className="border rounded-lg p-4">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="font-semibold">
+                          {assignment.scope.type === "course"
+                            ? "📚 Course"
+                            : "📖 Module"}{" "}
+                          Assignment
+                        </h4>
+                        <span
+                          className={`px-2 py-1 text-xs rounded ${
+                            assignment.active
+                              ? "bg-green-100 text-green-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {assignment.active ? "Active" : "Inactive"}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {assignment.timing === "pre"
+                          ? "📝 Pre-completion"
+                          : "📋 Post-completion"}{" "}
+                        • Course: {assignment.scope.courseId}
+                        {assignment.scope.moduleId &&
+                          ` • Module: ${assignment.scope.moduleId}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Questionnaire v{assignment.questionnaireVersion} •
+                        Created:{" "}
+                        {new Date(assignment.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
