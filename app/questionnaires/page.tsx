@@ -45,8 +45,11 @@ export default function QuestionnairePage() {
   const { firebaseUser, loading } = useAuth();
   const [assignments, setAssignments] = useState<QuestionnaireAssignment[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
-  const [currentQuestionnaire, setCurrentQuestionnaire] = useState<StartedQuestionnaire | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string | number | string[]>>({});
+  const [currentQuestionnaire, setCurrentQuestionnaire] =
+    useState<StartedQuestionnaire | null>(null);
+  const [answers, setAnswers] = useState<
+    Record<string, string | number | string[]>
+  >({});
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string>("");
 
@@ -79,43 +82,67 @@ export default function QuestionnairePage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           courseId: testCourseId,
-          ...(testModuleId && { moduleId: testModuleId })
+          ...(testModuleId && { moduleId: testModuleId }),
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
         setAssignments([
-          ...(data.preCourse ? [{
-            assignmentId: data.preCourse.assignmentId,
-            questionnaireTitle: "Pre-Course Survey",
-            scope: { type: "course" as const, courseId: testCourseId },
-            timing: "pre" as const,
-            completed: data.preCourse.completed
-          }] : []),
-          ...(data.postCourse ? [{
-            assignmentId: data.postCourse.assignmentId,
-            questionnaireTitle: "Post-Course Survey",
-            scope: { type: "course" as const, courseId: testCourseId },
-            timing: "post" as const,
-            completed: data.postCourse.completed
-          }] : []),
-          ...(data.preModule ? [{
-            assignmentId: data.preModule.assignmentId,
-            questionnaireTitle: "Pre-Module Survey",
-            scope: { type: "module" as const, courseId: testCourseId, moduleId: testModuleId },
-            timing: "pre" as const,
-            completed: data.preModule.completed
-          }] : []),
-          ...(data.postModule ? [{
-            assignmentId: data.postModule.assignmentId,
-            questionnaireTitle: "Post-Module Survey",
-            scope: { type: "module" as const, courseId: testCourseId, moduleId: testModuleId },
-            timing: "post" as const,
-            completed: data.postModule.completed
-          }] : [])
+          ...(data.preCourse
+            ? [
+                {
+                  assignmentId: data.preCourse.assignmentId,
+                  questionnaireTitle: "Pre-Course Survey",
+                  scope: { type: "course" as const, courseId: testCourseId },
+                  timing: "pre" as const,
+                  completed: data.preCourse.completed,
+                },
+              ]
+            : []),
+          ...(data.postCourse
+            ? [
+                {
+                  assignmentId: data.postCourse.assignmentId,
+                  questionnaireTitle: "Post-Course Survey",
+                  scope: { type: "course" as const, courseId: testCourseId },
+                  timing: "post" as const,
+                  completed: data.postCourse.completed,
+                },
+              ]
+            : []),
+          ...(data.preModule
+            ? [
+                {
+                  assignmentId: data.preModule.assignmentId,
+                  questionnaireTitle: "Pre-Module Survey",
+                  scope: {
+                    type: "module" as const,
+                    courseId: testCourseId,
+                    moduleId: testModuleId,
+                  },
+                  timing: "pre" as const,
+                  completed: data.preModule.completed,
+                },
+              ]
+            : []),
+          ...(data.postModule
+            ? [
+                {
+                  assignmentId: data.postModule.assignmentId,
+                  questionnaireTitle: "Post-Module Survey",
+                  scope: {
+                    type: "module" as const,
+                    courseId: testCourseId,
+                    moduleId: testModuleId,
+                  },
+                  timing: "post" as const,
+                  completed: data.postModule.completed,
+                },
+              ]
+            : []),
         ]);
       } else {
         console.error("Failed to load assignments");
@@ -155,8 +182,11 @@ export default function QuestionnairePage() {
     }
   };
 
-  const updateAnswer = (questionId: string, value: string | number | string[]) => {
-    setAnswers(prev => ({ ...prev, [questionId]: value }));
+  const updateAnswer = (
+    questionId: string,
+    value: string | number | string[]
+  ) => {
+    setAnswers((prev) => ({ ...prev, [questionId]: value }));
   };
 
   const submitQuestionnaire = async () => {
@@ -165,15 +195,17 @@ export default function QuestionnairePage() {
     setSubmitting(true);
     try {
       const token = await firebaseUser.getIdToken();
-      
+
       // Convert answers to API format
-      const formattedAnswers = Object.entries(answers).map(([questionId, value]) => {
-        if (Array.isArray(value)) {
-          return { questionId, values: value };
-        } else {
-          return { questionId, value };
+      const formattedAnswers = Object.entries(answers).map(
+        ([questionId, value]) => {
+          if (Array.isArray(value)) {
+            return { questionId, values: value };
+          } else {
+            return { questionId, value };
+          }
         }
-      });
+      );
 
       const response = await fetch("/api/questionnaires/submit", {
         method: "POST",
@@ -189,7 +221,11 @@ export default function QuestionnairePage() {
 
       if (response.ok) {
         const data = await response.json();
-        setResult(`✅ Questionnaire submitted successfully! ${data.score ? `Score: ${data.score.earned}/${data.score.total}` : ""}`);
+        setResult(
+          `✅ Questionnaire submitted successfully! ${
+            data.score ? `Score: ${data.score.earned}/${data.score.total}` : ""
+          }`
+        );
         setCurrentQuestionnaire(null);
         setAnswers({});
         loadAssignments(); // Refresh to show completion status
@@ -232,13 +268,21 @@ export default function QuestionnairePage() {
               <label key={option.id} className="flex items-center space-x-2">
                 <input
                   type="checkbox"
-                  checked={Array.isArray(answers[question.id]) && (answers[question.id] as string[]).includes(option.id)}
+                  checked={
+                    Array.isArray(answers[question.id]) &&
+                    (answers[question.id] as string[]).includes(option.id)
+                  }
                   onChange={(e) => {
-                    const currentValues = Array.isArray(answers[question.id]) ? answers[question.id] as string[] : [];
+                    const currentValues = Array.isArray(answers[question.id])
+                      ? (answers[question.id] as string[])
+                      : [];
                     if (e.target.checked) {
                       updateAnswer(question.id, [...currentValues, option.id]);
                     } else {
-                      updateAnswer(question.id, currentValues.filter(v => v !== option.id));
+                      updateAnswer(
+                        question.id,
+                        currentValues.filter((v) => v !== option.id)
+                      );
                     }
                   }}
                   className="text-primary"
@@ -253,17 +297,25 @@ export default function QuestionnairePage() {
         return (
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
-              <span className="text-sm">{question.scale?.labels?.[question.scale.min] || question.scale?.min}</span>
+              <span className="text-sm">
+                {question.scale?.labels?.[question.scale.min] ||
+                  question.scale?.min}
+              </span>
               <input
                 type="range"
                 min={question.scale?.min || 1}
                 max={question.scale?.max || 5}
                 step={1}
                 value={answers[question.id] || question.scale?.min || 1}
-                onChange={(e) => updateAnswer(question.id, parseInt(e.target.value))}
+                onChange={(e) =>
+                  updateAnswer(question.id, parseInt(e.target.value))
+                }
                 className="flex-1"
               />
-              <span className="text-sm">{question.scale?.labels?.[question.scale.max] || question.scale?.max}</span>
+              <span className="text-sm">
+                {question.scale?.labels?.[question.scale.max] ||
+                  question.scale?.max}
+              </span>
             </div>
             <div className="text-center font-semibold">
               Selected: {answers[question.id] || question.scale?.min || 1}
@@ -303,7 +355,9 @@ export default function QuestionnairePage() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Authentication Required</h1>
-          <p className="text-muted-foreground">Please sign in to access questionnaires.</p>
+          <p className="text-muted-foreground">
+            Please sign in to access questionnaires.
+          </p>
           <Link
             href="/login"
             className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
@@ -320,7 +374,9 @@ export default function QuestionnairePage() {
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold">Questionnaires</h1>
-          <p className="text-muted-foreground">Complete surveys and quizzes for your courses</p>
+          <p className="text-muted-foreground">
+            Complete surveys and quizzes for your courses
+          </p>
         </div>
         <Link
           href="/dashboard"
@@ -345,7 +401,9 @@ export default function QuestionnairePage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Module ID (optional):</label>
+            <label className="block text-sm font-medium mb-1">
+              Module ID (optional):
+            </label>
             <input
               type="text"
               value={testModuleId}
@@ -374,10 +432,15 @@ export default function QuestionnairePage() {
         <div className="mb-8 p-6 border rounded-lg bg-white shadow-sm">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-bold">{currentQuestionnaire.questionnaire.title}</h2>
+              <h2 className="text-2xl font-bold">
+                {currentQuestionnaire.questionnaire.title}
+              </h2>
               <p className="text-muted-foreground">
-                {currentQuestionnaire.questionnaire.purpose === "survey" ? "📊 Survey" : 
-                 currentQuestionnaire.questionnaire.purpose === "quiz" ? "🧪 Quiz" : "📝 Mixed"}
+                {currentQuestionnaire.questionnaire.purpose === "survey"
+                  ? "📊 Survey"
+                  : currentQuestionnaire.questionnaire.purpose === "quiz"
+                  ? "🧪 Quiz"
+                  : "📝 Mixed"}
                 {" • "}Version {currentQuestionnaire.questionnaire.version}
               </p>
             </div>
@@ -390,22 +453,26 @@ export default function QuestionnairePage() {
           </div>
 
           <div className="space-y-8">
-            {currentQuestionnaire.questionnaire.questions.map((question, index) => (
-              <div key={question.id} className="space-y-4">
-                <div className="flex items-start space-x-2">
-                  <span className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-2">
-                      {question.prompt}
-                      {question.required && <span className="text-red-500 ml-1">*</span>}
-                    </h3>
-                    {renderQuestion(question)}
+            {currentQuestionnaire.questionnaire.questions.map(
+              (question, index) => (
+                <div key={question.id} className="space-y-4">
+                  <div className="flex items-start space-x-2">
+                    <span className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                      {index + 1}
+                    </span>
+                    <div className="flex-1">
+                      <h3 className="font-semibold mb-2">
+                        {question.prompt}
+                        {question.required && (
+                          <span className="text-red-500 ml-1">*</span>
+                        )}
+                      </h3>
+                      {renderQuestion(question)}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
 
           <div className="mt-8 flex justify-end">
@@ -441,19 +508,34 @@ export default function QuestionnairePage() {
             </div>
           ) : assignments.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No questionnaires available for the specified course/module.</p>
-              <p className="text-sm mt-2">Try creating sample data in the admin panel first.</p>
+              <p>
+                No questionnaires available for the specified course/module.
+              </p>
+              <p className="text-sm mt-2">
+                Try creating sample data in the admin panel first.
+              </p>
             </div>
           ) : (
             <div className="grid gap-4">
               {assignments.map((assignment) => (
-                <div key={assignment.assignmentId} className="border rounded-lg p-6">
+                <div
+                  key={assignment.assignmentId}
+                  className="border rounded-lg p-6"
+                >
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-semibold text-lg">{assignment.questionnaireTitle}</h3>
+                      <h3 className="font-semibold text-lg">
+                        {assignment.questionnaireTitle}
+                      </h3>
                       <p className="text-muted-foreground">
-                        {assignment.scope.type === "course" ? "📚 Course-level" : "📖 Module-level"} • 
-                        {assignment.timing === "pre" ? " Pre-completion" : " Post-completion"} survey
+                        {assignment.scope.type === "course"
+                          ? "📚 Course-level"
+                          : "📖 Module-level"}{" "}
+                        •
+                        {assignment.timing === "pre"
+                          ? " Pre-completion"
+                          : " Post-completion"}{" "}
+                        survey
                       </p>
                     </div>
                     <span
@@ -469,7 +551,9 @@ export default function QuestionnairePage() {
 
                   {!assignment.completed && (
                     <button
-                      onClick={() => startQuestionnaire(assignment.assignmentId)}
+                      onClick={() =>
+                        startQuestionnaire(assignment.assignmentId)
+                      }
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                     >
                       Start Questionnaire

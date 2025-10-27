@@ -57,7 +57,7 @@ export default function AdminPage() {
       loadCourses();
       loadQuestionnaires();
     }
-  }, [firebaseUser, role]);
+  }, [firebaseUser, role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadCourses = async () => {
     setLoadingCourses(true);
@@ -157,10 +157,30 @@ export default function AdminPage() {
   const loadQuestionnaires = async () => {
     setLoadingQuestionnaires(true);
     try {
-      // For now, we'll use a placeholder since we don't have a list API yet
-      // TODO: Implement GET /api/admin/questionnaires endpoint
-      setQuestionnaires([]);
-      setAssignments([]);
+      if (!firebaseUser) return;
+      
+      const token = await firebaseUser.getIdToken();
+      
+      // Load questionnaires
+      const questionnairesResponse = await fetch("/api/admin/questionnaires", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (questionnairesResponse.ok) {
+        const questionnairesData = await questionnairesResponse.json();
+        setQuestionnaires(questionnairesData.questionnaires || []);
+      }
+      
+      // Load assignments
+      const assignmentsResponse = await fetch("/api/admin/assignments", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (assignmentsResponse.ok) {
+        const assignmentsData = await assignmentsResponse.json();
+        setAssignments(assignmentsData.assignments || []);
+      }
+      
     } catch (error) {
       console.error("Failed to load questionnaires:", error);
     } finally {
@@ -173,7 +193,7 @@ export default function AdminPage() {
 
     try {
       const token = await firebaseUser.getIdToken();
-      
+
       const sampleQuestionnaire = {
         title: "Course Satisfaction Survey",
         purpose: "survey" as const,
@@ -216,7 +236,9 @@ export default function AdminPage() {
 
       if (response.ok) {
         const result = await response.json();
-        setQuestionnaireResult(`✅ Questionnaire created: ${result.questionnaireId}`);
+        setQuestionnaireResult(
+          `✅ Questionnaire created: ${result.questionnaireId}`
+        );
         loadQuestionnaires();
       } else {
         const error = await response.text();
@@ -232,7 +254,7 @@ export default function AdminPage() {
 
     try {
       const token = await firebaseUser.getIdToken();
-      
+
       const sampleAssignment = {
         questionnaireId: "sample-questionnaire-id", // In practice, use actual questionnaire ID
         scope: { type: "course" as const, courseId },
@@ -391,7 +413,9 @@ export default function AdminPage() {
           {questionnaireResult && (
             <div className="p-4 border rounded-lg bg-blue-50">
               <h4 className="font-semibold mb-2">Questionnaire Result:</h4>
-              <pre className="text-sm whitespace-pre-wrap">{questionnaireResult}</pre>
+              <pre className="text-sm whitespace-pre-wrap">
+                {questionnaireResult}
+              </pre>
             </div>
           )}
         </div>
@@ -500,7 +524,7 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        
+
         <div className="p-6 bg-purple-50 border border-purple-200 rounded-lg">
           <h3 className="text-lg font-semibold text-purple-900 mb-2">
             Phase 3 Status - Questionnaire System Ready!
