@@ -1,175 +1,59 @@
-// Base types
-export type FirestoreId = string;
+// =============================================================================
+// Legacy models.ts - Re-export from consolidated types
+// =============================================================================
+// This file is kept for backward compatibility.
+// All type definitions have been moved to types/types.ts
+// New code should import from types/types.ts directly.
 
-// Phase 2: Course & Module Learning System
+// Re-export all types from the consolidated types file
+export * from "./types";
 
-export interface CourseDoc {
-  ownerUid: string; // Admin who created and owns this course
-  title: string;
-  description: string;
-  durationMinutes: number;
-  level: "beginner" | "intermediate" | "advanced";
-  published: boolean;
-  heroImageUrl?: string;
-  moduleCount: number;
-  publishedAt?: FirebaseFirestore.Timestamp;
-  createdAt: FirebaseFirestore.Timestamp;
-  updatedAt: FirebaseFirestore.Timestamp;
-}
+// Legacy compatibility - these exports maintain existing import paths
+export type {
+  // Core document types
+  CourseDoc,
+  ModuleDoc,
+  EnrollmentDoc,
+  ProgressDoc,
+  QuestionnaireDoc,
+  QuestionnaireAssignmentDoc,
+  QuestionnaireResponseDoc,
+  UserDoc,
+  LoginEventDoc,
+  IdempotentWriteDoc,
 
-export interface ModuleDoc {
-  ownerUid: string; // Admin who owns this module (inherited from parent course)
-  courseId: string;
-  index: number; // 0..N unique per course
-  title: string;
-  summary: string;
-  contentType: "video" | "text" | "pdf" | "link";
-  contentUrl?: string;
-  body?: string;
-  estMinutes: number;
-  published: boolean; // mirrors course published
-  updatedAt: FirebaseFirestore.Timestamp;
-}
+  // Helper types
+  QuestionnaireQuestion,
+  Question,
+  ModuleAsset,
+  AuthUser,
+  ApiUser,
+  GradingResult,
+  QuestionScore,
 
-export interface EnrollmentDoc {
-  uid: string;
-  courseId: string;
-  enrolledAt: FirebaseFirestore.Timestamp;
-  completed: boolean;
-  lastModuleIndex: number; // resume pointer
-  completedCount: number;
-  progressPct: number; // 0..100 integer
-  preCourseComplete?: boolean;
-  postCourseComplete?: boolean;
-}
+  // Legacy interfaces (deprecated)
+  Course,
+  Module,
+  Enrollment,
+  Progress,
+  Questionnaire,
+  Assignment,
+  Response,
+  User,
+  LoginEvent,
 
-export interface ProgressDoc {
-  uid: string;
-  courseId: string;
-  moduleId: string;
-  completed: boolean;
-  completedAt?: FirebaseFirestore.Timestamp;
-  preModuleComplete?: boolean;
-  postModuleComplete?: boolean;
-}
-
-// Phase 3: Questionnaire System Types
-
-export interface QuestionnaireQuestion {
-  id: string; // stable within the template version
-  type: "single" | "multi" | "scale" | "text";
-  prompt: string;
-  options?: { id: string; label: string }[]; // single/multi
-  scale?: { min: number; max: number; labels?: Record<number, string> };
-  required: boolean;
-  correct?: string[]; // quiz only
-  points?: number; // default 1 if quiz
-}
-
-// Type alias for convenience
-export type Question = QuestionnaireQuestion;
-
-export interface QuestionnaireDoc {
-  ownerUid: string; // Admin who created this questionnaire template
-  title: string;
-  purpose: "survey" | "quiz" | "assessment";
-  version: number;
-  questions: QuestionnaireQuestion[];
-  createdAt: FirebaseFirestore.Timestamp;
-  updatedAt: FirebaseFirestore.Timestamp;
-}
-
-export interface QuestionnaireAssignmentDoc {
-  ownerUid: string; // Admin who owns this assignment
-  questionnaireId: string;
-  questionnaireVersion: number; // frozen at assign time
-  scope: { type: "course" | "module"; courseId: string; moduleId?: string };
-  timing: "pre" | "post";
-  active: boolean;
-  createdAt: FirebaseFirestore.Timestamp;
-  updatedAt: FirebaseFirestore.Timestamp;
-}
-
-export interface QuestionnaireResponseDoc {
-  uid: string;
-  assignmentId: string;
-  questionnaireId: string;
-  questionnaireVersion: number;
-  scope: { type: "course" | "module"; courseId: string; moduleId?: string };
-  answers: {
-    questionId: string;
-    value: string | number | string[] | number[];
-  }[];
-  isComplete: boolean;
-  score?: { earned: number; total: number };
-  submittedAt?: FirebaseFirestore.Timestamp;
-  createdAt: FirebaseFirestore.Timestamp;
-  updatedAt: FirebaseFirestore.Timestamp;
-}
-
-// Legacy interfaces (keeping for backward compatibility)
-export interface Course {
-  id: FirestoreId;
-  // Legacy interface - use CourseDoc for new implementations
-  placeholder?: unknown;
-}
-
-export interface Module {
-  id: FirestoreId;
-  courseId: FirestoreId;
-  // Legacy interface - use ModuleDoc for new implementations
-  placeholder?: unknown;
-}
-
-export interface Enrollment {
-  id: FirestoreId;
-  userId: FirestoreId;
-  courseId: FirestoreId;
-  // Legacy interface - use EnrollmentDoc for new implementations
-  placeholder?: unknown;
-}
-
-export interface Progress {
-  id: FirestoreId;
-  userId: FirestoreId;
-  moduleId: FirestoreId;
-  // Legacy interface - use ProgressDoc for new implementations
-  placeholder?: unknown;
-}
-
-export interface Questionnaire {
-  id: FirestoreId;
-  moduleId: FirestoreId;
-  // TODO: Add questionnaire properties - questions, settings, etc.
-  placeholder?: unknown;
-}
-
-export interface Assignment {
-  id: FirestoreId;
-  questionnaireId: FirestoreId;
-  userId: FirestoreId;
-  // TODO: Add assignment properties - dueDate, attempts, etc.
-  placeholder?: unknown;
-}
-
-export interface Response {
-  id: FirestoreId;
-  assignmentId: FirestoreId;
-  userId: FirestoreId;
-  // TODO: Add response properties - answers, submittedAt, score, etc.
-  placeholder?: unknown;
-}
-
-export interface User {
-  id: FirestoreId;
-  email: string;
-  // TODO: Add user properties - name, role, preferences, etc.
-  placeholder?: unknown;
-}
-
-export interface LoginEvent {
-  id: FirestoreId;
-  userId: FirestoreId;
-  // TODO: Add login event properties - timestamp, IP, userAgent, etc.
-  placeholder?: unknown;
-}
+  // Utility types
+  FirestoreId,
+  CourseLevel,
+  QuestionType,
+  ContentType,
+  AssetKind,
+  QuestionnairePurpose,
+  AssignmentTiming,
+  ScopeType,
+  UserRole,
+  ApiResponse,
+  SuccessResponse,
+  ErrorResponse,
+  ErrorCode,
+} from "./types";

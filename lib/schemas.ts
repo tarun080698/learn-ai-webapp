@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-// Phase 2: Zod schemas for validation
+// =============================================================================
+// COMPREHENSIVE ZOD VALIDATION SCHEMAS - Updated for new backend system
+// =============================================================================
 
+// Course Management Schemas
 export const zCourseUpsert = z.object({
   courseId: z.string().optional(), // for update
   title: z.string().min(1),
@@ -9,28 +12,85 @@ export const zCourseUpsert = z.object({
   durationMinutes: z.number().int().nonnegative(),
   level: z.enum(["beginner", "intermediate", "advanced"]),
   heroImageUrl: z.string().url().optional(),
-  published: z.boolean().optional(), // publish toggled in separate endpoint
-  // Note: ownerUid is set by server from authenticated admin, not from client request
+  // Note: ownerUid is set by server from authenticated admin
 });
 
+export const zCoursePublish = z.object({
+  courseId: z.string().min(1),
+  published: z.boolean(),
+});
+
+export const zCourseArchive = z.object({
+  courseId: z.string().min(1),
+  archived: z.boolean(),
+});
+
+// Module Management Schemas
 export const zModuleUpsert = z.object({
   moduleId: z.string().optional(), // for update
   courseId: z.string().min(1),
   index: z.number().int().min(0),
   title: z.string().min(1),
   summary: z.string().min(1),
-  contentType: z.enum(["video", "text", "pdf", "link"]),
+  contentType: z.enum(["video", "text", "pdf", "image", "link"]), // Added 'image'
   contentUrl: z.string().url().optional(),
   body: z.string().optional(),
   estMinutes: z.number().int().min(1),
   // Note: ownerUid is inherited from parent course and set by server
 });
 
+export const zModulesReorder = z.object({
+  courseId: z.string().min(1),
+  order: z
+    .array(
+      z.object({
+        moduleId: z.string().min(1),
+        index: z.number().int().min(0),
+      })
+    )
+    .min(1),
+});
+
+export const zModuleArchive = z.object({
+  moduleId: z.string().min(1),
+  archived: z.boolean(),
+});
+
+// Asset Management Schemas
+export const zAssetAdd = z.object({
+  moduleId: z.string().min(1),
+  asset: z.object({
+    kind: z.enum(["pdf", "video", "image", "link"]),
+    url: z.string().url(),
+    title: z.string().optional(),
+    meta: z.record(z.string(), z.any()).optional(),
+  }),
+});
+
+export const zAssetReorder = z.object({
+  moduleId: z.string().min(1),
+  order: z
+    .array(
+      z.object({
+        assetId: z.string().min(1),
+        order: z.number().int().min(0),
+      })
+    )
+    .min(1),
+});
+
+export const zAssetRemove = z.object({
+  moduleId: z.string().min(1),
+  assetId: z.string().min(1),
+});
+
+// Legacy publish schema (keeping for backward compatibility)
 export const zPublish = z.object({
   courseId: z.string().min(1),
   published: z.boolean(),
 });
 
+// User Workflow Schemas (keep existing)
 export const zEnroll = z.object({
   courseId: z.string().min(1),
 });
@@ -108,39 +168,77 @@ export const LoginEventSchema = z.object({
   placeholder: z.any(),
 });
 
-// Phase 3: Questionnaire System Schemas
-
+// Questionnaire System Schemas (Updated for create-and-assign flow)
 export const zQuestionOption = z.object({
-  id: z.string(),
-  label: z.string(),
+  id: z.string().min(1),
+  label: z.string().min(1),
 });
 
 export const zQuestion = z.object({
-  id: z.string(),
+  id: z.string().min(1),
   type: z.enum(["single", "multi", "scale", "text"]),
-  prompt: z.string(),
+  prompt: z.string().min(1),
   options: z.array(zQuestionOption).optional(),
   scale: z
     .object({
-      min: z.number(),
-      max: z.number(),
-      labels: z.record(z.number(), z.string()).optional(),
+      min: z.number().int(),
+      max: z.number().int(),
+      labels: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
   required: z.boolean(),
   correct: z.array(z.string()).optional(),
-  points: z.number().optional(),
+  points: z.number().int().min(1).optional(),
 });
 
+// New create-and-assign flow schema
+export const zQuestionnaireCreateAndAssign = z.object({
+  title: z.string().min(1),
+  purpose: z.enum(["survey", "quiz", "assessment"]),
+  questions: z.array(zQuestion).min(1),
+  scope: z.object({
+    type: z.enum(["course", "module"]),
+    courseId: z.string().min(1),
+    moduleId: z.string().min(1).optional(),
+  }),
+  timing: z.enum(["pre", "post"]),
+  // Note: ownerUid is set by server from authenticated admin
+});
+
+// Assignment management schemas
+export const zAssignmentUpdate = z.object({
+  assignmentId: z.string().min(1),
+  // Within same course only: allow course<->module, pre<->post
+  scope: z
+    .object({
+      type: z.enum(["course", "module"]),
+      courseId: z.string().min(1),
+      moduleId: z.string().min(1).optional(),
+    })
+    .optional(),
+  timing: z.enum(["pre", "post"]).optional(),
+  active: z.boolean().optional(),
+});
+
+export const zAssignmentArchive = z.object({
+  assignmentId: z.string().min(1),
+  archived: z.boolean(),
+});
+
+export const zAssignmentDelete = z.object({
+  assignmentId: z.string().min(1),
+});
+
+// Legacy questionnaire schema (deprecated - use create-and-assign flow)
 export const zQuestionnaireUpsert = z.object({
   questionnaireId: z.string().optional(),
   title: z.string().min(1),
   purpose: z.enum(["survey", "quiz", "assessment"]),
-  version: z.number().min(1),
   questions: z.array(zQuestion).min(1),
   // Note: ownerUid is set by server from authenticated admin
 });
 
+// Legacy assignment schema (deprecated - use create-and-assign flow)
 export const zAssignmentUpsert = z.object({
   assignmentId: z.string().optional(),
   questionnaireId: z.string(),
@@ -168,7 +266,32 @@ export const zSubmit = z.object({
   ),
 });
 
-// Export types derived from schemas
+// =============================================================================
+// EXPORT TYPES DERIVED FROM SCHEMAS
+// =============================================================================
+
+// New schema types
+export type CourseUpsertInput = z.infer<typeof zCourseUpsert>;
+export type CoursePublishInput = z.infer<typeof zCoursePublish>;
+export type CourseArchiveInput = z.infer<typeof zCourseArchive>;
+export type ModuleUpsertInput = z.infer<typeof zModuleUpsert>;
+export type ModulesReorderInput = z.infer<typeof zModulesReorder>;
+export type ModuleArchiveInput = z.infer<typeof zModuleArchive>;
+export type AssetAddInput = z.infer<typeof zAssetAdd>;
+export type AssetReorderInput = z.infer<typeof zAssetReorder>;
+export type AssetRemoveInput = z.infer<typeof zAssetRemove>;
+export type QuestionnaireCreateAndAssignInput = z.infer<
+  typeof zQuestionnaireCreateAndAssign
+>;
+export type AssignmentUpdateInput = z.infer<typeof zAssignmentUpdate>;
+export type AssignmentArchiveInput = z.infer<typeof zAssignmentArchive>;
+export type AssignmentDeleteInput = z.infer<typeof zAssignmentDelete>;
+export type EnrollInput = z.infer<typeof zEnroll>;
+export type ProgressCompleteInput = z.infer<typeof zProgressComplete>;
+export type StartInput = z.infer<typeof zStart>;
+export type SubmitInput = z.infer<typeof zSubmit>;
+
+// Legacy schema types (deprecated - use types from types/types.ts)
 export type Course = z.infer<typeof CourseSchema>;
 export type Module = z.infer<typeof ModuleSchema>;
 export type Enrollment = z.infer<typeof EnrollmentSchema>;

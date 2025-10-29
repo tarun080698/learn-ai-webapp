@@ -1,5 +1,5 @@
 import { Firestore, collection, CollectionReference } from "firebase/firestore";
-import type { QuestionnaireQuestion } from "@/types/models";
+import type { QuestionnaireQuestion, ModuleAsset } from "@/types/models";
 
 // Phase 2 & 3: Collection name constants
 export const COL = {
@@ -385,4 +385,314 @@ export async function requireActiveAssignmentForContext(
   }
 
   return { id: assignmentDoc.id, ...assignment };
+}
+
+// =============================================================================
+// NEW BACKEND HELPERS - Ownership, Archiving, Counters, Assets
+// =============================================================================
+
+/**
+ * Enforce ownership: Check if the admin owns the document
+ */
+export async function enforceOwnership(
+  db: FirebaseFirestore.Firestore,
+  adminUid: string,
+  collection: string,
+  docId: string
+): Promise<void> {
+  const doc = await db.collection(collection).doc(docId).get();
+  if (!doc.exists) {
+    throw new Error("Document not found");
+  }
+
+  const data = doc.data();
+  if (!data || data.ownerUid !== adminUid) {
+    throw new Error(
+      `Access denied: You don't own this ${collection.slice(0, -1)}`
+    );
+  }
+}
+
+/**
+ * Check if a course is owned by the admin
+ */
+export async function requireCourseOwnership(
+  db: FirebaseFirestore.Firestore,
+  adminUid: string,
+  courseId: string
+): Promise<void> {
+  await enforceOwnership(db, adminUid, COL.courses, courseId);
+}
+
+/**
+ * Check if a questionnaire is owned by the admin
+ */
+export async function requireQuestionnaireOwnership(
+  db: FirebaseFirestore.Firestore,
+  adminUid: string,
+  questionnaireId: string
+): Promise<void> {
+  await enforceOwnership(db, adminUid, COL.questionnaires, questionnaireId);
+}
+
+/**
+ * Archive/unarchive document with audit trail
+ */
+export async function updateArchiveStatus(
+  db: FirebaseFirestore.Firestore,
+  collection: string,
+  docId: string,
+  archived: boolean,
+  adminUid: string
+): Promise<void> {
+  const doc = db.collection(collection).doc(docId);
+  const updateData = {
+    archived,
+    updatedAt: new Date(),
+    archivedAt: archived ? new Date() : null,
+    archivedBy: archived ? adminUid : null,
+  };
+
+  await doc.update(updateData);
+}
+
+/**
+ * Hard delete with ownership check and audit trail
+ */
+export async function hardDeleteWithAudit(
+  db: FirebaseFirestore.Firestore,
+  collection: string,
+  docId: string,
+  adminUid: string,
+  reason: string = "Admin delete"
+): Promise<void> {
+  // First enforce ownership
+  await enforceOwnership(db, adminUid, collection, docId);
+
+  // Create audit log before deletion
+  const auditLog = {
+    action: "delete",
+    collection,
+    docId,
+    adminUid,
+    reason,
+    timestamp: new Date(),
+  };
+
+  // Store audit log (in a real app, you'd have an audit collection)
+  console.log("Audit Log:", auditLog);
+
+  // Perform the delete
+  await db.collection(collection).doc(docId).delete();
+}
+
+/**
+ * Update enrollment counter when user enrolls
+ */
+export async function incrementCourseEnrollmentCount(
+  db: FirebaseFirestore.Firestore,
+  courseId: string
+): Promise<void> {
+  const courseRef = db.collection(COL.courses).doc(courseId);
+  await db.runTransaction(async (transaction) => {
+    const courseDoc = await transaction.get(courseRef);
+    const currentCount = courseDoc.data()?.enrollmentCount || 0;
+    transaction.update(courseRef, {
+      enrollmentCount: currentCount + 1,
+      updatedAt: new Date(),
+    });
+  });
+}
+
+/**
+ * Update completion counter when user completes course
+ */
+export async function incrementCourseCompletionCount(
+  db: FirebaseFirestore.Firestore,
+  courseId: string
+): Promise<void> {
+  const courseRef = db.collection(COL.courses).doc(courseId);
+  await db.runTransaction(async (transaction) => {
+    const courseDoc = await transaction.get(courseRef);
+    const currentCount = courseDoc.data()?.completionCount || 0;
+    transaction.update(courseRef, {
+      completionCount: currentCount + 1,
+      updatedAt: new Date(),
+    });
+  });
+}
+
+/**
+ * Add asset to module with proper ordering
+ */
+export async function addAssetToModule(
+  db: FirebaseFirestore.Firestore,
+  moduleId: string,
+  asset: {
+    kind: "pdf" | "video" | "image" | "link";
+    url: string;
+    title?: string;
+    meta?: Record<string, unknown>;
+  }
+): Promise<string> {
+  const moduleRef = db.collection(COL.modules).doc(moduleId);
+
+  return await db.runTransaction(async (transaction) => {
+    const moduleDoc = await transaction.get(moduleRef);
+    if (!moduleDoc.exists) {
+      throw new Error("Module not found");
+    }
+
+    const moduleData = moduleDoc.data();
+    const currentAssets = moduleData?.assets || [];
+
+    // Generate new asset ID and add to the end
+    const assetId = `asset_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 9)}`;
+    const newAsset = {
+      id: assetId,
+      order: currentAssets.length,
+      ...asset,
+    };
+
+    const updatedAssets = [...currentAssets, newAsset];
+
+    transaction.update(moduleRef, {
+      assets: updatedAssets,
+      updatedAt: new Date(),
+    });
+
+    return assetId;
+  });
+}
+
+/**
+ * Reorder assets within a module
+ */
+export async function reorderModuleAssets(
+  db: FirebaseFirestore.Firestore,
+  moduleId: string,
+  reorderMap: { assetId: string; order: number }[]
+): Promise<void> {
+  const moduleRef = db.collection(COL.modules).doc(moduleId);
+
+  await db.runTransaction(async (transaction) => {
+    const moduleDoc = await transaction.get(moduleRef);
+    if (!moduleDoc.exists) {
+      throw new Error("Module not found");
+    }
+
+    const moduleData = moduleDoc.data();
+    const currentAssets = moduleData?.assets || [];
+
+    // Create lookup map for new orders
+    const orderMap = new Map(
+      reorderMap.map((item) => [item.assetId, item.order])
+    );
+
+    // Update assets with new order
+    const updatedAssets = currentAssets.map((asset: ModuleAsset) => ({
+      ...asset,
+      order: orderMap.get(asset.id) ?? asset.order,
+    }));
+
+    // Sort by new order
+    updatedAssets.sort((a: ModuleAsset, b: ModuleAsset) => a.order - b.order);
+
+    transaction.update(moduleRef, {
+      assets: updatedAssets,
+      updatedAt: new Date(),
+    });
+  });
+}
+
+/**
+ * Remove asset from module
+ */
+export async function removeAssetFromModule(
+  db: FirebaseFirestore.Firestore,
+  moduleId: string,
+  assetId: string
+): Promise<void> {
+  const moduleRef = db.collection(COL.modules).doc(moduleId);
+
+  await db.runTransaction(async (transaction) => {
+    const moduleDoc = await transaction.get(moduleRef);
+    if (!moduleDoc.exists) {
+      throw new Error("Module not found");
+    }
+
+    const moduleData = moduleDoc.data();
+    const currentAssets = moduleData?.assets || [];
+
+    // Remove the asset
+    const updatedAssets = currentAssets.filter(
+      (asset: ModuleAsset) => asset.id !== assetId
+    );
+
+    // Reorder remaining assets
+    updatedAssets.forEach((asset: ModuleAsset, index: number) => {
+      asset.order = index;
+    });
+
+    transaction.update(moduleRef, {
+      assets: updatedAssets,
+      updatedAt: new Date(),
+    });
+  });
+}
+
+/**
+ * Get owned courses for admin with filtering options
+ */
+export async function getOwnedCourses(
+  db: FirebaseFirestore.Firestore,
+  adminUid: string,
+  options: {
+    includeArchived?: boolean;
+    publishedOnly?: boolean;
+    limit?: number;
+  } = {}
+) {
+  let query = db.collection(COL.courses).where("ownerUid", "==", adminUid);
+
+  if (!options.includeArchived) {
+    query = query.where("archived", "==", false);
+  }
+
+  if (options.publishedOnly) {
+    query = query.where("published", "==", true);
+  }
+
+  if (options.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+}
+
+/**
+ * Get modules for a course with ownership check
+ */
+export async function getCourseModules(
+  db: FirebaseFirestore.Firestore,
+  adminUid: string,
+  courseId: string,
+  includeArchived: boolean = false
+) {
+  // First check course ownership
+  await requireCourseOwnership(db, adminUid, courseId);
+
+  let query = db.collection(COL.modules).where("courseId", "==", courseId);
+
+  if (!includeArchived) {
+    query = query.where("archived", "==", false);
+  }
+
+  query = query.orderBy("index", "asc");
+
+  const snapshot = await query.get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
 }
