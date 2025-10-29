@@ -6,37 +6,46 @@ The Learn AI backend is built on **Next.js 16 App Router** with **Firebase** as 
 
 ### Architecture
 
-- **Runtime**: Next.js 16 API Routes (serverless functions)
-- **Database**: Firebase Firestore (NoSQL document store) with composite indexes
-- **Authentication**: Firebase Auth with custom role-based access control
-- **Admin SDK**: Firebase Admin SDK 13.5 for server-side operations
-- **Validation**: Zod 4.1 schemas for request/response validation
-- **Security**: Bearer token authentication with role-based authorization
-- **File Storage**: Firebase Storage for course images and content
-- **Idempotency**: Request deduplication system for critical operations
+- **Runtime**: Next.js 15+ App Router with serverless API routes (43 endpoints)
+- **Database**: Firebase Firestore NoSQL with ownership model and archiving system
+- **Authentication**: Firebase Auth with dual provider model (Google OAuth + Email/Password)
+- **Authorization**: Role-based access control with admin ownership enforcement
+- **Admin SDK**: Firebase Admin SDK for server-side operations and data management
+- **Validation**: Zod schema validation for all request/response payloads
+- **Security**: Bearer token authentication with comprehensive security rules
+- **File Storage**: Firebase Storage with organized asset management system
+- **Performance**: Composite indexes and denormalized counters for optimal queries
+- **Data Integrity**: Idempotency keys, transactional updates, and audit logging
 
 ### Current Implementation Status
 
-**✅ Fully Implemented (25+ endpoints)**:
+**✅ Production Ready (43 API endpoints)**:
 
-- Authentication and session management
-- Course catalog and detailed course information
-- Complete enrollment workflow with gating
-- Module completion and progress tracking
-- Questionnaire system with assignments and responses
-- Admin course, module, and questionnaire management
-- User role management and admin operations
+- **Authentication & Session Management**: Login processing with streak tracking, user profiles
+- **Public Course Discovery**: Course catalog, detailed course information with enrollment status
+- **User Learning Workflow**: Course enrollment, progress tracking, module access control
+- **Assessment System**: Complete questionnaire workflow with assignments, responses, and scoring
+- **Admin Management Suite**: Course/module/questionnaire CRUD operations with ownership model
+- **User & Role Management**: Admin user management, role assignments, account administration
+- **Asset Management**: File upload system for course heroes and module assets
+- **Data Migration**: Database migration tools for schema updates and ownership assignment
+- **Health Monitoring**: API health checks and status monitoring
 
-**🚧 Partially Implemented**:
+**🏗️ Key Architectural Features**:
 
-- Advanced analytics and reporting
-- Bulk operations for course management
+- **Ownership Model**: Admin-owned resources with isolated access control
+- **Archiving System**: Soft delete functionality across all major collections
+- **Counter Management**: Denormalized counters for enrollment and completion tracking
+- **Idempotency System**: Request deduplication for critical operations
+- **Gating Logic**: Questionnaire-based course/module access control
+- **Asset Pipeline**: Multi-format asset support with metadata and ordering
 
-**❌ Not Yet Implemented**:
+**❌ Future Enhancements**:
 
-- Course deletion API endpoint
-- User promotion to admin workflow
-- Advanced content analytics
+- Advanced analytics dashboards
+- Bulk operation APIs for mass management
+- Content versioning and rollback system
+- Advanced reporting and data export
 
 ### Authentication Flow
 
@@ -46,55 +55,284 @@ The Learn AI backend is built on **Next.js 16 App Router** with **Firebase** as 
 - **Authorization**: Middleware functions (`requireUser`, `requireAdmin`)
 - **Streak Tracking**: Automatic calculation of login streaks
 
-## API Endpoints
+## API Endpoints (43 Total)
 
-### Authentication APIs
+### Authentication & User Management (3 endpoints)
 
 #### `POST /api/auth/mark-login`
 
-**Purpose**: Server-side login processing and role assignment
+**Purpose**: Server-side login processing with streak tracking and role assignment
 **Auth**: Authenticated user required
-**Request**:
-
-```json
-Authorization: Bearer <firebase-id-token>
-```
-
-**Response**:
-
-```json
-{
-  "ok": true,
-  "uid": "user-uid",
-  "role": "user|admin",
-  "provider": "google.com|password",
-  "currentStreakDays": 5,
-  "bestStreakDays": 12
-}
-```
-
-**Notes**:
-
-- Enforces provider restrictions (users→Google, admins→email/password)
-- Updates user document and login events
-- Calculates streak data
+**Features**: Provider validation, streak calculation, user document updates
 
 #### `GET /api/auth/me`
 
-**Purpose**: Get current user profile and session info
+**Purpose**: Get current user profile and session information
 **Auth**: Authenticated user required
-**Response**:
+**Response**: User profile data, role info, streak statistics
 
-```json
-{
-  "uid": "user-uid",
-  "email": "user@example.com",
-  "role": "user|admin",
-  "displayName": "John Doe",
-  "currentStreakDays": 5,
-  "bestStreakDays": 12
-}
-```
+#### `POST /api/admin/users/roles` | `GET /api/admin/users/roles`
+
+**Purpose**: Manage user roles and admin assignments
+**Auth**: Admin required
+**Features**: Role promotion/demotion, user listing with role information
+
+### Public Course Discovery (3 endpoints)
+
+#### `GET /api/catalog`
+
+**Purpose**: Published course catalog for public browsing
+**Auth**: Optional (enhanced with enrollment status if authenticated)
+**Filtering**: Published courses only, archived courses excluded
+**Features**: Enrollment status decoration, course metadata
+
+#### `GET /api/courses/[courseId]`
+
+**Purpose**: Detailed course information with module listing
+**Auth**: Optional (enhanced with progress if authenticated)
+**Features**: Module structure, questionnaire assignments, progress tracking
+
+#### `GET /api/health`
+
+**Purpose**: API health check and service status monitoring
+**Auth**: None required
+**Response**: Service status, database connectivity, basic system metrics
+
+### User Learning Workflow (5 endpoints)
+
+#### `POST /api/enroll`
+
+**Purpose**: Course enrollment with gating and idempotency
+**Auth**: User required
+**Features**: Questionnaire gating, duplicate enrollment prevention, atomic transactions
+
+#### `GET /api/enrollments`
+
+**Purpose**: User's enrollment history with progress and course details
+**Auth**: User required (own enrollments only)
+**Features**: Progress percentages, course metadata, completion status
+
+#### `POST /api/progress`
+
+**Purpose**: Module completion tracking and progress updates
+**Auth**: User required
+**Features**: Progress percentage calculation, enrollment updates, gating validation
+
+#### `POST /api/modules/access`
+
+**Purpose**: Module access validation and gating checks
+**Auth**: User required
+**Features**: Questionnaire completion validation, enrollment verification
+
+#### `GET /api/questionnaires`
+
+**Purpose**: User's questionnaire assignment discovery
+**Auth**: User required
+**Features**: Assignment context, completion status, response history
+
+### Assessment System (8 endpoints)
+
+#### `GET /api/questionnaires/context`
+
+**Purpose**: Get questionnaire assignments for course/module context
+**Auth**: User required
+**Features**: Assignment discovery, completion status, gating information
+
+#### `POST /api/questionnaires/start`
+
+**Purpose**: Begin questionnaire with frozen template version
+**Auth**: User required
+**Features**: Template version locking, response initialization, validation
+
+#### `POST /api/questionnaires/submit`
+
+**Purpose**: Submit questionnaire responses with scoring and gating updates
+**Auth**: User required
+**Features**: Answer validation, quiz scoring, gating flag updates, idempotency
+
+#### `POST /api/questionnaires/assign`
+
+**Purpose**: Create questionnaire assignments to courses/modules
+**Auth**: Admin required
+**Features**: Assignment creation, scope validation, timing configuration
+
+#### `POST /api/questionnaires/remove`
+
+**Purpose**: Remove questionnaire assignments
+**Auth**: Admin required
+**Features**: Assignment cleanup, response handling, validation
+
+#### `GET /api/questionnaires/progress`
+
+**Purpose**: Track questionnaire completion progress
+**Auth**: User required
+**Features**: Completion tracking, score history, assignment context
+
+#### `POST /api/questionnaires/gate`
+
+**Purpose**: Check questionnaire-based access gates for courses/modules
+**Auth**: User required
+**Features**: Gating validation, requirement checking, access control
+
+### Admin Course Management (14 endpoints)
+
+#### `POST /api/admin/course.upsert`
+
+**Purpose**: Create or update courses with ownership enforcement
+**Auth**: Admin required (course owner only for updates)
+**Features**: Course CRUD, ownership validation, metadata management
+
+#### `POST /api/admin/course.publish`
+
+**Purpose**: Publish/unpublish courses with visibility control
+**Auth**: Admin required (course owner only)
+**Features**: Publication status, visibility control, cascade to modules
+
+#### `POST /api/admin/course.archive`
+
+**Purpose**: Archive/unarchive courses with soft delete
+**Auth**: Admin required (course owner only)
+**Features**: Soft delete, archive metadata, cascade handling
+
+#### `GET /api/admin/courses.mine`
+
+**Purpose**: Get admin's owned courses with management data
+**Auth**: Admin required
+**Features**: Ownership filtering, course statistics, management metadata
+
+#### `POST /api/admin/module.upsert`
+
+**Purpose**: Create or update course modules with asset management
+**Auth**: Admin required (course owner only)
+**Features**: Module CRUD, asset management, ordering, content handling
+
+#### `POST /api/admin/module.archive`
+
+**Purpose**: Archive/unarchive modules with soft delete
+**Auth**: Admin required (course owner only)
+**Features**: Module soft delete, archive tracking, course consistency
+
+#### `GET /api/admin/modules.mine`
+
+**Purpose**: Get admin's owned modules with course context
+**Auth**: Admin required
+**Features**: Module listing, course relationship, asset information
+
+#### `POST /api/admin/modules.reorder`
+
+**Purpose**: Reorder modules within courses
+**Auth**: Admin required (course owner only)
+**Features**: Module reordering, index management, atomic updates
+
+#### `POST /api/admin/asset.add`
+
+**Purpose**: Add assets to modules with metadata
+**Auth**: Admin required (module owner only)
+**Features**: Asset addition, metadata management, ordering
+
+#### `POST /api/admin/asset.remove`
+
+**Purpose**: Remove assets from modules
+**Auth**: Admin required (module owner only)
+**Features**: Asset removal, cleanup, order management
+
+#### `POST /api/admin/asset.reorder`
+
+**Purpose**: Reorder assets within modules
+**Auth**: Admin required (module owner only)
+**Features**: Asset reordering, position management
+
+#### `POST /api/admin/upload`
+
+**Purpose**: Upload files for course heroes and module assets
+**Auth**: Admin required
+**Features**: File validation, Firebase Storage integration, metadata extraction
+**File Size Limits**:
+
+- **Images** (jpg, png, webp): 5MB maximum
+- **PDFs**: 10MB maximum
+- **Videos** (mp4, webm): 200MB maximum
+- **General Assets**: 50MB default maximum
+
+#### `POST /api/admin/seed.dev`
+
+**Purpose**: Development database seeding with sample data
+**Auth**: Admin required (development only)
+**Features**: Sample data generation, development environment setup
+
+#### `POST /api/dev/migrate`
+
+**Purpose**: Database migration for schema updates and ownership assignment
+**Auth**: Admin required (development only)
+**Features**: Schema migration, ownership backfill, data transformation
+
+### Admin Questionnaire Management (8 endpoints)
+
+#### `GET /api/admin/questionnaires`
+
+**Purpose**: List all questionnaire templates with admin context
+**Auth**: Admin required
+**Features**: Template listing, ownership info, version tracking
+
+#### `GET /api/admin/questionnaires.mine`
+
+**Purpose**: Get admin's owned questionnaire templates
+**Auth**: Admin required
+**Features**: Ownership filtering, template management, usage statistics
+
+#### `POST /api/admin/questionnaire.upsert`
+
+**Purpose**: Create or update questionnaire templates
+**Auth**: Admin required (template owner only for updates)
+**Features**: Template CRUD, question management, validation
+
+#### `POST /api/admin/questionnaire.create-and-assign`
+
+**Purpose**: Create questionnaire and assign to course/module in one operation
+**Auth**: Admin required
+**Features**: Atomic creation and assignment, workflow optimization
+
+#### `GET /api/admin/assignments`
+
+**Purpose**: List all questionnaire assignments with context
+**Auth**: Admin required
+**Features**: Assignment listing, scope information, activity status
+
+#### `GET /api/admin/assignments.mine`
+
+**Purpose**: Get admin's owned questionnaire assignments
+**Auth**: Admin required
+**Features**: Ownership filtering, assignment management
+
+#### `POST /api/admin/assignment.upsert`
+
+**Purpose**: Create or update questionnaire assignments
+**Auth**: Admin required (assignment owner only for updates)
+**Features**: Assignment CRUD, scope validation, timing management
+
+#### `POST /api/admin/assignment.update`
+
+**Purpose**: Update existing questionnaire assignment properties
+**Auth**: Admin required (assignment owner only)
+**Features**: Assignment modification, scope changes, activity toggle
+
+#### `POST /api/admin/assignment.archive`
+
+**Purpose**: Archive questionnaire assignments with soft delete
+**Auth**: Admin required (assignment owner only)
+**Features**: Assignment archiving, cleanup, audit trail
+
+#### `POST /api/admin/assignment.delete`
+
+**Purpose**: Permanently delete questionnaire assignments
+**Auth**: Admin required (assignment owner only)
+**Features**: Hard delete, cascade cleanup, validation
+
+#### `POST /api/admin/admins.create`
+
+**Purpose**: Create new admin accounts with proper setup
+**Auth**: Admin required
+**Features**: Admin account creation, role assignment, validation
 
 ### Admin APIs
 
@@ -652,10 +890,38 @@ GET /api/questionnaires/context?courseId=course-123&moduleId=module-456
 
 ### Idempotency System
 
-- Header: `x-idempotency-key`
-- Storage: `idempotentWrites` collection
-- Wrapper: `withIdempotency()` function
-- Supported endpoints: `/enroll`, `/progress`, `/questionnaires/submit`
+**Purpose**: Prevents duplicate operations from network retries and ensures consistent behavior.
+
+**Implementation**:
+
+- **Header**: `x-idempotency-key` (required for critical operations)
+- **Key Format**: Client-generated UUID v4 recommended (e.g., `uuidv4()`)
+- **Storage**: `idempotentWrites` collection with 24-hour TTL
+- **Wrapper**: `withIdempotency<T>(db, key, scope, fn)` utility function
+- **Scope Tracking**: Operation context for debugging and analytics
+
+**Protected Endpoints**:
+
+- `POST /api/enroll` - Course enrollment operations
+- `POST /api/progress` - Module completion tracking
+- `POST /api/questionnaires/submit` - Questionnaire response submission
+
+**Flow**:
+
+1. Client sends fresh UUID v4 as `x-idempotency-key` header
+2. Server checks `idempotentWrites` collection for existing operation
+3. If found, returns cached result without re-execution
+4. If not found, executes operation and stores result
+5. Automatic cleanup after 24 hours via TTL
+
+**Example Usage**:
+
+```bash
+curl -X POST http://localhost:3000/api/enroll \
+  -H "Authorization: Bearer $USER_TOKEN" \
+  -H "x-idempotency-key: $(uuidgen)" \
+  -d '{"courseId":"course-123"}'
+```
 
 ## Testing Strategy
 
@@ -673,92 +939,193 @@ GET /api/questionnaires/context?courseId=course-123&moduleId=module-456
 
 ### Environment Variables
 
-Required for backend operation:
+**Required for Production**:
 
 ```bash
-# Firebase Configuration
-FB_SERVICE_ACCOUNT_KEY_JSON=<firebase-service-account-json>
-NEXT_PUBLIC_FIREBASE_CONFIG=<firebase-config-json>
+# Firebase Service Account (Required for Admin SDK)
+FB_SERVICE_ACCOUNT_KEY_JSON='{"type":"service_account","project_id":"...","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"...","client_id":"...","auth_uri":"...","token_uri":"...","auth_provider_x509_cert_url":"...","client_x509_cert_url":"..."}'
 
-# Admin Bootstrap (optional)
-ADMIN_BOOTSTRAP_KEY=<secure-bootstrap-key>
+# Firebase Client Configuration (Required for Authentication)
+NEXT_PUBLIC_FIREBASE_CONFIG='{"apiKey":"...","authDomain":"....firebaseapp.com","projectId":"...","storageBucket":"....appspot.com","messagingSenderId":"...","appId":"..."}'
 ```
+
+**Optional Configuration**:
+
+```bash
+# Admin Bootstrap Key (Development/Testing Only)
+ADMIN_BOOTSTRAP_KEY=your-secure-bootstrap-key-here
+
+# Environment Detection
+NODE_ENV=development|production
+NEXT_PUBLIC_ENV=development|production
+
+# Firebase Emulator (Development Only)
+FIRESTORE_EMULATOR_HOST=localhost:8080
+FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
+```
+
+**Security Guidelines**:
+
+- Never commit service account keys to version control
+- Use separate Firebase projects for development, staging, and production
+- Rotate bootstrap keys regularly in production environments
+- Store sensitive environment variables in secure deployment systems
 
 ## Current Implementation Status
 
-### ✅ Production Ready Endpoints (25+)
+### ✅ Production Ready Endpoints (43 Total)
 
-**Authentication & User Management**:
+**Complete API Coverage**:
 
-- `POST /api/auth/mark-login` - Session management with streak tracking
-- `GET /api/auth/me` - User profile and authentication status
+- **Authentication & User Management**: 3 endpoints - Login processing, user profiles, role management
+- **Public Course Discovery**: 3 endpoints - Course catalog, detailed course info, health monitoring
+- **User Learning Workflow**: 5 endpoints - Enrollment, progress tracking, module access, questionnaire discovery
+- **Assessment System**: 8 endpoints - Complete questionnaire workflow with assignments and scoring
+- **Admin Course Management**: 14 endpoints - Full CRUD for courses, modules, assets with ownership model
+- **Admin Questionnaire Management**: 10 endpoints - Template and assignment management with archiving
 
-**Public Course Discovery**:
+### 🏗️ Key Architectural Achievements
 
-- `GET /api/catalog` - Published course listings with enrollment status
-- `GET /api/courses/[courseId]` - Detailed course information with modules
+**Ownership Model Implementation**:
 
-**User Learning Workflow**:
+- Admin-owned resources with `ownerUid` field across courses, modules, questionnaires
+- Isolated access control preventing cross-admin modifications
+- Server-side ownership validation in all admin endpoints
 
-- `POST /api/enroll` - Course enrollment with gating and idempotency
-- `GET /api/enrollments` - User enrollment history with progress
-- `POST /api/progress` - Module completion tracking
-- `POST /api/modules/access` - Module access validation
+**Archiving System**:
 
-**Assessment System**:
+- Soft delete functionality across all major collections
+- Archive metadata tracking (`archivedAt`, `archivedBy`)
+- Public catalog filtering excludes archived content
+- Admin management includes archive/unarchive operations
 
-- `GET /api/questionnaires/context` - Assignment context for courses/modules
-- `POST /api/questionnaires/start` - Begin questionnaire with frozen template
-- `POST /api/questionnaires/submit` - Submit responses with scoring
+**Counter Management**:
 
-**Admin Management (14 endpoints)**:
+- Denormalized counters in course documents (`enrollmentCount`, `completionCount`)
+- Atomic counter updates via Firebase transactions
+- Performance optimization for large-scale operations
 
-- Complete CRUD for courses, modules, questionnaires, and assignments
-- User role management and admin account creation
-- File upload and development seeding tools
+**Asset Management Pipeline**:
 
-### 🔧 Recent Bug Fixes & Improvements
+- Multi-format asset support (PDF, video, image, links)
+- Ordered asset arrays with metadata
+- File upload system with validation and Firebase Storage integration
+- Asset CRUD operations with module ownership enforcement
 
-**Collection Name Correction**:
+**Comprehensive Security Model**:
 
-- Fixed course detail API to query `courseModules` instead of `modules`
-- Aligned public APIs with admin API collection patterns
-- Corrected module fetching for course detail pages
+- Role-based access control with Firebase Auth custom claims
+- Provider enforcement (Google OAuth for users, email/password for admins)
+- Security rules deployed with archiving and ownership filtering
+- Request validation with Zod schemas across all endpoints
 
-**Next.js 16 Compatibility**:
+### 🔧 Recent Major Enhancements
 
-- Updated dynamic route handlers for async params
-- Enhanced error handling for authentication flows
-- Improved TypeScript types for better development experience
+**Phase C Backend Overhaul**:
 
-### 📋 Known Limitations
+- Complete ownership model implementation across all admin resources
+- Archiving system replacing hard deletes for better data integrity
+- Counter management for performance optimization
+- Asset management system for rich module content
 
-**Missing Endpoints**:
+**Database Migration System**:
 
-- Course deletion API (UI exists, backend pending)
-- User promotion to admin workflow
-- Bulk course operations
+- Development migration endpoint for schema updates
+- Ownership backfill for existing data
+- Archive field initialization across collections
 
-**Development Areas**:
+**Enhanced API Endpoints**:
 
-- Advanced course analytics and reporting
-- Content versioning and history
-- Enhanced notification system
+- Asset management (add/remove/reorder) for modules
+- Assignment archiving and management workflow
+- User role management with admin creation
+- Health monitoring and development seeding
 
-## Security Considerations
+### 📋 Future Enhancements
 
-### Firestore Rules ✅ Deployed
+**Advanced Features**:
 
-- **Public Collections**: `courses`, `courseModules` (published only, read-only)
-- **User-Owned Collections**: `users`, `enrollments`, `progress`, `questionnaireResponses`
-- **Server-Only Collections**: `questionnaires`, `questionnaireAssignments`, `loginEvents`, `idempotentWrites`
-- **Admin Collections**: Full access for admin role, restricted for users
+- Bulk operations API for mass course management
+- Advanced analytics and reporting dashboards
+- Content versioning and rollback system
+- Enhanced notification and communication system
 
-### Authentication & Authorization ✅ Production Ready
+**Performance Optimizations**:
 
-- **JWT Verification**: All requests validated via Firebase Admin SDK 13.5
-- **Role-Based Access**: Custom claims with strict `user`/`admin` separation
-- **Provider Enforcement**: Google OAuth for users, email/password for admins
+- Query optimization for large datasets
+- Caching layer for frequently accessed data
+- Background job processing for heavy operations
+
+## Security & Data Architecture
+
+### Firestore Security Rules ✅ Production Deployed
+
+**Public Access Patterns**:
+
+- **courses**: Read access for `published == true && archived != true` only
+- **courseModules**: No direct client access (content protection)
+- Client access to module content strictly via API endpoints
+
+**User-Owned Collections**:
+
+- **users**: Self-access only, role field immutable from client
+- **enrollments**: Owner access with immutable core fields (`uid`, `courseId`)
+- **progress**: Owner access with immutable tracking fields
+- **questionnaireResponses**: Owner access with response integrity
+
+**Admin-Only Collections** (Server-side only):
+
+- **questionnaires**: No client access, admin API only
+- **questionnaireAssignments**: Server-managed with ownership validation
+- **loginEvents**, **idempotentWrites**: Infrastructure collections
+- **adminAuditLogs**: Admin action logging and audit trail
+
+### Authentication & Authorization Architecture
+
+**Multi-Provider Authentication**:
+
+- **Users**: Google OAuth (`google.com` provider) for simplified onboarding
+- **Admins**: Email/password (`password` provider) for account control
+- Provider validation enforced at API level with clear error messaging
+
+**Role-Based Access Control**:
+
+- Firebase Auth custom claims with `role: "user" | "admin"`
+- Server-side role validation in all protected endpoints
+- Admin ownership model prevents cross-admin resource access
+
+**Security Middleware Stack**:
+
+- `getUserFromRequest()`: JWT token validation and user extraction
+- `requireUser()` / `requireAdmin()`: Role-based access enforcement
+- `assertUserProviderGoogle()`: Provider validation for users
+- Request validation with comprehensive Zod schemas
+
+### Data Integrity & Performance
+
+**Ownership Model**:
+
+- All admin-managed resources include `ownerUid` field
+- Server-side ownership validation in create/update operations
+- Isolated admin environments preventing resource conflicts
+
+**Archiving System**:
+
+- Soft delete with `archived`, `archivedAt`, `archivedBy` metadata
+- Public APIs automatically filter archived content
+- Admin APIs support archive/unarchive operations with audit trail
+
+**Counter Management**:
+
+- Denormalized counters (`enrollmentCount`, `completionCount`) in course documents
+- Atomic updates via Firebase transactions
+- Performance optimization for dashboard and analytics queries
+
+**Idempotency System**:
+
+- Critical operations protected with `x-idempotency-key` headers
+- Duplicate request detection and prevention
+- Consistent behavior for enrollment and questionnaire submissions
 - **Session Management**: Automatic token refresh and role validation
 
 ### Data Validation ✅ Comprehensive

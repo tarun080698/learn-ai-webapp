@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserFromRequest } from "@/lib/auth";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
 import { z } from "zod";
 import { FieldValue } from "firebase-admin/firestore";
@@ -24,42 +23,34 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Two bootstrap paths:
-    // 1. Bootstrap secret header
+    // Strict bootstrap key requirement
     const bootstrapKey = req.headers.get("x-admin-bootstrap-key");
-    const isBootstrapValid =
-      bootstrapKey && bootstrapKey === process.env.ADMIN_BOOTSTRAP_KEY;
-
-    // 2. Existing admin + allowlist check
-    let isAuthorized = false;
-    if (isBootstrapValid) {
-      // Check if this is the first admin (no existing admins)
-      const existingAdmins = await adminDb
-        .collection("users")
-        .where("role", "==", "admin")
-        .limit(1)
-        .get();
-
-      isAuthorized = existingAdmins.empty || !!process.env.ADMIN_BOOTSTRAP_KEY;
-    } else {
-      // Must be existing admin calling this endpoint
-      const user = await getUserFromRequest(req);
-      if (user?.role === "admin") {
-        // Check if target email is in allowlist
-        const adminAllowlist =
-          process.env.ADMIN_ALLOWLIST?.split(",").map((e) => e.trim()) || [];
-        isAuthorized = adminAllowlist.includes(email);
-      }
-    }
-
-    if (!isAuthorized) {
+    if (!bootstrapKey || bootstrapKey !== process.env.ADMIN_BOOTSTRAP_KEY) {
       return NextResponse.json(
         {
           ok: false,
           code: "unauthorized",
-          message: "Admin creation not authorized",
+          message: "Admin bootstrap key required",
         },
         { status: 401 }
+      );
+    }
+
+    // Check if this is the first admin (one-time bootstrap protection)
+    const existingAdmins = await adminDb
+      .collection("users")
+      .where("role", "==", "admin")
+      .limit(1)
+      .get();
+
+    if (!existingAdmins.empty) {
+      return NextResponse.json(
+        {
+          ok: false,
+          code: "already_bootstrapped",
+          message: "Admin bootstrap already completed",
+        },
+        { status: 409 }
       );
     }
 

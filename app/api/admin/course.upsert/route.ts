@@ -3,6 +3,7 @@ import { getUserFromRequest, requireAdmin, jsonError } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { zCourseUpsert } from "@/lib/schemas";
 import { COL } from "@/lib/firestore";
+import { logAdminAction, trackChanges } from "@/lib/adminAudit";
 
 /*
 DEV TESTING:
@@ -95,12 +96,27 @@ export async function POST(req: NextRequest) {
       updateData.heroImageUrl = parsed.heroImageUrl;
     }
 
+    let auditChanges;
     if (isUpdate) {
+      // Get current data for change tracking
+      const currentDoc = await adminDb
+        .collection(COL.courses)
+        .doc(courseId)
+        .get();
+      const currentData = currentDoc.data()!;
+
       // Update existing course (preserve existing fields)
       await adminDb
         .collection(COL.courses)
         .doc(courseId)
         .set(updateData, { merge: true });
+
+      // Track changes for audit
+      auditChanges = trackChanges(
+        currentData,
+        { ...currentData, ...updateData },
+        ["title", "description", "durationMinutes", "level", "heroImageUrl"]
+      );
     } else {
       // Create new course with defaults
       updateData.published = false;
@@ -108,6 +124,15 @@ export async function POST(req: NextRequest) {
       updateData.createdAt = now;
       await adminDb.collection(COL.courses).doc(courseId).set(updateData);
     }
+
+    // Log admin action for audit trail
+    await logAdminAction(adminDb, {
+      actorUid: user.uid,
+      action: isUpdate ? "course.update" : "course.create",
+      resourceType: "course",
+      resourceId: courseId,
+      ...(auditChanges && { changes: auditChanges }),
+    });
 
     return Response.json({
       ok: true,

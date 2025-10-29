@@ -4,6 +4,7 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import { zPublish } from "@/lib/schemas";
 import { COL } from "@/lib/firestore";
 import { FieldValue } from "firebase-admin/firestore";
+import { logAdminAction } from "@/lib/adminAudit";
 
 /*
 DEV TESTING:
@@ -99,6 +100,17 @@ export async function POST(req: NextRequest) {
           updatedAt: now,
         });
       });
+    });
+
+    // Log admin action for audit trail
+    await logAdminAction(adminDb, {
+      actorUid: user.uid,
+      action: parsed.published ? "course.publish" : "course.unpublish",
+      resourceType: "course",
+      resourceId: parsed.courseId,
+      changes: {
+        published: { before: courseData?.published, after: parsed.published },
+      },
     });
 
     return Response.json({

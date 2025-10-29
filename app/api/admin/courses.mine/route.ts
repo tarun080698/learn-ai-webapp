@@ -41,37 +41,27 @@ export async function GET(req: NextRequest) {
       .collection(COL.courses)
       .where("ownerUid", "==", user.uid);
 
+    // Add archived filter (always exclude archived)
+    query = query.where("archived", "==", false);
+
     // Add published filter if specified
     if (published !== null) {
       query = query.where("published", "==", published === "true");
     }
 
-    // For development: fetch without ordering to avoid index requirements
+    // Use composite index: (ownerUid, archived, updatedAt desc)
+    // Only support updatedAt ordering to match available index
+    query = query.orderBy("updatedAt", orderDirection as "asc" | "desc");
+    query = query.limit(limit);
+
     const snapshot = await query.get();
 
-    let courses: (CourseDoc & { id: string })[] = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...(doc.data() as CourseDoc),
-    }));
-
-    // Sort in JavaScript to avoid needing Firestore indexes
-    courses = courses
-      .sort((a, b) => {
-        const aValue =
-          orderBy === "updatedAt"
-            ? a.updatedAt.toDate().getTime()
-            : a.createdAt.toDate().getTime();
-        const bValue =
-          orderBy === "updatedAt"
-            ? b.updatedAt.toDate().getTime()
-            : b.createdAt.toDate().getTime();
-
-        if (orderDirection === "desc") {
-          return bValue - aValue;
-        }
-        return aValue - bValue;
+    const courses: (CourseDoc & { id: string })[] = snapshot.docs.map(
+      (doc) => ({
+        id: doc.id,
+        ...(doc.data() as CourseDoc),
       })
-      .slice(0, limit);
+    );
 
     return Response.json({
       ok: true,

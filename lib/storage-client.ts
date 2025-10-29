@@ -22,8 +22,11 @@ export const ALLOWED_TYPES = {
 
 // Max file sizes in bytes
 export const MAX_SIZES = {
-  heroImage: 5 * 1024 * 1024, // 5MB
-  moduleAsset: 50 * 1024 * 1024, // 50MB
+  heroImage: 5 * 1024 * 1024, // 5MB for images
+  image: 5 * 1024 * 1024, // 5MB for images
+  pdf: 10 * 1024 * 1024, // 10MB for PDFs
+  video: 200 * 1024 * 1024, // 200MB for videos
+  moduleAsset: 200 * 1024 * 1024, // 200MB max for any module asset
 } as const;
 
 /**
@@ -45,18 +48,36 @@ export function generateStoragePath(
 }
 
 /**
- * Validate file upload
+ * Validate file upload with specific size limits by file type
  */
 export function validateFileUpload(
   file: File,
   type: "hero" | "asset"
 ): { valid: boolean; error?: string } {
-  const maxSize = type === "hero" ? MAX_SIZES.heroImage : MAX_SIZES.moduleAsset;
+  // Determine appropriate max size based on file type
+  let maxSize: number;
+
+  if (type === "hero") {
+    maxSize = MAX_SIZES.heroImage;
+  } else {
+    // For assets, use specific limits based on file type
+    if (ALLOWED_TYPES.images.some((type) => type === file.type)) {
+      maxSize = MAX_SIZES.image; // 5MB for images
+    } else if (ALLOWED_TYPES.documents.some((type) => type === file.type)) {
+      maxSize = MAX_SIZES.pdf; // 10MB for PDFs
+    } else if (ALLOWED_TYPES.videos.some((type) => type === file.type)) {
+      maxSize = MAX_SIZES.video; // 200MB for videos
+    } else {
+      maxSize = MAX_SIZES.moduleAsset; // fallback
+    }
+  }
 
   if (file.size > maxSize) {
     return {
       valid: false,
-      error: `File too large. Max size: ${Math.round(maxSize / 1024 / 1024)}MB`,
+      error: `File too large. Max size for ${file.type}: ${Math.round(
+        maxSize / 1024 / 1024
+      )}MB`,
     };
   }
 

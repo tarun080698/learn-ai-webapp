@@ -26,34 +26,26 @@ export async function GET(req: NextRequest) {
       // Ignore auth errors - this is a public endpoint
     }
 
-    // Query published AND non-archived courses from Firestore
-    // Note: Firestore doesn't support compound queries with != and ==
-    // so we filter archived courses in JavaScript
+    // Query published AND non-archived courses using composite index
+    // Index: (published, archived, publishedAt desc)
     const coursesRef = adminDb.collection(COL.courses);
     const publishedCoursesSnapshot = await coursesRef
       .where("published", "==", true)
+      .where("archived", "==", false)
+      .orderBy("publishedAt", "desc")
       .get();
 
-    // Filter out archived courses and sort
-    let courses = publishedCoursesSnapshot.docs
-      .filter((doc) => {
-        const data = doc.data();
-        return !data.archived; // Exclude archived courses
-      })
-      .map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        // Convert Firestore timestamps for JSON serialization
-        createdAt:
-          doc.data().createdAt?.toDate()?.toISOString() ||
-          new Date().toISOString(),
-        updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-        publishedAt: doc.data().publishedAt?.toDate()?.toISOString(),
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+    // Map courses with proper timestamp conversion
+    let courses = publishedCoursesSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      // Convert Firestore timestamps for JSON serialization
+      createdAt:
+        doc.data().createdAt?.toDate()?.toISOString() ||
+        new Date().toISOString(),
+      updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+      publishedAt: doc.data().publishedAt?.toDate()?.toISOString(),
+    }));
 
     // If user is authenticated, decorate with enrollment information
     if (user) {

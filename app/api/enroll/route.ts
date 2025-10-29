@@ -2,12 +2,12 @@ import { NextRequest } from "next/server";
 import {
   getUserFromRequest,
   assertUserProviderGoogle,
-  withIdempotency,
   jsonError,
 } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { zEnroll } from "@/lib/schemas";
 import { COL, enrollmentId } from "@/lib/firestore";
+import { withIdempotency } from "@/lib/idempotency";
 
 /*
 DEV TESTING:
@@ -55,8 +55,8 @@ export async function POST(req: NextRequest) {
     // Wrap enrollment logic with idempotency
     const result = await withIdempotency(
       adminDb,
-      user.uid,
       idempotencyKey,
+      { kind: "enroll", uid: user.uid, courseId: parsed.courseId },
       async () => {
         // Check if course exists and is published
         const courseDoc = await adminDb!

@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import {
   getUserFromRequest,
   assertUserProviderGoogle,
-  withIdempotency,
   jsonError,
 } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
@@ -13,6 +12,7 @@ import {
   progressId,
   canCompleteModule,
 } from "@/lib/firestore";
+import { withIdempotency } from "@/lib/idempotency";
 
 /*
 DEV TESTING:
@@ -45,6 +45,11 @@ TRANSACTION RULES:
 4. Read course.moduleCount
 5. Compute: completedCount, progressPct, lastModuleIndex, completed flag
 6. Update enrollment with new denormalized values
+
+RESUME POINTER LOGIC:
+- lastModuleIndex = highest continuous module index from 0
+- Allows out-of-order completions but resume pointer stays linear
+- Example: completed [0,1,3,4] → resume at index 2 (next uncompleted in sequence)
 */
 
 export async function POST(req: NextRequest) {
@@ -77,8 +82,13 @@ export async function POST(req: NextRequest) {
     // Wrap progress logic with idempotency
     const result = await withIdempotency(
       adminDb,
-      user.uid,
       idempotencyKey,
+      {
+        kind: "progress",
+        uid: user.uid,
+        courseId: parsed.courseId,
+        moduleId: parsed.moduleId,
+      },
       async () => {
         // Check gating requirements before allowing module completion
         const canComplete = await canCompleteModule(

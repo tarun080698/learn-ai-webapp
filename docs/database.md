@@ -6,13 +6,16 @@ The Learn AI platform uses **Firebase Firestore**, a NoSQL document database. Th
 
 ### Database Architecture
 
-- **Document Store**: NoSQL with flexible schema supporting complex nested data
-- **Collections**: 9 top-level collections for different data types
-- **Subcollections**: None used (flat structure for simpler queries and better performance)
-- **Relationships**: Foreign key relationships via document IDs with referential integrity
-- **Denormalization**: Strategic duplication for performance (module counts, progress percentages)
-- **Composite Indexes**: 5 required indexes for efficient querying
-- **Current Status**: Fully implemented with real data, actively used in production
+- **Document Store**: NoSQL with flexible schema supporting complex nested data structures
+- **Collections**: 9 primary collections plus 3 infrastructure collections (12 total)
+- **Subcollections**: Flat structure design for optimal query performance and simpler indexing
+- **Ownership Model**: Admin-owned resources with `ownerUid` fields for isolated access control
+- **Archiving System**: Soft delete functionality with `archived`, `archivedAt`, `archivedBy` metadata
+- **Counter Management**: Denormalized counters for performance (`enrollmentCount`, `completionCount`)
+- **Relationships**: Foreign key relationships via document IDs with referential integrity validation
+- **Composite Indexes**: 7 composite indexes + automatic single-field indexes for optimal querying
+- **Security Model**: Comprehensive Firestore rules with role-based access and ownership enforcement
+- **Current Status**: Production-ready with Phase C backend overhaul complete, full API coverage
 
 ## Collections
 
@@ -31,6 +34,9 @@ interface UserDoc {
   role: "user" | "admin"; // Authorization role
   currentStreakDays: number; // Current login streak
   bestStreakDays: number; // All-time best streak
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
   createdAt: Timestamp; // Account creation
   lastLoginAt: Timestamp; // Most recent login
   updatedAt: Timestamp; // Last profile update
@@ -58,8 +64,13 @@ interface CourseDoc {
   durationMinutes: number; // Estimated completion time
   level: "beginner" | "intermediate" | "advanced";
   published: boolean; // Visibility flag
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
   heroImageUrl?: string; // Course thumbnail (Firebase Storage URL)
   moduleCount: number; // Denormalized count (auto-updated)
+  enrollmentCount: number; // Counter for enrolled users
+  completionCount: number; // Counter for completed users
   publishedAt?: Timestamp; // Publication date
   createdAt: Timestamp; // Creation date
   updatedAt: Timestamp; // Last modification
@@ -76,7 +87,10 @@ interface CourseDoc {
 
 - `moduleCount` is automatically maintained when modules are added/removed
 - `published` status cascades to all child modules
+- `archived` courses are hidden from public endpoints but preserved for data integrity
+- `enrollmentCount` and `completionCount` are atomically updated with idempotency protection
 - `heroImageUrl` supports Firebase Storage and external URLs
+- Ownership model enforces admin access control for all operations
 
 ### `courseModules`
 
@@ -87,18 +101,31 @@ interface CourseDoc {
 
 ```typescript
 interface ModuleDoc {
-  ownerUid: string; // Admin who created the module
+  ownerUid: string; // Admin who created the module (inherited from course)
   courseId: string; // Parent course reference
   index: number; // Module order (0-based)
   title: string; // Module display name
   summary: string; // Module description
-  contentType: "video" | "text" | "pdf" | "link";
+  contentType: "video" | "text" | "pdf" | "image" | "link";
   contentUrl?: string; // External content link or Firebase Storage URL
   body?: string; // Inline text content (for text type)
   estMinutes: number; // Estimated completion time
   published: boolean; // Mirrors course.published (cascaded)
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
+  assets: ModuleAsset[]; // Ordered list of module assets
   createdAt: Timestamp; // Creation date
   updatedAt: Timestamp; // Last modification
+}
+
+interface ModuleAsset {
+  id: string; // Unique asset identifier
+  kind: "pdf" | "video" | "image" | "link";
+  url: string; // Asset URL (Firebase Storage or external)
+  title?: string; // Optional asset title
+  order: number; // Asset order within module (0-based)
+  meta?: Record<string, unknown>; // Additional metadata (file size, duration, etc.)
 }
 ```
 
@@ -132,11 +159,15 @@ interface EnrollmentDoc {
   courseId: string; // Course reference
   enrolledAt: Timestamp; // Enrollment date
   completed: boolean; // Course completion flag
+  completedAt?: Timestamp; // Course completion timestamp
   lastModuleIndex: number; // Resume pointer
   completedCount: number; // Modules completed (denormalized)
   progressPct: number; // Completion percentage (0-100)
   preCourseComplete?: boolean; // Pre-course questionnaire gating
   postCourseComplete?: boolean; // Post-course questionnaire gating
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
 }
 ```
 
@@ -164,6 +195,9 @@ interface ProgressDoc {
   completed: boolean; // Completion flag
   completedAt?: Timestamp; // Completion date
   preModuleComplete?: boolean; // Pre-module questionnaire gating
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
 }
 ```
 
@@ -187,6 +221,9 @@ interface QuestionnaireDoc {
   purpose: "survey" | "quiz" | "assessment";
   version: number; // Auto-incrementing version (starts at 1)
   questions: QuestionnaireQuestion[];
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
   createdAt: Timestamp; // Creation date
   updatedAt: Timestamp; // Last modification
 }
@@ -238,6 +275,9 @@ interface QuestionnaireAssignmentDoc {
   };
   timing: "pre" | "post"; // When to present questionnaire
   active: boolean; // Assignment enabled (allows temporary disabling)
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
   createdAt: Timestamp; // Assignment date
   updatedAt?: Timestamp; // Last modification
 }
@@ -282,6 +322,9 @@ interface QuestionnaireResponseDoc {
     total: number; // Total possible points
     percentage: number; // Percentage score (0-100)
   };
+  archived: boolean; // Soft delete flag (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin who archived
   submittedAt: Timestamp; // Submission date
   createdAt: Timestamp; // Response creation (for started responses)
 }
@@ -621,11 +664,138 @@ All 9 collections are fully implemented and actively used:
 
 ### Database Statistics
 
-- **Collections**: 9 active collections
-- **Indexes**: 7 composite indexes + automatic single-field indexes
-- **Security Rules**: Comprehensive role-based access control
-- **Data Volume**: Designed to scale with course catalog growth
-- **Performance**: Optimized for real-time user interactions
+- **Primary Collections**: 9 core collections (users, courses, courseModules, enrollments, progress, questionnaires, questionnaireAssignments, questionnaireResponses)
+- **Infrastructure Collections**: 3 system collections (loginEvents, idempotentWrites, adminAuditLogs)
+- **Composite Indexes**: 7 production-deployed indexes for optimal query performance
+- **Security Rules**: Comprehensive ownership model with archiving support - fully deployed
+- **API Coverage**: 43 endpoints providing complete CRUD operations with ownership enforcement
+- **Archiving System**: Soft delete across all major collections with audit trail
+- **Counter Management**: Denormalized performance counters for enrollment and completion tracking
+- **Data Integrity**: Transactional updates, idempotency keys, and referential integrity validation
+- **Performance**: Optimized for real-time interactions with denormalized data and strategic indexing
+
+## Security Rules
+
+The Firestore security rules implement comprehensive role-based access control with the following key features:
+
+### Admin Ownership Model
+
+- All admin-owned resources (courses, modules, questionnaires) include `ownerUid` field
+- Only the owning admin can modify their resources
+- Admins cannot modify resources owned by other admins
+- Supports multi-admin environments with isolated ownership
+
+### Archiving System
+
+- All collections support soft delete via `archived` boolean field
+- Archived documents are hidden from public queries
+- Public catalog queries automatically filter: `published == true && archived == false`
+- Only admins can archive/unarchive documents
+- Archive metadata includes `archivedAt` timestamp and `archivedBy` admin UID
+
+### Key Security Patterns
+
+```javascript
+// Public course catalog access (published and non-archived only)
+match /courses/{courseId} {
+  allow read: if resource.data.published == true &&
+                 resource.data.archived == false;
+}
+
+// Admin ownership enforcement
+match /courses/{courseId} {
+  allow write: if request.auth != null &&
+                  request.auth.token.role == "admin" &&
+                  request.auth.uid == resource.data.ownerUid;
+}
+
+// User-specific data isolation
+match /enrollments/{enrollmentId} {
+  allow read, write: if request.auth != null &&
+                        request.auth.uid == resource.data.uid;
+}
+```
+
+### Collection-Specific Rules
+
+- **courses**: Public read (published+non-archived), admin write (ownership-based)
+- **courseModules**: Public read (inherits course visibility), admin write (ownership-based)
+- **users**: Self-access only, admin read access
+- **enrollments**: User-specific access, admin read access
+- **progress**: User-specific access, admin read access
+- **questionnaires**: Admin-only access (ownership-based)
+- **questionnaireAssignments**: Admin-only access (ownership-based)
+- **questionnaireResponses**: User-specific access, admin read access
+
+## Infrastructure Collections
+
+Beyond the core application collections, the system includes several infrastructure collections for system operations:
+
+### `loginEvents`
+
+**Purpose**: Track user login history and streak calculations
+**Security**: Server-only access (Admin SDK)
+**Schema**:
+
+```typescript
+interface LoginEventDoc {
+  uid: string; // User reference
+  loginAt: Timestamp; // Login timestamp
+  provider: string; // Authentication provider
+  streakDays: number; // Calculated streak at login
+}
+```
+
+### `idempotentWrites`
+
+**Purpose**: Prevent duplicate operations via idempotency keys
+**Security**: Server-only access (Admin SDK)
+**Schema**:
+
+```typescript
+interface IdempotentWriteDoc {
+  key: string; // Idempotency key (doc ID)
+  operation: string; // Operation type
+  result: any; // Operation result
+  createdAt: Timestamp; // First attempt timestamp
+  expiresAt: Timestamp; // Cleanup timestamp
+}
+```
+
+### `adminAuditLogs`
+
+**Purpose**: Audit trail for admin operations and ownership changes
+**Security**: Server-only access (Admin SDK)
+**Schema**:
+
+```typescript
+interface AdminAuditLogDoc {
+  adminUid: string; // Admin performing action
+  action: string; // Action type (create, update, archive, etc.)
+  resourceType: string; // Resource type (course, module, etc.)
+  resourceId: string; // Resource identifier
+  changes?: Record<string, any>; // Change details
+  timestamp: Timestamp; // Action timestamp
+}
+```
+
+## Index Requirements
+
+### Composite Indexes
+
+1. **courses**: `(published, archived, createdAt desc)` - Public catalog with archiving
+2. **courseModules**: `(courseId, index asc)` - Module ordering
+3. **enrollments**: `(uid, enrolledAt desc)` - User enrollment history
+4. **progress**: `(uid, courseId, moduleId)` - User progress lookup
+5. **questionnaireAssignments**: `(scope.courseId, timing, active)` - Assignment queries
+6. **questionnaireResponses**: `(uid, assignmentId)` - User response lookup
+7. **users**: `(role, archived, createdAt desc)` - Admin user management
+
+### Performance Optimizations
+
+- Denormalized counters in course documents (`enrollmentCount`, `completionCount`)
+- Progress percentage calculated and stored in enrollment documents
+- Composite indexes support all query patterns without additional lookups
 
 ## Development and Testing
 
@@ -637,11 +807,15 @@ firebase emulators:start --only firestore
 
 # Initialize database with sample data
 npm run seed:dev
+
+# Deploy security rules to emulator
+firebase deploy --only firestore:rules --project demo-project
 ```
 
 ### Production Deployment
 
 - All indexes deployed via Firebase CLI
-- Security rules deployed and active
+- Security rules deployed and active with archiving support
 - Backup and recovery procedures in place
 - Monitoring and alerting configured
+- Archive cleanup policies for data retention
