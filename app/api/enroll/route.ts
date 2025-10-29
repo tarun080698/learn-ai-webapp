@@ -7,7 +7,7 @@ import {
 } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { zEnroll } from "@/lib/schemas";
-import { COL, enrollmentId, checkGatingRequirements } from "@/lib/firestore";
+import { COL, enrollmentId } from "@/lib/firestore";
 
 /*
 DEV TESTING:
@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
         const enrollDoc = await enrollRef.get();
 
         if (enrollDoc.exists) {
-          // Return existing enrollment (idempotent)
+          // Return existing enrollment (idempotent - counter NOT incremented again)
+          // This ensures multiple enrollment requests don't artificially inflate enrollmentCount
           const existing = enrollDoc.data()!;
           return {
             enrollment: {
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
             isNew: false,
           };
         } else {
-          // Create new enrollment
+          // Create new enrollment with counter increment
           const now = new Date();
           const enrollmentData = {
             uid: user.uid,
@@ -110,7 +111,23 @@ export async function POST(req: NextRequest) {
             progressPct: 0,
           };
 
-          await enrollRef.set(enrollmentData);
+          // Use transaction to atomically create enrollment and increment counter
+          await adminDb!.runTransaction(async (transaction) => {
+            // Create enrollment
+            transaction.set(enrollRef, enrollmentData);
+
+            // Increment course enrollment counter
+            const courseRef = adminDb!
+              .collection(COL.courses)
+              .doc(parsed.courseId);
+            const courseDoc = await transaction.get(courseRef);
+            const currentCount = courseDoc.data()?.enrollmentCount || 0;
+
+            transaction.update(courseRef, {
+              enrollmentCount: currentCount + 1,
+              updatedAt: now,
+            });
+          });
 
           return {
             enrollment: {

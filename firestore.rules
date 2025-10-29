@@ -16,16 +16,16 @@ service cloud.firestore {
     }
 
     /* ---------- Public Catalog (read-only) ---------- */
-    // Anyone (even not signed in) can read published courses/modules.
+    // Anyone (even not signed in) can read published AND non-archived courses/modules.
     match /courses/{courseId} {
-      allow read: if resource.data.published == true;
+      allow read: if resource.data.published == true && resource.data.archived != true;
       allow write: if false; // Admin writes via server (Admin SDK) only
     }
 
     // Store modules in "courseModules" collection (as per Phase 2)
     match /courseModules/{moduleId} {
       // We mirror published flag to modules when course.publish runs.
-      allow read: if resource.data.published == true;
+      allow read: if resource.data.published == true && resource.data.archived != true;
       allow write: if false; // server-only
     }
 

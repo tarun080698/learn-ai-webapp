@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { getUserFromRequest } from "@/lib/auth";
+import { COL } from "@/lib/firestore";
 
 export async function GET(
   req: NextRequest,
@@ -20,7 +21,7 @@ export async function GET(
     }
 
     // Get course details
-    const courseDoc = await adminDb.collection("courses").doc(courseId).get();
+    const courseDoc = await adminDb.collection(COL.courses).doc(courseId).get();
 
     if (!courseDoc.exists) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 });
@@ -28,18 +29,17 @@ export async function GET(
 
     const courseData = courseDoc.data();
 
-    // Only return published courses for non-admin users
-    if (!courseData?.published) {
+    // Only return published AND non-archived courses
+    if (!courseData?.published || courseData?.archived) {
       return NextResponse.json(
         { error: "Course not available" },
         { status: 404 }
       );
     }
 
-    // Get modules for this course from the correct collection
-    // Note: Simplified query to avoid composite index requirement
+    // Get modules for this course (published and non-archived only, metadata only)
     const modulesSnapshot = await adminDb
-      .collection("courseModules")
+      .collection(COL.modules)
       .where("courseId", "==", courseId)
       .get();
 
@@ -47,45 +47,47 @@ export async function GET(
       `Found ${modulesSnapshot.docs.length} modules for course ${courseId}`
     );
 
-    // Filter for published modules in JavaScript
+    // Filter for published AND non-archived modules, return metadata only
     const allModules = modulesSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     }));
 
-    console.log(
-      "All modules:",
-      allModules.map((m: Record<string, unknown>) => ({
-        id: m.id,
-        published: m.published,
-        title: m.title,
+    const availableModules = allModules.filter(
+      (module: Record<string, unknown>) =>
+        module.published === true && !module.archived
+    );
+    console.log(`Found ${availableModules.length} available modules`);
+
+    // Return only metadata (no body, no assets)
+    const modules = availableModules
+      .map((module: Record<string, unknown>) => ({
+        id: module.id,
+        index: module.index,
+        title: module.title,
+        estMinutes: module.estMinutes,
+        summary: module.summary,
+        contentType: module.contentType,
       }))
-    );
+      .sort((a, b) => (a.index || 0) - (b.index || 0));
 
-    const publishedModules = allModules.filter(
-      (module: Record<string, unknown>) => module.published === true
-    );
-    console.log(`Found ${publishedModules.length} published modules`);
-
-    const modules = publishedModules.sort(
-      (a: Record<string, unknown>, b: Record<string, unknown>) =>
-        ((a.index as number) || 0) - ((b.index as number) || 0)
-    );
-
-    // Get course-level questionnaire assignments
+    // Get course-level questionnaire assignments (active and non-archived)
     const assignmentsSnapshot = await adminDb
-      .collection("assignments")
+      .collection(COL.assignments)
       .where("scope.courseId", "==", courseId)
       .where("scope.type", "==", "course")
       .where("active", "==", true)
       .get();
 
-    const assignments = assignmentsSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Filter out archived assignments
+    const assignments = assignmentsSnapshot.docs
+      .filter((doc) => !doc.data().archived)
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-    // Get questionnaire details for assignments
+    // Get questionnaire details for assignments (non-archived only)
     const questionnaireIds = assignments.map(
       (a: Record<string, unknown>) => a.questionnaireId as string
     );
@@ -93,15 +95,17 @@ export async function GET(
 
     if (questionnaireIds.length > 0) {
       const questionnairesSnapshot = await adminDb
-        .collection("questionnaires")
+        .collection(COL.questionnaires)
         .where("__name__", "in", questionnaireIds)
         .get();
 
       questionnaires.push(
-        ...questionnairesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
+        ...questionnairesSnapshot.docs
+          .filter((doc) => !doc.data().archived)
+          .map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }))
       );
     }
 
@@ -113,7 +117,7 @@ export async function GET(
       const user = await getUserFromRequest(req);
       if (user) {
         const enrollmentDoc = await adminDb
-          .collection("enrollments")
+          .collection(COL.enrollments)
           .where("uid", "==", user.uid)
           .where("courseId", "==", courseId)
           .limit(1)
@@ -130,9 +134,18 @@ export async function GET(
       console.log("User not authenticated, showing course as preview");
     }
 
+    // Build public course data (excluding sensitive fields)
     const course = {
       id: courseDoc.id,
-      ...courseData,
+      title: courseData.title,
+      description: courseData.description,
+      durationMinutes: courseData.durationMinutes,
+      level: courseData.level,
+      heroImageUrl: courseData.heroImageUrl,
+      published: courseData.published,
+      createdAt: courseData.createdAt,
+      updatedAt: courseData.updatedAt,
+      publishedAt: courseData.publishedAt,
       modules,
       questionnaires: assignments.map((assignment: Record<string, unknown>) => {
         const questionnaire = questionnaires.find(
@@ -147,6 +160,7 @@ export async function GET(
         status: enrollmentStatus,
         enrolledAt: enrollmentDate,
       },
+      moduleCount: modules.length, // Provide actual available module count
     };
 
     return NextResponse.json({

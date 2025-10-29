@@ -190,6 +190,10 @@ export async function POST(req: NextRequest) {
           const newCompleted =
             newCompletedCount >= totalModules && totalModules > 0;
 
+          // Check if this is the first time the enrollment is being completed
+          const wasEnrollmentCompleted = enrollData.completed || false;
+          const isFirstTimeCompleted = newCompleted && !wasEnrollmentCompleted;
+
           // 6. Update enrollment
           const updatedEnrollData = {
             ...enrollData,
@@ -201,6 +205,17 @@ export async function POST(req: NextRequest) {
 
           transaction.set(enrollRef, updatedEnrollData, { merge: true });
 
+          // 7. Increment course completion counter if enrollment completed for first time
+          // Idempotency: only increment when enrollment.completed flips from false to true
+          // Multiple progress completions won't inflate the counter
+          if (isFirstTimeCompleted) {
+            const currentCompletionCount = courseData.completionCount || 0;
+            transaction.update(courseRef, {
+              completionCount: currentCompletionCount + 1,
+              updatedAt: new Date(),
+            });
+          }
+
           return {
             progressPct: newProgressPct,
             lastModuleIndex: clampedLastModuleIndex,
@@ -208,6 +223,7 @@ export async function POST(req: NextRequest) {
             completedCount: newCompletedCount,
             totalModules,
             wasAlreadyCompleted,
+            courseCompletedFirstTime: isFirstTimeCompleted, // For debugging/logging
           };
         });
       }

@@ -1,13 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
+import { getUserFromRequest } from "@/lib/auth";
+import { COL, enrollmentId } from "@/lib/firestore";
 
 /**
  * GET /api/catalog
  *
- * Returns published courses for public catalog display.
- * No authentication required - public endpoint.
+ * Returns published and non-archived courses for public catalog display.
+ * If Authorization header is present and valid, decorates with enrollment info.
+ * Public endpoint - authentication optional.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     console.log("📚 Fetching published courses for catalog");
 
@@ -15,16 +18,28 @@ export async function GET() {
       throw new Error("Firebase Admin not initialized");
     }
 
-    // Query published courses from Firestore
-    // Note: Using simple query for development, orderBy handled in JavaScript
-    // For production, create composite index: published + createdAt
-    const coursesRef = adminDb.collection("courses");
+    // Try to get authenticated user (optional for this endpoint)
+    let user = null;
+    try {
+      user = await getUserFromRequest(req);
+    } catch {
+      // Ignore auth errors - this is a public endpoint
+    }
+
+    // Query published AND non-archived courses from Firestore
+    // Note: Firestore doesn't support compound queries with != and ==
+    // so we filter archived courses in JavaScript
+    const coursesRef = adminDb.collection(COL.courses);
     const publishedCoursesSnapshot = await coursesRef
       .where("published", "==", true)
       .get();
 
-    // Sort in JavaScript for development compatibility
-    const courses = publishedCoursesSnapshot.docs
+    // Filter out archived courses and sort
+    let courses = publishedCoursesSnapshot.docs
+      .filter((doc) => {
+        const data = doc.data();
+        return !data.archived; // Exclude archived courses
+      })
       .map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -40,13 +55,48 @@ export async function GET() {
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
-    console.log(`✅ Found ${courses.length} published courses`);
+    // If user is authenticated, decorate with enrollment information
+    if (user) {
+      const enrollmentPromises = courses.map(async (course) => {
+        const enrollId = enrollmentId(user.uid, course.id);
+        const enrollDoc = await adminDb!
+          .collection(COL.enrollments)
+          .doc(enrollId)
+          .get();
+
+        if (enrollDoc.exists) {
+          const enrollData = enrollDoc.data()!;
+          return {
+            ...course,
+            enrolled: true,
+            enrollmentId: enrollId,
+            progressPct: enrollData.progressPct || 0,
+            completed: enrollData.completed || false,
+          };
+        } else {
+          return {
+            ...course,
+            enrolled: false,
+            enrollmentId: null,
+          };
+        }
+      });
+
+      courses = await Promise.all(enrollmentPromises);
+    }
+
+    console.log(
+      `✅ Found ${courses.length} published courses${
+        user ? " (decorated with enrollment info)" : ""
+      }`
+    );
 
     return NextResponse.json(
       {
         success: true,
         courses,
         count: courses.length,
+        authenticated: !!user,
       },
       { status: 200 }
     );
