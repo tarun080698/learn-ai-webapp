@@ -20,8 +20,17 @@ try {
     }
 
     const serviceAccount = JSON.parse(serviceAccountKey);
+    const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
+
+    if (!storageBucket) {
+      throw new Error(
+        "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET environment variable is required"
+      );
+    }
+
     adminApp = initializeApp({
       credential: cert(serviceAccount),
+      storageBucket: storageBucket,
     });
   } else {
     adminApp = getApp();
@@ -36,7 +45,7 @@ try {
   adminDb = null;
 }
 
-export { adminAuth, adminDb };
+export { adminApp, adminAuth, adminDb };
 
 // TODO: Harden with key rotation guidance
 // Consider implementing key rotation strategy and secret management best practices

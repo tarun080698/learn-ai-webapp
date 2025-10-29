@@ -173,11 +173,15 @@ Authorization: Bearer <firebase-id-token>
   "questions": [
     {
       "id": "q1",
-      "type": "single|multi|scale|text",
+      "type": "single-choice|multiple-choice|scale|text",
       "prompt": "How would you rate this course?",
       "required": true,
-      "options": ["Excellent", "Good", "Fair", "Poor"],
-      "correctAnswer": "Excellent"
+      "options": [
+        { "id": "excellent", "label": "Excellent", "correct": true },
+        { "id": "good", "label": "Good" },
+        { "id": "fair", "label": "Fair" },
+        { "id": "poor", "label": "Poor" }
+      ]
     }
   ]
 }
@@ -360,35 +364,42 @@ Authorization: Bearer <firebase-id-token>
 
 **Notes**: Transactional update of progress and enrollment records
 
-#### `POST /api/questionnaires/context`
+#### `GET /api/questionnaires/context`
 
 **Purpose**: Get questionnaire assignments for course/module
 **Auth**: User required
-**Request**:
+**Query Parameters**:
 
-```json
-{
-  "courseId": "course-123",
-  "moduleId": "optional-module-456"
-}
+- `courseId` (required): Course identifier
+- `moduleId` (optional): Module identifier
+
+**Example**:
+
+```
+GET /api/questionnaires/context?courseId=course-123&moduleId=module-456
 ```
 
 **Response**:
 
 ```json
 {
-  "assignments": [
-    {
-      "id": "assignment-123",
-      "questionnaireId": "questionnaire-456",
-      "title": "Pre-Course Survey",
-      "description": "Initial assessment",
-      "timing": "pre",
-      "scope": { "type": "course", "courseId": "course-123" },
-      "completed": false,
-      "submittedAt": null
-    }
-  ]
+  "ok": true,
+  "preCourse": {
+    "assignmentId": "assignment-123",
+    "completed": false
+  },
+  "postCourse": {
+    "assignmentId": "assignment-456",
+    "completed": true
+  },
+  "preModule": {
+    "assignmentId": "assignment-789",
+    "completed": false
+  },
+  "postModule": {
+    "assignmentId": "assignment-012",
+    "completed": false
+  }
 }
 ```
 
@@ -420,13 +431,18 @@ Authorization: Bearer <firebase-id-token>
     "questions": [
       {
         "id": "q1",
-        "type": "single",
+        "type": "single-choice",
         "prompt": "What is your experience level?",
         "required": true,
-        "options": ["Beginner", "Intermediate", "Advanced"]
+        "options": [
+          { "id": "beginner", "label": "Beginner" },
+          { "id": "intermediate", "label": "Intermediate" },
+          { "id": "advanced", "label": "Advanced" }
+        ]
       }
     ]
-  }
+  },
+  "questionnaireVersion": 2
 }
 ```
 
@@ -445,11 +461,11 @@ Authorization: Bearer <firebase-id-token>
   "answers": [
     {
       "questionId": "q1",
-      "value": "Intermediate"
+      "value": "intermediate"
     },
     {
       "questionId": "q2",
-      "values": ["Option A", "Option B"]
+      "value": ["option_a", "option_b"]
     }
   ]
 }
@@ -460,9 +476,10 @@ Authorization: Bearer <firebase-id-token>
 ```json
 {
   "responseId": "user-uid_assignment-123",
-  "score": 85,
-  "totalQuestions": 5,
-  "correctAnswers": 4,
+  "score": {
+    "earned": 4,
+    "total": 5
+  },
   "gatingUpdated": {
     "preCourseComplete": true
   }

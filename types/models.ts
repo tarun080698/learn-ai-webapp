@@ -4,6 +4,7 @@ export type FirestoreId = string;
 // Phase 2: Course & Module Learning System
 
 export interface CourseDoc {
+  ownerUid: string; // Admin who created and owns this course
   title: string;
   description: string;
   durationMinutes: number;
@@ -17,6 +18,7 @@ export interface CourseDoc {
 }
 
 export interface ModuleDoc {
+  ownerUid: string; // Admin who owns this module (inherited from parent course)
   courseId: string;
   index: number; // 0..N unique per course
   title: string;
@@ -64,9 +66,13 @@ export interface QuestionnaireQuestion {
   points?: number; // default 1 if quiz
 }
 
+// Type alias for convenience
+export type Question = QuestionnaireQuestion;
+
 export interface QuestionnaireDoc {
+  ownerUid: string; // Admin who created this questionnaire template
   title: string;
-  purpose: "survey" | "quiz" | "mixed";
+  purpose: "survey" | "quiz" | "assessment";
   version: number;
   questions: QuestionnaireQuestion[];
   createdAt: FirebaseFirestore.Timestamp;
@@ -74,6 +80,7 @@ export interface QuestionnaireDoc {
 }
 
 export interface QuestionnaireAssignmentDoc {
+  ownerUid: string; // Admin who owns this assignment
   questionnaireId: string;
   questionnaireVersion: number; // frozen at assign time
   scope: { type: "course" | "module"; courseId: string; moduleId?: string };

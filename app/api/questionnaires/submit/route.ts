@@ -21,12 +21,8 @@ import {
   jsonError,
 } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
-import {
-  COL,
-  getAssignmentWithTemplate,
-  responseId,
-  gradeAnswers,
-} from "@/lib/firestore";
+import { COL, getAssignmentWithTemplate, responseId } from "@/lib/firestore";
+import { gradeQuestionnaire, validateAnswerOptions } from "@/lib/grading";
 import { zSubmit } from "@/lib/schemas";
 import type {
   QuestionnaireDoc,
@@ -78,8 +74,7 @@ export async function POST(req: NextRequest) {
 
     const answerMap = new Map<string, string | number | string[] | number[]>();
     validated.answers.forEach((answer) => {
-      const finalValue =
-        answer.value !== undefined ? answer.value : answer.values;
+      const finalValue = answer.value;
       if (finalValue !== undefined) {
         // Type cast since zod validation ensures correct types
         answerMap.set(
@@ -88,6 +83,34 @@ export async function POST(req: NextRequest) {
         );
       }
     });
+
+    // Convert answerMap to format for validation
+    const answersForValidation: Record<string, string | string[]> = {};
+    answerMap.forEach((value, key) => {
+      if (Array.isArray(value)) {
+        answersForValidation[key] = value.map(String);
+      } else {
+        answersForValidation[key] = String(value);
+      }
+    });
+
+    // Validate answer options using grading utility
+    for (const question of questionnaireData.questions) {
+      const answer = answersForValidation[question.id];
+      if (answer !== undefined) {
+        const validation = validateAnswerOptions(question, answer);
+        if (!validation.valid) {
+          return NextResponse.json(
+            {
+              error:
+                validation.error ||
+                `Invalid answer for question ${question.id}`,
+            },
+            { status: 422 }
+          );
+        }
+      }
+    }
 
     // Check required questions
     for (const question of questionnaireData.questions) {
@@ -153,19 +176,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Compute score for quiz questions
+    // Convert answers to grading format
     const answers = validated.answers
-      .filter((a) => a.value !== undefined || a.values !== undefined)
+      .filter((a) => a.value !== undefined)
       .map((a) => ({
         questionId: a.questionId,
-        value: (a.value !== undefined ? a.value : a.values) as
-          | string
-          | number
-          | string[]
-          | number[],
+        value: a.value as string | number | string[],
       }));
 
-    const score = gradeAnswers(questionnaireData.questions, answers);
+    const score = gradeQuestionnaire(questionnaireData.questions, answers);
 
     const now = new Date();
     const resId = responseId(user.uid, validated.assignmentId);

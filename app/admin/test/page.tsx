@@ -1,10 +1,17 @@
 "use client";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { useAuthenticatedMutation } from "@/hooks/useAuthenticatedFetch";
 import { useState } from "react";
 
 export default function AdminTestingPage() {
   const { firebaseUser } = useAuth();
+
+  // Authenticated API hooks
+  const seedDataApi = useAuthenticatedMutation();
+  const createCourseApi = useAuthenticatedMutation();
+  const createModuleApi = useAuthenticatedMutation();
+  const publishCourseApi = useAuthenticatedMutation();
 
   // State for admin testing
   const [seedResult, setSeedResult] = useState<string>("");
@@ -42,16 +49,7 @@ export default function AdminTestingPage() {
     }
 
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/admin/seed.dev", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const data = await response.json();
+      const data = (await seedDataApi.mutate("/api/admin/seed.dev", {})) as any;
       setSeedResult(JSON.stringify(data, null, 2));
 
       // Auto-fill course ID if successful
@@ -70,24 +68,14 @@ export default function AdminTestingPage() {
     }
 
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/admin/course.upsert", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: courseTitle,
-          description: courseDescription,
-          durationMinutes: courseDuration,
-          level: courseLevel,
-          heroImageUrl:
-            "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800",
-        }),
-      });
-
-      const data = await response.json();
+      const data = (await createCourseApi.mutate("/api/admin/course.upsert", {
+        title: courseTitle,
+        description: courseDescription,
+        durationMinutes: courseDuration,
+        level: courseLevel,
+        heroImageUrl:
+          "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800",
+      })) as any;
       setCourseResult(JSON.stringify(data, null, 2));
 
       // Auto-fill course ID if successful
@@ -106,8 +94,6 @@ export default function AdminTestingPage() {
     }
 
     try {
-      const token = await firebaseUser.getIdToken();
-
       const moduleData: {
         courseId: string;
         index: number;
@@ -133,16 +119,10 @@ export default function AdminTestingPage() {
         moduleData.contentUrl = "https://example.com/content.pdf";
       }
 
-      const response = await fetch("/api/admin/module.upsert", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(moduleData),
-      });
-
-      const data = await response.json();
+      const data = (await createModuleApi.mutate(
+        "/api/admin/module.upsert",
+        moduleData
+      )) as any;
       setModuleResult(JSON.stringify(data, null, 2));
     } catch (error) {
       setModuleResult(`Error: ${error}`);
@@ -156,20 +136,10 @@ export default function AdminTestingPage() {
     }
 
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/admin/course.publish", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          courseId: targetCourseId,
-          published: true,
-        }),
-      });
-
-      const data = await response.json();
+      const data = (await publishCourseApi.mutate("/api/admin/course.publish", {
+        courseId: targetCourseId,
+        published: true,
+      })) as any;
       setPublishResult(JSON.stringify(data, null, 2));
     } catch (error) {
       setPublishResult(`Error: ${error}`);

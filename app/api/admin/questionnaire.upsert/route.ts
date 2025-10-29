@@ -53,12 +53,27 @@ export async function POST(req: NextRequest) {
       throw new Error("Firebase Admin not initialized");
     }
 
+    // Validate option IDs for uniqueness within each question
+    for (const question of validated.questions) {
+      if (question.options && question.options.length > 0) {
+        const optionIds = question.options.map((opt) => opt.id);
+        const uniqueIds = new Set(optionIds);
+
+        if (optionIds.length !== uniqueIds.size) {
+          throw Object.assign(
+            new Error(`Duplicate option IDs found in question ${question.id}`),
+            { status: 400, code: "duplicate_option_ids" }
+          );
+        }
+      }
+    }
+
     const now = new Date();
     const questionnaireId =
       validated.questionnaireId ||
       adminDb.collection(COL.questionnaires).doc().id;
 
-    // If updating, check version constraints
+    // If updating, check version constraints and ownership
     if (validated.questionnaireId) {
       const existingDoc = await adminDb
         .collection(COL.questionnaires)
@@ -66,11 +81,24 @@ export async function POST(req: NextRequest) {
         .get();
       if (existingDoc.exists) {
         const existing = existingDoc.data();
-        if (existing && validated.version < existing.version) {
-          return NextResponse.json(
-            { error: "Version must be >= current version" },
-            { status: 422 }
-          );
+        if (existing) {
+          // Check ownership
+          if (existing.ownerUid !== user.uid) {
+            throw Object.assign(
+              new Error("Access denied: not the questionnaire owner"),
+              {
+                status: 403,
+                code: "questionnaire_access_denied",
+              }
+            );
+          }
+          // Check version
+          if (validated.version < existing.version) {
+            return NextResponse.json(
+              { error: "Version must be >= current version" },
+              { status: 422 }
+            );
+          }
         }
       }
     }
@@ -80,6 +108,7 @@ export async function POST(req: NextRequest) {
       purpose: validated.purpose,
       version: validated.version,
       questions: validated.questions,
+      ownerUid: user.uid, // Set ownership
       updatedAt: now,
       ...(validated.questionnaireId ? {} : { createdAt: now }),
     };

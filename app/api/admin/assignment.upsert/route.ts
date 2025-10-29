@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const assignmentId =
       validated.assignmentId || adminDb.collection(COL.assignments).doc().id;
 
-    // Get questionnaire to freeze version
+    // Get questionnaire to freeze version and verify ownership
     const questionnaireDoc = await adminDb
       .collection(COL.questionnaires)
       .doc(validated.questionnaireId)
@@ -68,12 +68,83 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Verify questionnaire ownership
+    if (questionnaire.ownerUid !== user.uid) {
+      throw Object.assign(
+        new Error("Access denied: not the questionnaire owner"),
+        {
+          status: 403,
+          code: "questionnaire_access_denied",
+        }
+      );
+    }
+
+    // Verify scope ownership (course or module)
+    if (validated.scope.type === "course") {
+      const courseDoc = await adminDb
+        .collection(COL.courses)
+        .doc(validated.scope.courseId)
+        .get();
+      if (!courseDoc.exists) {
+        return NextResponse.json(
+          { error: "Course not found" },
+          { status: 404 }
+        );
+      }
+      const courseData = courseDoc.data();
+      if (courseData?.ownerUid !== user.uid) {
+        throw Object.assign(new Error("Access denied: not the course owner"), {
+          status: 403,
+          code: "course_access_denied",
+        });
+      }
+    } else if (validated.scope.type === "module" && validated.scope.moduleId) {
+      const moduleDoc = await adminDb
+        .collection(COL.modules)
+        .doc(validated.scope.moduleId)
+        .get();
+      if (!moduleDoc.exists) {
+        return NextResponse.json(
+          { error: "Module not found" },
+          { status: 404 }
+        );
+      }
+      const moduleData = moduleDoc.data();
+      if (moduleData?.ownerUid !== user.uid) {
+        throw Object.assign(new Error("Access denied: not the module owner"), {
+          status: 403,
+          code: "module_access_denied",
+        });
+      }
+    }
+
+    // If updating existing assignment, verify ownership
+    if (validated.assignmentId) {
+      const existingDoc = await adminDb
+        .collection(COL.assignments)
+        .doc(validated.assignmentId)
+        .get();
+      if (existingDoc.exists) {
+        const existing = existingDoc.data();
+        if (existing?.ownerUid !== user.uid) {
+          throw Object.assign(
+            new Error("Access denied: not the assignment owner"),
+            {
+              status: 403,
+              code: "assignment_access_denied",
+            }
+          );
+        }
+      }
+    }
+
     const assignmentData = {
       questionnaireId: validated.questionnaireId,
       questionnaireVersion: questionnaire.version, // Freeze version
       scope: validated.scope,
       timing: validated.timing,
       active: validated.active ?? true,
+      ownerUid: user.uid, // Set ownership
       updatedAt: now,
       ...(validated.assignmentId ? {} : { createdAt: now }),
     };

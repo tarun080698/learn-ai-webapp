@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Verify parent course exists
+    // Verify parent course exists and admin owns it
     const courseDoc = await adminDb
       .collection(COL.courses)
       .doc(parsed.courseId)
@@ -79,7 +79,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const courseData = courseDoc.data()!;
+    // Verify course ownership
+    const courseData = courseDoc.data();
+    if (courseData?.ownerUid !== user.uid) {
+      throw Object.assign(new Error("Access denied: not the course owner"), {
+        status: 403,
+        code: "course_access_denied",
+      });
+    }
     const coursePublished = courseData.published || false;
 
     const now = new Date();
@@ -107,6 +114,27 @@ export async function POST(req: NextRequest) {
       moduleId = adminDb.collection(COL.modules).doc().id;
     }
 
+    // Validate index uniqueness within the course
+    const existingModuleQuery = await adminDb
+      .collection(COL.modules)
+      .where("courseId", "==", parsed.courseId)
+      .where("index", "==", parsed.index)
+      .get();
+
+    // Check if there's a conflict (another module with same index)
+    const conflictingModule = existingModuleQuery.docs.find(
+      (doc) => doc.id !== moduleId
+    );
+
+    if (conflictingModule) {
+      throw Object.assign(
+        new Error(
+          `Module index ${parsed.index} is already used in this course`
+        ),
+        { status: 400, code: "duplicate_module_index" }
+      );
+    }
+
     // Prepare module data
     const moduleData: Record<string, unknown> = {
       courseId: parsed.courseId,
@@ -116,6 +144,7 @@ export async function POST(req: NextRequest) {
       contentType: parsed.contentType,
       estMinutes: parsed.estMinutes,
       published: coursePublished, // Mirror parent course published status
+      ownerUid: user.uid, // Set ownership from parent course
       updatedAt: now,
     };
 

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       courseId = parsed.courseId;
       isUpdate = true;
 
-      // Verify course exists
+      // Verify course exists and admin owns it
       const courseDoc = await adminDb
         .collection(COL.courses)
         .doc(courseId)
@@ -66,6 +66,15 @@ export async function POST(req: NextRequest) {
           code: "course_not_found",
         });
       }
+
+      // Verify ownership
+      const courseData = courseDoc.data();
+      if (courseData?.ownerUid !== user.uid) {
+        throw Object.assign(new Error("Access denied: not the course owner"), {
+          status: 403,
+          code: "course_access_denied",
+        });
+      }
     } else {
       // Create new course
       courseId = adminDb.collection(COL.courses).doc().id;
@@ -73,6 +82,7 @@ export async function POST(req: NextRequest) {
 
     // Prepare update data
     const updateData: Record<string, unknown> = {
+      ownerUid: user.uid, // Always set/ensure owner
       title: parsed.title,
       description: parsed.description,
       durationMinutes: parsed.durationMinutes,

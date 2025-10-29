@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       assignmentId: validated.assignmentId,
+      questionnaireVersion: assignmentData.questionnaireVersion,
       questionnaire: {
         title: questionnaireData.title,
         purpose: questionnaireData.purpose,

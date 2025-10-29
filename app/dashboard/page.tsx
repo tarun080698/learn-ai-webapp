@@ -3,6 +3,10 @@
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { RouteGuard } from "@/app/components/RouteGuard";
 import { Navigation } from "@/app/components/Navigation";
+import {
+  useAuthenticatedApi,
+  useAuthenticatedMutation,
+} from "@/hooks/useAuthenticatedFetch";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -26,17 +30,16 @@ interface Enrollment {
 }
 
 export default function DashboardPage() {
-  const {
-    firebaseUser,
-    loading,
-    signOutAll,
-    currentStreakDays,
-    bestStreakDays,
-  } = useAuth();
+  const { firebaseUser, loading, currentStreakDays, bestStreakDays } =
+    useAuth();
+
+  // Authenticated API hooks
+  const loadEnrollmentsApi = useAuthenticatedMutation();
+  const enrollInCourseApi = useAuthenticatedMutation();
+  const updateProgressApi = useAuthenticatedMutation();
 
   // Enrollment state
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [loadingEnrollments, setLoadingEnrollments] = useState(false);
 
   // Phase 2: State for testing enrollment and progress
   const [enrollResult, setEnrollResult] = useState<string>("");
@@ -45,57 +48,40 @@ export default function DashboardPage() {
   const [testModuleId, setTestModuleId] = useState<string>("");
   const [testModuleIndex, setTestModuleIndex] = useState<number>(0);
 
+  const loadEnrollments = async () => {
+    if (!firebaseUser) return;
+
+    try {
+      const data = (await loadEnrollmentsApi.mutate(
+        "/api/enrollments",
+        undefined,
+        {
+          method: "GET",
+        }
+      )) as { enrollments: Enrollment[] };
+      setEnrollments(data.enrollments || []);
+    } catch (error) {
+      console.error("Error loading enrollments:", error);
+    }
+  };
+
   // Load enrollments when user is authenticated
   useEffect(() => {
     if (firebaseUser) {
       loadEnrollments();
     }
-  }, [firebaseUser]);
-
-  const loadEnrollments = async () => {
-    if (!firebaseUser) return;
-
-    try {
-      setLoadingEnrollments(true);
-      const response = await fetch("/api/enrollments", {
-        headers: {
-          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setEnrollments(data.enrollments || []);
-      } else {
-        console.error("Failed to load enrollments");
-      }
-    } catch (error) {
-      console.error("Error loading enrollments:", error);
-    } finally {
-      setLoadingEnrollments(false);
-    }
-  };
+  }, [firebaseUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Test enrollment function
   const testEnrollment = async () => {
     if (!firebaseUser || !testCourseId) return;
 
     try {
-      const response = await fetch("/api/enrollments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
-        },
-        body: JSON.stringify({ courseId: testCourseId }),
+      const data = await enrollInCourseApi.mutate("/api/enrollments", {
+        courseId: testCourseId,
       });
-
-      const data = await response.json();
       setEnrollResult(JSON.stringify(data, null, 2));
-
-      if (response.ok) {
-        loadEnrollments(); // Refresh the list
-      }
+      loadEnrollments(); // Refresh the list
     } catch (error) {
       setEnrollResult(`Error: ${error}`);
     }
@@ -106,26 +92,14 @@ export default function DashboardPage() {
     if (!firebaseUser || !testCourseId || !testModuleId) return;
 
     try {
-      const response = await fetch("/api/progress", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
-        },
-        body: JSON.stringify({
-          courseId: testCourseId,
-          moduleId: testModuleId,
-          moduleIndex: testModuleIndex,
-          completed: true,
-        }),
+      const data = await updateProgressApi.mutate("/api/progress", {
+        courseId: testCourseId,
+        moduleId: testModuleId,
+        moduleIndex: testModuleIndex,
+        completed: true,
       });
-
-      const data = await response.json();
       setProgressResult(JSON.stringify(data, null, 2));
-
-      if (response.ok) {
-        loadEnrollments(); // Refresh to see updated progress
-      }
+      loadEnrollments(); // Refresh to see updated progress
     } catch (error) {
       setProgressResult(`Error: ${error}`);
     }
@@ -187,36 +161,16 @@ export default function DashboardPage() {
         <div className="container mx-auto py-8">
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-3xl font-bold">Student Dashboard</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-bold">
                 Welcome back, {firebaseUser.displayName || firebaseUser.email}!
-              </p>
+              </h1>
             </div>
-            <div className="flex gap-2">
-              <Link
-                href="/questionnaires"
-                className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-              >
-                Questionnaires
-              </Link>
-              <Link
-                href="/catalog"
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Browse Catalog
-              </Link>
-              <button
-                onClick={signOutAll}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
+            <div className="flex gap-2"></div>
           </div>
 
           {/* Learning Streak Section */}
-          <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-6 rounded-lg mb-8">
-            <div className="flex items-center gap-4">
+          <div className="hidden bg-linear-to-r from-blue-50/10 to-blue-200/10 p-6 rounded-lg mb-8">
+            <div className="flex items-center gap-5">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">
                   {currentStreakDays || 0}
@@ -231,13 +185,13 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-sm text-muted-foreground">Best Streak</div>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold mb-2">Keep Learning!</h3>
-                <p className="text-sm text-muted-foreground">
-                  Maintain your daily learning streak to build consistent habits
-                  and track your progress.
-                </p>
-              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold mb-2">Keep Learning!</h3>
+              <p className="text-sm text-muted-foreground">
+                Maintain your daily learning streak to build consistent habits
+                and track your progress.
+              </p>
             </div>
           </div>
 
@@ -247,14 +201,14 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold">My Enrollments</h2>
               <button
                 onClick={loadEnrollments}
-                disabled={loadingEnrollments}
+                disabled={loadEnrollmentsApi.loading}
                 className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 disabled:opacity-50"
               >
-                {loadingEnrollments ? "Loading..." : "Refresh"}
+                {loadEnrollmentsApi.loading ? "Loading..." : "Refresh"}
               </button>
             </div>
 
-            {loadingEnrollments ? (
+            {loadEnrollmentsApi.loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
                 <p>Loading enrollments...</p>
@@ -275,7 +229,7 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {enrollments.map((enrollment) => (
                   <div
                     key={enrollment.id}
@@ -349,7 +303,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Phase 2 Testing Section */}
-          <div className="mt-12 p-6 border rounded-lg bg-blue-50">
+          <div className="hidden mt-12 p-6 border rounded-lg bg-blue-50">
             <h3 className="text-lg font-semibold mb-4">
               Phase 2 Testing Tools (Development Only)
             </h3>
@@ -422,7 +376,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Learning Streak Detail */}
-          <div className="mt-8 p-6 border rounded-lg">
+          <div className="mt-8 border bg-linear-to-r from-blue-50/10 to-blue-200/10 p-6 rounded-lg mb-8">
             <h3 className="font-semibold mb-4">Learning Streak</h3>
             <div className="space-y-3">
               <div className="flex justify-between">

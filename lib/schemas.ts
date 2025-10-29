@@ -10,6 +10,7 @@ export const zCourseUpsert = z.object({
   level: z.enum(["beginner", "intermediate", "advanced"]),
   heroImageUrl: z.string().url().optional(),
   published: z.boolean().optional(), // publish toggled in separate endpoint
+  // Note: ownerUid is set by server from authenticated admin, not from client request
 });
 
 export const zModuleUpsert = z.object({
@@ -22,6 +23,7 @@ export const zModuleUpsert = z.object({
   contentUrl: z.string().url().optional(),
   body: z.string().optional(),
   estMinutes: z.number().int().min(1),
+  // Note: ownerUid is inherited from parent course and set by server
 });
 
 export const zPublish = z.object({
@@ -133,9 +135,10 @@ export const zQuestion = z.object({
 export const zQuestionnaireUpsert = z.object({
   questionnaireId: z.string().optional(),
   title: z.string().min(1),
-  purpose: z.enum(["survey", "quiz", "mixed"]),
+  purpose: z.enum(["survey", "quiz", "assessment"]),
   version: z.number().min(1),
   questions: z.array(zQuestion).min(1),
+  // Note: ownerUid is set by server from authenticated admin
 });
 
 export const zAssignmentUpsert = z.object({
@@ -159,8 +162,8 @@ export const zSubmit = z.object({
   answers: z.array(
     z.object({
       questionId: z.string(),
-      value: z.union([z.string(), z.number()]).optional(),
-      values: z.array(z.union([z.string(), z.number()])).optional(),
+      // For single/multi choice: option IDs; for text/number/scale: actual values
+      value: z.union([z.string(), z.number(), z.array(z.string())]),
     })
   ),
 });

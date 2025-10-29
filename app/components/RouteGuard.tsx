@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { postLoginRedirect } from "@/utils/constants";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, ReactNode } from "react";
 
@@ -21,7 +22,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
     if (firebaseUser && role !== null) {
       // If admin is on non-admin page, redirect to admin
       if (role === "admin" && !pathname.startsWith("/admin")) {
-        router.replace("/admin");
+        router.replace(postLoginRedirect.admin);
         return;
       }
 
@@ -38,7 +39,7 @@ export function RouteGuard({ children }: RouteGuardProps) {
         pathname === "/admin/login"
       ) {
         if (role === "admin") {
-          router.replace("/admin");
+          router.replace(postLoginRedirect.admin);
         } else {
           router.replace("/dashboard");
         }

@@ -62,7 +62,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
-        console.log({ data });
         setState((prev) => ({
           ...prev,
           role: data.role,

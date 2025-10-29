@@ -54,6 +54,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Verify course ownership
+    const courseData = courseDoc.data();
+    if (courseData?.ownerUid !== user.uid) {
+      throw Object.assign(new Error("Access denied: not the course owner"), {
+        status: 403,
+        code: "course_access_denied",
+      });
+    }
+
     const now = new Date();
 
     // Prepare course update data

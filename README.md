@@ -144,6 +144,29 @@ open http://localhost:3000
      -d '{"email":"admin@example.com","password":"secure-password"}'
    ```
 
+### Migration Scripts
+
+When upgrading from older versions, you may need to run migration scripts:
+
+1. **Questionnaire Options Migration** (v1.0 → v2.0):
+
+   This migrates questionnaires from old string array options to new `{id, label}` format:
+
+   ```bash
+   # Compile TypeScript
+   npx tsc --build
+
+   # Run migration
+   node scripts/migrate-questionnaire-options.js
+   ```
+
+   The migration script will:
+
+   - Convert option arrays like `["Excellent", "Good", "Fair"]` to structured objects
+   - Generate stable option IDs for existing responses compatibility
+   - Preserve correct answer mappings for quiz questions
+   - Update questionnaire versions automatically
+
 ## Key Features
 
 ### Course Management

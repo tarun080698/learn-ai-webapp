@@ -26,7 +26,7 @@ export function Navigation() {
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                 <span className="text-primary-foreground font-bold text-sm">
-                  AI
+                  Logo
                 </span>
               </div>
               <span className="font-bold text-xl">Learn AI</span>
@@ -34,11 +34,12 @@ export function Navigation() {
           </div>
 
           {/* Navigation Links */}
-          <div className="flex items-center space-x-4">
+
+          <div className="flex items-center gap-4 lg:gap-10 text-lg">
             {/* Always show catalog */}
             <Link
               href="/catalog"
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             >
               Catalog
             </Link>
@@ -52,14 +53,14 @@ export function Navigation() {
                 {role === "admin" ? (
                   <Link
                     href="/admin"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     Admin
                   </Link>
                 ) : (
                   <Link
                     href="/dashboard"
-                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     Dashboard
                   </Link>
@@ -67,12 +68,9 @@ export function Navigation() {
 
                 {/* User menu */}
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">
-                    {firebaseUser.displayName || firebaseUser.email}
-                  </span>
                   <button
                     onClick={handleSignOut}
-                    className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                    className="px-3 py-2 font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     Sign Out
                   </button>
@@ -83,13 +81,13 @@ export function Navigation() {
               <>
                 <Link
                   href="/login"
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   Login
                 </Link>
                 <Link
                   href="/admin/login"
-                  className="px-4 py-2 text-sm font-medium bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
+                  className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                 >
                   Admin
                 </Link>

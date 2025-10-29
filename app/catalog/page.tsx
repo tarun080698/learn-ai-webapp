@@ -108,13 +108,13 @@ export default async function CatalogPage() {
 
                   <div className="flex gap-2">
                     <Link
-                      href="/login"
+                      href={`/courses/${course.id}`}
                       className="flex-1 px-4 py-2 bg-primary text-primary-foreground text-center rounded-lg hover:bg-primary/90 transition-colors text-sm"
                     >
                       Enroll Now
                     </Link>
                     <Link
-                      href="/login"
+                      href={`/courses/${course.id}/preview`}
                       className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm"
                     >
                       Preview

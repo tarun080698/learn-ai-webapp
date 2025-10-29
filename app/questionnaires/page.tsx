@@ -3,6 +3,10 @@
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { RouteGuard } from "@/app/components/RouteGuard";
 import { Navigation } from "@/app/components/Navigation";
+import {
+  useAuthenticatedApi,
+  useAuthenticatedMutation,
+} from "@/hooks/useAuthenticatedFetch";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
@@ -43,21 +47,121 @@ interface StartedQuestionnaire {
   questionnaire: QuestionnaireTemplate;
 }
 
+interface QuestionnaireContextResponse {
+  preCourse?: {
+    assignmentId: string;
+    completed: boolean;
+  };
+  postCourse?: {
+    assignmentId: string;
+    completed: boolean;
+  };
+  preModule?: {
+    assignmentId: string;
+    completed: boolean;
+  };
+  postModule?: {
+    assignmentId: string;
+    completed: boolean;
+  };
+}
+
+interface SubmissionResponse {
+  score?: {
+    earned: number;
+    total: number;
+  };
+}
+
 export default function QuestionnairePage() {
   const { firebaseUser, loading } = useAuth();
   const [assignments, setAssignments] = useState<QuestionnaireAssignment[]>([]);
-  const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [currentQuestionnaire, setCurrentQuestionnaire] =
     useState<StartedQuestionnaire | null>(null);
   const [answers, setAnswers] = useState<
     Record<string, string | number | string[]>
   >({});
-  const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<string>("");
 
   // Test course and module IDs for demonstration
   const [testCourseId, setTestCourseId] = useState("course-intro-ai");
   const [testModuleId, setTestModuleId] = useState("module-1");
+
+  // Authenticated API hooks
+  const loadAssignmentsApi = useAuthenticatedMutation();
+  const startQuestionnaireApi = useAuthenticatedMutation();
+  const submitQuestionnaireApi = useAuthenticatedMutation();
+
+  const loadAssignments = async () => {
+    if (!firebaseUser) return;
+
+    try {
+      const data = (await loadAssignmentsApi.mutate(
+        "/api/questionnaires/context",
+        {
+          courseId: testCourseId,
+          ...(testModuleId && { moduleId: testModuleId }),
+        }
+      )) as QuestionnaireContextResponse;
+
+      setAssignments([
+        ...(data.preCourse
+          ? [
+              {
+                assignmentId: data.preCourse.assignmentId,
+                questionnaireTitle: "Pre-Course Survey",
+                scope: { type: "course" as const, courseId: testCourseId },
+                timing: "pre" as const,
+                completed: data.preCourse.completed,
+              },
+            ]
+          : []),
+        ...(data.postCourse
+          ? [
+              {
+                assignmentId: data.postCourse.assignmentId,
+                questionnaireTitle: "Post-Course Survey",
+                scope: { type: "course" as const, courseId: testCourseId },
+                timing: "post" as const,
+                completed: data.postCourse.completed,
+              },
+            ]
+          : []),
+        ...(data.preModule
+          ? [
+              {
+                assignmentId: data.preModule.assignmentId,
+                questionnaireTitle: "Pre-Module Survey",
+                scope: {
+                  type: "module" as const,
+                  courseId: testCourseId,
+                  moduleId: testModuleId,
+                },
+                timing: "pre" as const,
+                completed: data.preModule.completed,
+              },
+            ]
+          : []),
+        ...(data.postModule
+          ? [
+              {
+                assignmentId: data.postModule.assignmentId,
+                questionnaireTitle: "Post-Module Survey",
+                scope: {
+                  type: "module" as const,
+                  courseId: testCourseId,
+                  moduleId: testModuleId,
+                },
+                timing: "post" as const,
+                completed: data.postModule.completed,
+              },
+            ]
+          : []),
+      ]);
+    } catch (error) {
+      console.error("Error loading assignments:", error);
+    }
+  };
 
   useEffect(() => {
     if (firebaseUser) {
@@ -72,113 +176,19 @@ export default function QuestionnairePage() {
     }
   }, [testCourseId, testModuleId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadAssignments = async () => {
-    if (!firebaseUser) return;
-
-    setLoadingAssignments(true);
-    try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/questionnaires/context", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          courseId: testCourseId,
-          ...(testModuleId && { moduleId: testModuleId }),
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAssignments([
-          ...(data.preCourse
-            ? [
-                {
-                  assignmentId: data.preCourse.assignmentId,
-                  questionnaireTitle: "Pre-Course Survey",
-                  scope: { type: "course" as const, courseId: testCourseId },
-                  timing: "pre" as const,
-                  completed: data.preCourse.completed,
-                },
-              ]
-            : []),
-          ...(data.postCourse
-            ? [
-                {
-                  assignmentId: data.postCourse.assignmentId,
-                  questionnaireTitle: "Post-Course Survey",
-                  scope: { type: "course" as const, courseId: testCourseId },
-                  timing: "post" as const,
-                  completed: data.postCourse.completed,
-                },
-              ]
-            : []),
-          ...(data.preModule
-            ? [
-                {
-                  assignmentId: data.preModule.assignmentId,
-                  questionnaireTitle: "Pre-Module Survey",
-                  scope: {
-                    type: "module" as const,
-                    courseId: testCourseId,
-                    moduleId: testModuleId,
-                  },
-                  timing: "pre" as const,
-                  completed: data.preModule.completed,
-                },
-              ]
-            : []),
-          ...(data.postModule
-            ? [
-                {
-                  assignmentId: data.postModule.assignmentId,
-                  questionnaireTitle: "Post-Module Survey",
-                  scope: {
-                    type: "module" as const,
-                    courseId: testCourseId,
-                    moduleId: testModuleId,
-                  },
-                  timing: "post" as const,
-                  completed: data.postModule.completed,
-                },
-              ]
-            : []),
-        ]);
-      } else {
-        console.error("Failed to load assignments");
-      }
-    } catch (error) {
-      console.error("Error loading assignments:", error);
-    } finally {
-      setLoadingAssignments(false);
-    }
-  };
-
   const startQuestionnaire = async (assignmentId: string) => {
     if (!firebaseUser) return;
 
     try {
-      const token = await firebaseUser.getIdToken();
-      const response = await fetch("/api/questionnaires/start", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ assignmentId }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentQuestionnaire(data);
-        setAnswers({});
-        setResult("");
-      } else {
-        const error = await response.text();
-        setResult(`❌ Error starting questionnaire: ${error}`);
-      }
+      const data = await startQuestionnaireApi.mutate(
+        "/api/questionnaires/start",
+        {
+          assignmentId,
+        }
+      );
+      setCurrentQuestionnaire(data as StartedQuestionnaire);
+      setAnswers({});
+      setResult("");
     } catch (error) {
       setResult(`❌ Error: ${error}`);
     }
@@ -194,10 +204,7 @@ export default function QuestionnairePage() {
   const submitQuestionnaire = async () => {
     if (!firebaseUser || !currentQuestionnaire) return;
 
-    setSubmitting(true);
     try {
-      const token = await firebaseUser.getIdToken();
-
       // Convert answers to API format
       const formattedAnswers = Object.entries(answers).map(
         ([questionId, value]) => {
@@ -209,36 +216,24 @@ export default function QuestionnairePage() {
         }
       );
 
-      const response = await fetch("/api/questionnaires/submit", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const data = (await submitQuestionnaireApi.mutate(
+        "/api/questionnaires/submit",
+        {
           assignmentId: currentQuestionnaire.assignment.id,
           answers: formattedAnswers,
-        }),
-      });
+        }
+      )) as SubmissionResponse;
 
-      if (response.ok) {
-        const data = await response.json();
-        setResult(
-          `✅ Questionnaire submitted successfully! ${
-            data.score ? `Score: ${data.score.earned}/${data.score.total}` : ""
-          }`
-        );
-        setCurrentQuestionnaire(null);
-        setAnswers({});
-        loadAssignments(); // Refresh to show completion status
-      } else {
-        const error = await response.text();
-        setResult(`❌ Error submitting: ${error}`);
-      }
+      setResult(
+        `✅ Questionnaire submitted successfully! ${
+          data.score ? `Score: ${data.score.earned}/${data.score.total}` : ""
+        }`
+      );
+      setCurrentQuestionnaire(null);
+      setAnswers({});
+      loadAssignments(); // Refresh to show completion status
     } catch (error) {
       setResult(`❌ Error: ${error}`);
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -464,7 +459,7 @@ export default function QuestionnairePage() {
                   (question, index) => (
                     <div key={question.id} className="space-y-4">
                       <div className="flex items-start space-x-2">
-                        <span className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                        <span className="shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
                           {index + 1}
                         </span>
                         <div className="flex-1">
@@ -485,10 +480,12 @@ export default function QuestionnairePage() {
               <div className="mt-8 flex justify-end">
                 <button
                   onClick={submitQuestionnaire}
-                  disabled={submitting}
+                  disabled={submitQuestionnaireApi.loading}
                   className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {submitting ? "Submitting..." : "Submit Questionnaire"}
+                  {submitQuestionnaireApi.loading
+                    ? "Submitting..."
+                    : "Submit Questionnaire"}
                 </button>
               </div>
             </div>
@@ -501,14 +498,14 @@ export default function QuestionnairePage() {
                 <h2 className="text-2xl font-bold">Available Questionnaires</h2>
                 <button
                   onClick={loadAssignments}
-                  disabled={loadingAssignments}
+                  disabled={loadAssignmentsApi.loading}
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
                 >
-                  {loadingAssignments ? "Loading..." : "Refresh"}
+                  {loadAssignmentsApi.loading ? "Loading..." : "Refresh"}
                 </button>
               </div>
 
-              {loadingAssignments ? (
+              {loadAssignmentsApi.loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
                   <p>Loading assignments...</p>
