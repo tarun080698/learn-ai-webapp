@@ -65,7 +65,7 @@ export function SecurityStandards() {
               >
                 {feature.title}
               </h3>
-              <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+              <p className="" style={{ color: "var(--secondary-70)" }}>
                 {feature.description}
               </p>
             </div>

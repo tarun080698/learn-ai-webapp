@@ -40,7 +40,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
         title?: string;
         description?: string;
         durationMinutes?: number;
-        level?: "beginner" | "intermediate" | "advanced" | "expert";
+        level?: "beginner" | "intermediate" | "advanced";
         heroImageUrl?: string;
       };
     }) => updateCourse(courseId, data),
@@ -158,7 +158,10 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
               estMinutes: moduleData.estMinutes || 15, // Ensure estMinutes is provided with default
               contentType: contentType,
               contentUrl: moduleData.contentUrl,
-              body: contentType === "text" ? (moduleData.body || "Content to be added.") : moduleData.body,
+              body:
+                contentType === "text"
+                  ? moduleData.body || "Content to be added."
+                  : moduleData.body,
             });
           }
         }
@@ -230,9 +233,9 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
       addToast({ message: "Course created successfully!", type: "success" });
 
       // Redirect to course management or show success message
-      setTimeout(() => {
-        window.location.href = "/admin";
-      }, 2000);
+      //   setTimeout(() => {
+      //     window.location.href = "/admin";
+      //   }, 2000);
     } catch (error) {
       console.error("Course creation failed:", error);
       addToast({
@@ -296,7 +299,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
               <h4 className="font-medium text-gray-700 mb-2">
                 Basic Information
               </h4>
-              <dl className="space-y-2 text-sm">
+              <dl className="space-y-2 ">
                 <div>
                   <dt className="text-gray-500">Title:</dt>
                   <dd className="font-medium">{courseData.title}</dd>
@@ -359,12 +362,12 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
                         {module.title || `Module ${index + 1}`}
                       </h4>
                       {module.description && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className=" text-gray-600 mt-1">
                           {module.description}
                         </p>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 flex items-center space-x-2">
+                    <div className=" text-gray-500 flex items-center space-x-2">
                       {module.contentType && (
                         <span className="px-2 py-1 bg-gray-100 rounded-full text-xs">
                           {module.contentType}
@@ -392,7 +395,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
           <div className="space-y-4">
             <div>
               <h4 className="font-medium text-gray-700">Course Level</h4>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className=" text-gray-600 mt-1">
                 Pre-assessment: {assignments.course.pre ? "Configured" : "None"}
                 <br />
                 Post-assessment:{" "}
@@ -402,7 +405,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
 
             <div>
               <h4 className="font-medium text-gray-700">Module Level</h4>
-              <div className="text-sm text-gray-600 mt-1">
+              <div className=" text-gray-600 mt-1">
                 {Object.keys(assignments.modules).length > 0
                   ? `${
                       Object.keys(assignments.modules).length
@@ -423,7 +426,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 {getStatusIcon(creationStatus.course)}
-                <span className="text-sm">Updating course information</span>
+                <span className="">Updating course information</span>
                 <span className="text-xs text-gray-500">
                   {getStatusText(creationStatus.course)}
                 </span>
@@ -432,7 +435,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
               {modules.length > 0 && (
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(creationStatus.modules)}
-                  <span className="text-sm">Creating modules</span>
+                  <span className="">Creating modules</span>
                   <span className="text-xs text-gray-500">
                     {getStatusText(creationStatus.modules)}
                   </span>
@@ -444,7 +447,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
                 Object.keys(assignments.modules).length > 0) && (
                 <div className="flex items-center space-x-3">
                   {getStatusIcon(creationStatus.assignments)}
-                  <span className="text-sm">Setting up assessments</span>
+                  <span className="">Setting up assessments</span>
                   <span className="text-xs text-gray-500">
                     {getStatusText(creationStatus.assignments)}
                   </span>
@@ -459,7 +462,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
             type="button"
             onClick={onPrevious}
             disabled={isCreating}
-            className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 border border-gray-300 rounded-md shadow-sm  font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Previous
           </button>
@@ -468,7 +471,7 @@ export function StepReview({ wizardState, onPrevious }: WizardStepProps) {
             type="button"
             onClick={handleCreateCourse}
             disabled={isCreating}
-            className="px-8 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-2 border border-transparent rounded-md shadow-sm  font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isCreating ? "Creating Course..." : "Create Course"}
           </button>

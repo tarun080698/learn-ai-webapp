@@ -107,19 +107,19 @@ export function FileUpload({
   const getStatusMessage = () => {
     if (result) {
       return (
-        <div className="text-green-600 text-sm">
+        <div className="text-green-600 ">
           ✅ Uploaded: {result.metadata.originalName}
         </div>
       );
     }
 
     if (error) {
-      return <div className="text-red-600 text-sm">❌ {error.message}</div>;
+      return <div className="text-red-600 ">❌ {error.message}</div>;
     }
 
     if (isUploading && progress) {
       return (
-        <div className="text-blue-600 text-sm">
+        <div className="text-blue-600 ">
           Uploading... {progress.percentage}%
         </div>
       );
@@ -127,7 +127,7 @@ export function FileUpload({
 
     if (fileRejections.length > 0) {
       return (
-        <div className="text-red-600 text-sm">
+        <div className="text-red-600 ">
           ❌ {fileRejections[0].errors[0].message}
         </div>
       );
@@ -141,7 +141,7 @@ export function FileUpload({
       {/* Description input */}
       {!result && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block  font-medium text-gray-700 mb-1">
             Description (optional)
           </label>
           <input
@@ -186,7 +186,7 @@ export function FileUpload({
         ) : result ? (
           <div className="space-y-2">
             <div className="text-green-600">✅ Upload Complete</div>
-            <div className="text-sm text-gray-600">
+            <div className=" text-gray-600">
               {result.metadata.originalName} (
               {formatFileSize(result.metadata.size)})
             </div>
@@ -196,7 +196,7 @@ export function FileUpload({
                 reset();
                 setUploadDescription("");
               }}
-              className="text-blue-600 hover:text-blue-800 text-sm underline"
+              className="text-blue-600 hover:text-blue-800  underline"
             >
               Upload another file
             </button>

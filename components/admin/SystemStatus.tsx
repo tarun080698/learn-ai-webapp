@@ -72,7 +72,7 @@ export function SystemStatus() {
                     style={{ backgroundColor: item.dotColor }}
                   ></div>
                   <span
-                    className="text-sm font-medium"
+                    className=" font-medium"
                     style={{ color: item.statusColor }}
                   >
                     {item.status}
@@ -80,7 +80,7 @@ export function SystemStatus() {
                 </div>
               </div>
               <div
-                className="space-y-2 text-sm"
+                className="space-y-2 "
                 style={{ color: "var(--secondary-70)" }}
               >
                 {item.metrics.map((metric, metricIndex) => (

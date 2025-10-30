@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
           ...(score.total > 0 ? { score } : {}),
         };
 
-        await adminDb
+        await adminDb!
           .collection(COL.responses)
           .doc(resId)
           .set(
@@ -233,7 +233,7 @@ export async function POST(req: NextRequest) {
         ) {
           // Set preCourseComplete=true
           const enrollmentId = `${user.uid}_${assignmentData.scope.courseId}`;
-          await adminDb.collection(COL.enrollments).doc(enrollmentId).set(
+          await adminDb!.collection(COL.enrollments).doc(enrollmentId).set(
             {
               preCourseComplete: true,
             },
@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
         ) {
           // Set postCourseComplete=true, check if all modules completed
           const enrollmentId = `${user.uid}_${assignmentData.scope.courseId}`;
-          const enrollmentDoc = await adminDb
+          const enrollmentDoc = await adminDb!
             .collection(COL.enrollments)
             .doc(enrollmentId)
             .get();
@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
             updateData.completed = true;
           }
 
-          await adminDb
+          await adminDb!
             .collection(COL.enrollments)
             .doc(enrollmentId)
             .set(updateData, { merge: true });
@@ -276,7 +276,7 @@ export async function POST(req: NextRequest) {
         ) {
           // Set preModuleComplete=true
           const progressId = `${user.uid}_${assignmentData.scope.courseId}_${assignmentData.scope.moduleId}`;
-          await adminDb.collection(COL.progress).doc(progressId).set(
+          await adminDb!.collection(COL.progress).doc(progressId).set(
             {
               preModuleComplete: true,
             },
@@ -288,7 +288,7 @@ export async function POST(req: NextRequest) {
         ) {
           // Set postModuleComplete=true
           const progressId = `${user.uid}_${assignmentData.scope.courseId}_${assignmentData.scope.moduleId}`;
-          await adminDb.collection(COL.progress).doc(progressId).set(
+          await adminDb!.collection(COL.progress).doc(progressId).set(
             {
               postModuleComplete: true,
             },

@@ -8,6 +8,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { formatDate } from "@/utils/dateUtils";
 import { Navigation } from "@/app/components/Navigation";
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { useAuthenticatedMutation } from "@/hooks/useAuthenticatedFetch";
@@ -210,10 +211,7 @@ export default function CourseDetailPage({
       <main className="max-w-4xl mx-auto py-8 px-4">
         {/* Back Navigation */}
         <div className="mb-6">
-          <Link
-            href="/catalog"
-            className="text-primary hover:text-primary/80 text-sm"
-          >
+          <Link href="/catalog" className="text-primary hover:text-primary/80 ">
             ← Back to Catalog
           </Link>
         </div>
@@ -235,7 +233,7 @@ export default function CourseDetailPage({
           <div className="flex justify-between items-start mb-4">
             <div>
               <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-4  text-muted-foreground">
                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
                   {course.level}
                 </span>
@@ -251,9 +249,7 @@ export default function CourseDetailPage({
                   ✅ Enrolled
                   {course.enrollment.enrolledAt && (
                     <div className="text-xs mt-1">
-                      {new Date(
-                        course.enrollment.enrolledAt
-                      ).toLocaleDateString()}
+                      {formatDate(course.enrollment.enrolledAt)}
                     </div>
                   )}
                 </div>
@@ -322,12 +318,12 @@ export default function CourseDetailPage({
                         <h3 className="font-medium">
                           {q.questionnaire?.title || "Questionnaire"}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className=" text-muted-foreground">
                           {q.questionnaire?.purpose} •{" "}
                           {q.questionnaire?.questions?.length || 0} questions
                         </p>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className=" text-muted-foreground">
                         Required before starting
                       </div>
                     </div>
@@ -344,12 +340,12 @@ export default function CourseDetailPage({
               {course.modules.map((module, index) => (
                 <div key={module.id} className="border rounded-lg p-4">
                   <div className="flex items-start gap-4">
-                    <div className="shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center text-sm font-medium">
+                    <div className="shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center  font-medium">
                       {index + 1}
                     </div>
                     <div className="flex-1">
                       <h3 className="font-medium mb-1">{module.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <p className=" text-muted-foreground mb-2">
                         {module.summary}
                       </p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -357,7 +353,7 @@ export default function CourseDetailPage({
                         <span>⏱️ {module.estMinutes} min</span>
                       </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className=" text-muted-foreground">
                       {isEnrolled ? "Available" : "Preview"}
                     </div>
                   </div>
@@ -380,12 +376,12 @@ export default function CourseDetailPage({
                         <h3 className="font-medium">
                           {q.questionnaire?.title || "Questionnaire"}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className=" text-muted-foreground">
                           {q.questionnaire?.purpose} •{" "}
                           {q.questionnaire?.questions?.length || 0} questions
                         </p>
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className=" text-muted-foreground">
                         Available after completion
                       </div>
                     </div>

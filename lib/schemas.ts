@@ -59,12 +59,10 @@ export const zModuleArchive = z.object({
 // Asset Management Schemas
 export const zAssetAdd = z.object({
   moduleId: z.string().min(1),
-  asset: z.object({
-    kind: z.enum(["pdf", "video", "image", "link"]),
-    url: z.string().url(),
-    title: z.string().optional(),
-    meta: z.record(z.string(), z.any()).optional(),
-  }),
+  type: z.enum(["pdf", "video", "image", "link"]), // Direct type field to match UI
+  title: z.string().min(1),
+  description: z.string().optional(), // Match API expectation
+  url: z.string().url(),
 });
 
 export const zAssetReorder = z.object({

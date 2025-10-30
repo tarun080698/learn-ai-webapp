@@ -79,7 +79,7 @@ function ToastContainer() {
               : "bg-secondary text-secondary-foreground"
           }`}
         >
-          <span className="text-sm font-medium">{toast.message}</span>
+          <span className=" font-medium">{toast.message}</span>
           <button
             onClick={() => removeToast(toast.id)}
             className="ml-4 text-current hover:opacity-80"

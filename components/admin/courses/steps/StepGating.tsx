@@ -15,6 +15,7 @@ const gatingSchema = z.object({
   coursePostAssessment: z.string().optional(),
   moduleGating: z
     .record(
+      z.string(),
       z.object({
         preAssessment: z.string().optional(),
         postAssessment: z.string().optional(),
@@ -48,7 +49,17 @@ export function StepGating({
         wizardState.assignments.course.pre?.questionnaireId || "",
       coursePostAssessment:
         wizardState.assignments.course.post?.questionnaireId || "",
-      moduleGating: wizardState.assignments.modules || {},
+      moduleGating: Object.fromEntries(
+        Object.entries(wizardState.assignments.modules || {}).map(
+          ([moduleId, assignments]) => [
+            moduleId,
+            {
+              preAssessment: assignments.pre?.questionnaireId || "",
+              postAssessment: assignments.post?.questionnaireId || "",
+            },
+          ]
+        )
+      ),
     },
   });
 
@@ -151,7 +162,7 @@ export function StepGating({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Pre-Assessment */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block  font-medium text-gray-700 mb-2">
                 Pre-Assessment (Before Course Access)
               </label>
               <Controller
@@ -160,7 +171,7 @@ export function StepGating({
                 render={({ field }) => (
                   <select
                     {...field}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:"
                   >
                     <option value="">No pre-assessment</option>
                     {questionnaires.map((q) => (
@@ -179,7 +190,7 @@ export function StepGating({
 
             {/* Post-Assessment */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block  font-medium text-gray-700 mb-2">
                 Post-Assessment (After Course Completion)
               </label>
               <Controller
@@ -188,7 +199,7 @@ export function StepGating({
                 render={({ field }) => (
                   <select
                     {...field}
-                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:"
                   >
                     <option value="">No post-assessment</option>
                     {questionnaires.map((q) => (
@@ -216,13 +227,13 @@ export function StepGating({
 
             {wizardState.modules.length > 0 && (
               <div className="flex items-center space-x-2">
-                <label className="text-sm text-gray-700">Add gating for:</label>
+                <label className=" text-gray-700">Add gating for:</label>
                 <select
                   onChange={(e) =>
                     e.target.value && addModuleGating(e.target.value)
                   }
                   value=""
-                  className="border-gray-300 rounded-md shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+                  className="border-gray-300 rounded-md shadow-sm  focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select module...</option>
                   {wizardState.modules.map((module, index) => (
@@ -244,7 +255,7 @@ export function StepGating({
           {selectedModules.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No module assessments configured.</p>
-              <p className="text-sm">
+              <p className="">
                 Use the dropdown above to add gating for specific modules.
               </p>
             </div>
@@ -285,7 +296,7 @@ export function StepGating({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Module Pre-Assessment */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block  font-medium text-gray-700 mb-1">
                           Pre-Assessment
                         </label>
                         <Controller
@@ -294,7 +305,7 @@ export function StepGating({
                           render={({ field }) => (
                             <select
                               {...field}
-                              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:"
                             >
                               <option value="">No pre-assessment</option>
                               {questionnaires.map((q) => (
@@ -313,7 +324,7 @@ export function StepGating({
 
                       {/* Module Post-Assessment */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block  font-medium text-gray-700 mb-1">
                           Post-Assessment
                         </label>
                         <Controller
@@ -322,7 +333,7 @@ export function StepGating({
                           render={({ field }) => (
                             <select
                               {...field}
-                              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                              className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:"
                             >
                               <option value="">No post-assessment</option>
                               {questionnaires.map((q) => (
@@ -350,14 +361,14 @@ export function StepGating({
           <button
             type="button"
             onClick={onPrevious}
-            className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="px-6 py-2 border border-gray-300 rounded-md shadow-sm  font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Previous
           </button>
 
           <button
             type="submit"
-            className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="px-6 py-2 border border-transparent rounded-md shadow-sm  font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Next: Review & Create
           </button>

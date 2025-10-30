@@ -16,7 +16,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Learn AI",
+  title: "Learn.ai 4all",
   description:
     "AI Learning Platform - Interactive courses and personalized learning paths",
 };

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Learn AI backend is a **production-ready Next.js 16 App Router** API implementing a comprehensive learning management system with advanced course creation, module management, assessment workflows, and administrative controls. Built on Firebase infrastructure with enterprise-grade security and performance optimizations.
+The Learn.ai 4all backend is a **production-ready Next.js 16 App Router** API implementing a comprehensive learning management system with advanced course creation, module management, assessment workflows, and administrative controls. Built on Firebase infrastructure with enterprise-grade security and performance optimizations.
 
 ### Architecture
 

@@ -97,7 +97,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   className="text-xl font-semibold cursor-pointer"
                   style={{ color: "var(--secondary)" }}
                 >
-                  Learn AI — Admin
+                  Learn.ai 4all — Admin
                 </h1>
               </Link>
               <nav className="hidden md:flex items-center space-x-6">
@@ -164,7 +164,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   }}
                 >
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                    className="w-8 h-8 rounded-full flex items-center justify-center  font-medium"
                     style={{
                       backgroundColor: "var(--primary)",
                       color: "var(--primary-foreground)",
@@ -196,7 +196,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     >
                       <div className="flex items-center space-x-3">
                         <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium"
+                          className="w-10 h-10 rounded-full flex items-center justify-center  font-medium"
                           style={{
                             backgroundColor: "var(--primary)",
                             color: "var(--primary-foreground)",
@@ -208,7 +208,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                         </div>
                         <div>
                           <p
-                            className="font-medium text-sm"
+                            className="font-medium "
                             style={{ color: "var(--secondary)" }}
                           >
                             {user?.displayName || "Admin"}
@@ -237,10 +237,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                           e.currentTarget.style.color = "var(--secondary)";
                         }}
                       >
-                        <FontAwesomeIcon
-                          icon={faSignOutAlt}
-                          className="text-sm"
-                        />
+                        <FontAwesomeIcon icon={faSignOutAlt} className="" />
                         <span>Sign out</span>
                       </button>
                     </div>

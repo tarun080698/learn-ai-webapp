@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest, requireAdmin, jsonError } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { COL } from "@/lib/firestore";
+import { formatDateISO } from "@/utils/dateUtils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,9 +44,8 @@ export async function GET(req: NextRequest) {
         id: doc.id,
         ...doc.data(),
         createdAt:
-          doc.data().createdAt?.toDate()?.toISOString() ||
-          new Date().toISOString(),
-        updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
+          formatDateISO(doc.data().createdAt) || new Date().toISOString(),
+        updatedAt: formatDateISO(doc.data().updatedAt),
       }))
       .sort(
         (a, b) =>

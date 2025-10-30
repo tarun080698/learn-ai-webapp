@@ -194,7 +194,7 @@ export function QuestionnaireBuilder({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block  font-medium text-gray-700 mb-1">
               Title *
             </label>
             <input
@@ -214,7 +214,7 @@ export function QuestionnaireBuilder({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block  font-medium text-gray-700 mb-1">
               Purpose
             </label>
             <select
@@ -249,7 +249,7 @@ export function QuestionnaireBuilder({
         </div>
 
         {errors.questions && (
-          <p className="text-red-600 text-sm">{errors.questions}</p>
+          <p className="text-red-600 ">{errors.questions}</p>
         )}
 
         <div className="space-y-6">
@@ -265,7 +265,7 @@ export function QuestionnaireBuilder({
                 </h3>
                 <button
                   onClick={() => removeQuestion(questionIndex)}
-                  className="text-red-600 hover:text-red-800 text-sm"
+                  className="text-red-600 hover:text-red-800 "
                 >
                   🗑️ Remove
                 </button>
@@ -274,7 +274,7 @@ export function QuestionnaireBuilder({
               {/* Question Type and Required */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block  font-medium text-gray-700 mb-1">
                     Question Type
                   </label>
                   <select
@@ -308,7 +308,7 @@ export function QuestionnaireBuilder({
                   />
                   <label
                     htmlFor={`required-${questionIndex}`}
-                    className="ml-2 text-sm text-gray-700"
+                    className="ml-2  text-gray-700"
                   >
                     Required
                   </label>
@@ -317,7 +317,7 @@ export function QuestionnaireBuilder({
 
               {/* Question Prompt */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block  font-medium text-gray-700 mb-1">
                   Question Prompt *
                 </label>
                 <textarea
@@ -344,12 +344,12 @@ export function QuestionnaireBuilder({
               {question.type !== "text" && (
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
+                    <label className="block  font-medium text-gray-700">
                       Answer Options
                     </label>
                     <button
                       onClick={() => addOption(questionIndex)}
-                      className="text-blue-600 hover:text-blue-800 text-sm"
+                      className="text-blue-600 hover:text-blue-800 "
                     >
                       ➕ Add Option
                     </button>
@@ -388,7 +388,7 @@ export function QuestionnaireBuilder({
                             onClick={() =>
                               removeOption(questionIndex, optionIndex)
                             }
-                            className="text-red-600 hover:text-red-800 text-sm px-2"
+                            className="text-red-600 hover:text-red-800  px-2"
                           >
                             🗑️
                           </button>

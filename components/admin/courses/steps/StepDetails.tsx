@@ -21,7 +21,7 @@ const courseDetailsSchema = z.object({
       "Description must be at least 20 characters if provided"
     ),
   durationHours: z.number().min(1, "Duration must be at least 1 hour"),
-  level: z.enum(["beginner", "intermediate", "advanced", "expert"]),
+  level: z.enum(["beginner", "intermediate", "advanced"]),
   heroImageUrl: z.string().url().optional().or(z.literal("")),
 });
 
@@ -197,7 +197,7 @@ export function StepDetails({
             </p>
           </div>
           {autoSaveStatus && (
-            <div className="flex items-center text-sm">
+            <div className="flex items-center ">
               {autoSaveStatus === "saving" && (
                 <>
                   <i className="fa-solid fa-spinner animate-spin text-blue-500 mr-2"></i>
@@ -240,9 +240,9 @@ export function StepDetails({
             placeholder="e.g., Advanced React Development Patterns"
           />
           {errors.title && (
-            <p className="text-red-500 text-sm">{errors.title.message}</p>
+            <p className="text-red-500 ">{errors.title.message}</p>
           )}
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 ">
             Choose a clear, descriptive title that accurately represents your
             course content.
           </p>
@@ -266,9 +266,9 @@ export function StepDetails({
             placeholder="Describe what students will learn, the outcomes they can expect, and who this course is for..."
           />
           {errors.description && (
-            <p className="text-red-500 text-sm">{errors.description.message}</p>
+            <p className="text-red-500 ">{errors.description.message}</p>
           )}
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 ">
             Provide a detailed description that helps students understand the
             value and outcomes of your course.
           </p>
@@ -296,7 +296,7 @@ export function StepDetails({
               <option value="expert">Expert</option>
             </select>
             {errors.level && (
-              <p className="text-red-500 text-sm">{errors.level.message}</p>
+              <p className="text-red-500 ">{errors.level.message}</p>
             )}
           </div>
           <div className="space-y-3">
@@ -318,9 +318,7 @@ export function StepDetails({
               placeholder="e.g., 40"
             />
             {errors.durationHours && (
-              <p className="text-red-500 text-sm">
-                {errors.durationHours.message}
-              </p>
+              <p className="text-red-500 ">{errors.durationHours.message}</p>
             )}
           </div>
         </div>
@@ -343,7 +341,7 @@ export function StepDetails({
                 ) : (
                   <div className="text-center text-gray-400">
                     <i className="fa-solid fa-image text-4xl mb-2"></i>
-                    <p className="text-sm">No image selected</p>
+                    <p className="">No image selected</p>
                   </div>
                 )}
               </div>

@@ -294,7 +294,7 @@ export default function QuestionnairePage() {
         return (
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
-              <span className="text-sm">
+              <span className="">
                 {question.scale?.labels?.[question.scale.min] ||
                   question.scale?.min}
               </span>
@@ -309,7 +309,7 @@ export default function QuestionnairePage() {
                 }
                 className="flex-1"
               />
-              <span className="text-sm">
+              <span className="">
                 {question.scale?.labels?.[question.scale.max] ||
                   question.scale?.max}
               </span>
@@ -391,9 +391,7 @@ export default function QuestionnairePage() {
             <h3 className="font-semibold mb-2">Test Configuration</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Course ID:
-                </label>
+                <label className="block  font-medium mb-1">Course ID:</label>
                 <input
                   type="text"
                   value={testCourseId}
@@ -403,7 +401,7 @@ export default function QuestionnairePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">
+                <label className="block  font-medium mb-1">
                   Module ID (optional):
                 </label>
                 <input
@@ -425,7 +423,7 @@ export default function QuestionnairePage() {
 
           {result && (
             <div className="mb-6 p-4 border rounded-lg bg-muted">
-              <pre className="text-sm whitespace-pre-wrap">{result}</pre>
+              <pre className=" whitespace-pre-wrap">{result}</pre>
             </div>
           )}
 
@@ -459,7 +457,7 @@ export default function QuestionnairePage() {
                   (question, index) => (
                     <div key={question.id} className="space-y-4">
                       <div className="flex items-start space-x-2">
-                        <span className="shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                        <span className="shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center  font-semibold">
                           {index + 1}
                         </span>
                         <div className="flex-1">
@@ -515,7 +513,7 @@ export default function QuestionnairePage() {
                   <p>
                     No questionnaires available for the specified course/module.
                   </p>
-                  <p className="text-sm mt-2">
+                  <p className=" mt-2">
                     Try creating sample data in the admin panel first.
                   </p>
                 </div>
@@ -543,7 +541,7 @@ export default function QuestionnairePage() {
                           </p>
                         </div>
                         <span
-                          className={`px-3 py-1 text-sm rounded-full ${
+                          className={`px-3 py-1  rounded-full ${
                             assignment.completed
                               ? "bg-green-100 text-green-800"
                               : "bg-yellow-100 text-yellow-800"

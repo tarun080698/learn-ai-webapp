@@ -7,7 +7,8 @@ import { useAuth } from "@/app/(auth)/AuthProvider";
 import { useAuthenticatedFetch } from "@/hooks/useAuthenticatedFetch";
 import { AdminCourse, CourseStats } from "@/types/admin";
 import { CourseDoc } from "@/types/models";
-import { formatDate, calculateCompletionRate } from "@/utils/helper";
+import { calculateCompletionRate } from "@/utils/helper";
+import { formatDate } from "@/utils/dateUtils";
 import { generateIdempotencyKey } from "@/utils/uuid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -283,9 +284,7 @@ export default function AdminDashboard() {
             heroImageUrl: course.heroImageUrl,
             published: course.published,
             archived: course.archived,
-            updatedAt: course.updatedAt?.toDate
-              ? course.updatedAt.toDate().toISOString()
-              : course.updatedAt,
+            updatedAt: course.updatedAt,
             moduleCount: course.moduleCount || 0,
             enrolledCount: course.enrolledCount || 0,
             completedCount: course.completedCount || 0,
@@ -522,7 +521,7 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
-        {console.log({ course })}
+
         <div className="p-6">
           <div className="flex items-center justify-between mb-3">
             <h3
@@ -535,14 +534,15 @@ export default function AdminDashboard() {
           </div>
           <div className="space-y-3 mb-4">
             <div
-              className="flex items-center justify-between text-sm"
+              className="flex items-center justify-between "
               style={{ color: "var(--secondary-70)" }}
             >
-              <span>Updated: {formatDate(course.updatedAt._seconds)}</span>
+              {/* <div>Created at: {formatDate(course.)}</div> */}
+              <div>Updated: {formatDate(course.updatedAt)}</div>
               <span>{course.moduleCount} modules</span>
             </div>
             <div
-              className="flex items-center justify-between text-sm"
+              className="flex items-center justify-between "
               style={{ color: "var(--secondary-70)" }}
             >
               <span>{course.enrolledCount} enrolled</span>
@@ -569,10 +569,10 @@ export default function AdminDashboard() {
                     e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
-                  <FontAwesomeIcon icon={faEdit} className="text-sm" />
+                  <FontAwesomeIcon icon={faEdit} className="" />
                 </button>
               </Link>
-              <Link href={`/admin/courses/${course.id}/preview`}>
+              <Link href={`/admin/courses/${course.id}`}>
                 <button
                   className="p-2 rounded-lg transition-colors duration-150"
                   title="Preview"
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                     e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
-                  <FontAwesomeIcon icon={faEye} className="text-sm" />
+                  <FontAwesomeIcon icon={faEye} className="" />
                 </button>
               </Link>
               <button
@@ -605,14 +605,14 @@ export default function AdminDashboard() {
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <FontAwesomeIcon icon={faArchive} className="text-sm" />
+                <FontAwesomeIcon icon={faArchive} className="" />
               </button>
             </div>
             {!course.archived && (
               <button
                 onClick={() => handlePublishToggle(course.id, course.published)}
                 disabled={actionLoading === course.id}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150"
+                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150"
                 style={{
                   backgroundColor: "var(--primary)",
                   color: "var(--primary-foreground)",
@@ -631,7 +631,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => handleArchiveToggle(course.id, course.archived)}
                 disabled={actionLoading === course.id}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150"
+                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150"
                 style={{
                   backgroundColor: "var(--card)",
                   color: "var(--secondary)",
@@ -754,7 +754,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <h3
-                      className="text-sm font-medium uppercase tracking-wide"
+                      className=" font-medium uppercase tracking-wide"
                       style={{ color: "var(--secondary-70)" }}
                     >
                       Total Courses
@@ -765,7 +765,7 @@ export default function AdminDashboard() {
                     >
                       {stats.totalCourses}
                     </p>
-                    <div className="flex items-center space-x-2 text-sm">
+                    <div className="flex items-center space-x-2 ">
                       <span style={{ color: "var(--secondary-70)" }}>
                         owner total
                       </span>
@@ -808,7 +808,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <h3
-                      className="text-sm font-medium uppercase tracking-wide"
+                      className=" font-medium uppercase tracking-wide"
                       style={{ color: "var(--secondary-70)" }}
                     >
                       Total Enrollments
@@ -819,7 +819,7 @@ export default function AdminDashboard() {
                     >
                       {stats.totalEnrollments.toLocaleString()}
                     </p>
-                    <div className="flex items-center space-x-2 text-sm">
+                    <div className="flex items-center space-x-2 ">
                       <span style={{ color: "var(--secondary-70)" }}>
                         owner total
                       </span>
@@ -862,7 +862,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <h3
-                      className="text-sm font-medium uppercase tracking-wide"
+                      className=" font-medium uppercase tracking-wide"
                       style={{ color: "var(--secondary-70)" }}
                     >
                       Total Completions
@@ -873,7 +873,7 @@ export default function AdminDashboard() {
                     >
                       {stats.totalCompletions.toLocaleString()}
                     </p>
-                    <div className="flex items-center space-x-2 text-sm">
+                    <div className="flex items-center space-x-2 ">
                       <span style={{ color: "var(--secondary-70)" }}>
                         owner total
                       </span>
@@ -934,7 +934,7 @@ export default function AdminDashboard() {
               Your Courses
             </h2>
             <div
-              className="flex items-center space-x-2 text-sm"
+              className="flex items-center space-x-2 "
               style={{ color: "var(--secondary-70)" }}
             >
               <span>Showing {filteredCourses.length} courses</span>

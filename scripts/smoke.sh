@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Smoke test script for Learn AI API endpoints
+# Smoke test script for Learn.ai 4all API endpoints
 # Tests key functionality to verify backend is working correctly
 
 BASE_URL="${BASE_URL:-http://localhost:3000}"
 ADMIN_BOOTSTRAP_KEY="${ADMIN_BOOTSTRAP_KEY:-your-bootstrap-key-here}"
 
-echo "🔥 Learn AI Backend Smoke Tests"
+echo "🔥 Learn.ai 4all Backend Smoke Tests"
 echo "Base URL: $BASE_URL"
 echo "================================"
 

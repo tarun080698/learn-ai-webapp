@@ -25,11 +25,9 @@ export function Navigation() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">
-                  Logo
-                </span>
+                <span className="text-primary-foreground font-bold ">Logo</span>
               </div>
-              <span className="font-bold text-xl">Learn AI</span>
+              <span className="font-bold text-xl">Learn.ai 4all</span>
             </Link>
           </div>
 

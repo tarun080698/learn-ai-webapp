@@ -1,5 +1,5 @@
 // Additional types for Create Course Wizard
-export type Level = "beginner" | "intermediate" | "advanced" | "expert";
+export type Level = "beginner" | "intermediate" | "advanced"; // Match database schema
 export type ContentType = "pdf" | "video" | "image" | "link" | "text";
 export type AssetType = "pdf" | "video" | "image" | "link";
 export type AssignmentTiming = "pre" | "post";
@@ -68,7 +68,10 @@ export interface CourseUpsertResponse {
 }
 
 export interface ModuleUpsertResponse {
-  id: string;
+  ok: boolean;
+  moduleId: string;
+  moduleCount: number;
+  isUpdate: boolean;
 }
 
 export interface AssetAddResponse {
@@ -102,10 +105,12 @@ export interface ModuleFormData {
 }
 
 export interface AssetFormData {
-  type: AssetType;
+  type: AssetType; // Keep 'type' for UI consistency
   title: string;
-  description?: string;
+  body?: string; // Rich text markdown description
   url: string;
+  order: number;
+  meta?: Record<string, unknown>;
 }
 
 // Wizard state
@@ -149,4 +154,5 @@ export interface WizardStepProps {
   onUpdate: (updates: Partial<WizardState>) => void;
   onNext: () => void;
   onPrevious: () => void;
+  onComplete?: (result: { courseId: string; isUpdate: boolean }) => void;
 }

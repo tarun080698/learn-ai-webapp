@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnaireBuilder } from "@/components/admin/QuestionnaireBuilder";
 import { QuestionnaireDoc } from "@/types/models";
+import { formatDate } from "@/utils/dateUtils";
 
 export default function AdminQuestionnairesPage() {
   const {
@@ -130,9 +131,7 @@ export default function AdminQuestionnairesPage() {
 
       {/* Filters */}
       <div className="flex items-center gap-4">
-        <span className="text-sm font-medium text-gray-700">
-          Filter by purpose:
-        </span>
+        <span className=" font-medium text-gray-700">Filter by purpose:</span>
         <div className="flex gap-2">
           {[
             { value: "all", label: "All" },
@@ -143,7 +142,7 @@ export default function AdminQuestionnairesPage() {
             <button
               key={value}
               onClick={() => setFilter(value as typeof filter)}
-              className={`px-3 py-1 rounded-md text-sm font-medium ${
+              className={`px-3 py-1 rounded-md  font-medium ${
                 filter === value
                   ? "bg-blue-100 text-blue-700"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -195,7 +194,7 @@ export default function AdminQuestionnairesPage() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {questionnaire.title}
                   </h3>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2  text-gray-600">
                     <span
                       className={`px-2 py-1 rounded text-xs font-medium ${
                         questionnaire.purpose === "quiz"
@@ -213,15 +212,12 @@ export default function AdminQuestionnairesPage() {
 
               {/* Stats */}
               <div className="mb-4">
-                <div className="text-sm text-gray-600">
+                <div className=" text-gray-600">
                   {questionnaire.questions.length} question
                   {questionnaire.questions.length !== 1 ? "s" : ""}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Updated{" "}
-                  {new Date(
-                    questionnaire.updatedAt.seconds * 1000
-                  ).toLocaleDateString()}
+                  Updated {formatDate(questionnaire.updatedAt)}
                 </div>
               </div>
 
@@ -229,7 +225,7 @@ export default function AdminQuestionnairesPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleEdit(questionnaire.id)}
-                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200 text-sm font-medium"
+                  className="flex-1 bg-gray-100 text-gray-700 py-2 px-3 rounded-md hover:bg-gray-200  font-medium"
                 >
                   ✏️ Edit
                 </button>
@@ -238,7 +234,7 @@ export default function AdminQuestionnairesPage() {
                     // TODO: Implement assignment modal
                     console.log("Assign questionnaire:", questionnaire.id);
                   }}
-                  className="flex-1 bg-blue-100 text-blue-700 py-2 px-3 rounded-md hover:bg-blue-200 text-sm font-medium"
+                  className="flex-1 bg-blue-100 text-blue-700 py-2 px-3 rounded-md hover:bg-blue-200  font-medium"
                 >
                   📋 Assign
                 </button>

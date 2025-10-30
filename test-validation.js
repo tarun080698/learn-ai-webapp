@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Comprehensive Testing & Validation Script for Learn AI Questionnaire System
+ * Comprehensive Testing & Validation Script for Learn.ai 4all Questionnaire System
  *
  * This script tests all APIs, validates functionality, and reports errors
  * Run with: node test-validation.js
@@ -562,7 +562,7 @@ class TestValidator {
   // Run all tests
   async runAllTests() {
     console.log("🚀 Starting comprehensive validation tests...");
-    console.log("Testing Learn AI Questionnaire System");
+    console.log("Testing Learn.ai 4all Questionnaire System");
     console.log("=".repeat(60));
 
     // Basic connectivity

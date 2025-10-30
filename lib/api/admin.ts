@@ -14,7 +14,7 @@ export async function createCourse(data: {
   title: string;
   description?: string;
   durationMinutes: number;
-  level: "beginner" | "intermediate" | "advanced" | "expert";
+  level: "beginner" | "intermediate" | "advanced"; // Fixed to match database schema
   heroImageUrl?: string;
 }): Promise<CourseUpsertResponse> {
   const headers = await createAuthHeaders();
@@ -42,7 +42,7 @@ export async function updateCourse(
     title?: string;
     description?: string;
     durationMinutes?: number;
-    level?: "beginner" | "intermediate" | "advanced" | "expert";
+    level?: "beginner" | "intermediate" | "advanced"; // Fixed to match database schema
     heroImageUrl?: string;
   }
 ): Promise<CourseUpsertResponse> {
@@ -268,6 +268,26 @@ export async function uploadFile(
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || "Failed to upload file");
+  }
+
+  return response.json();
+}
+
+// Complete course data fetching
+export async function getCourseComplete(courseId: string) {
+  const headers = await createAuthHeaders();
+
+  const response = await fetch(
+    `/api/admin/course.complete?courseId=${courseId}`,
+    {
+      method: "GET",
+      headers,
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Failed to fetch complete course data");
   }
 
   return response.json();

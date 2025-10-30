@@ -55,7 +55,7 @@ export default async function CatalogPage() {
         <div className="mt-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold">Available Courses</h2>
-            <span className="text-sm text-muted-foreground">
+            <span className=" text-muted-foreground">
               {courses.length} course{courses.length !== 1 ? "s" : ""} available
             </span>
           </div>
@@ -95,7 +95,7 @@ export default async function CatalogPage() {
                     </div>
                   </div>
 
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                  <p className=" text-muted-foreground mb-4 line-clamp-3">
                     {course.description}
                   </p>
 
@@ -109,13 +109,13 @@ export default async function CatalogPage() {
                   <div className="flex gap-2">
                     <Link
                       href={`/courses/${course.id}`}
-                      className="flex-1 px-4 py-2 bg-primary text-primary-foreground text-center rounded-lg hover:bg-primary/90 transition-colors text-sm"
+                      className="flex-1 px-4 py-2 bg-primary text-primary-foreground text-center rounded-lg hover:bg-primary/90 transition-colors "
                     >
                       Enroll Now
                     </Link>
                     <Link
-                      href={`/courses/${course.id}/preview`}
-                      className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors text-sm"
+                      href={`/courses/${course.id}`}
+                      className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors "
                     >
                       Preview
                     </Link>

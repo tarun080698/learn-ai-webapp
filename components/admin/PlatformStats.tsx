@@ -51,7 +51,7 @@ export function PlatformStats() {
             Platform Overview
           </h2>
           <p className="text-lg" style={{ color: "var(--secondary-70)" }}>
-            Real-time statistics from your Learn AI platform
+            Real-time statistics from your Learn.ai 4all platform
           </p>
         </div>
 
@@ -81,7 +81,7 @@ export function PlatformStats() {
               >
                 {stat.value}
               </div>
-              <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+              <p className="" style={{ color: "var(--secondary-70)" }}>
                 {stat.label}
               </p>
             </div>

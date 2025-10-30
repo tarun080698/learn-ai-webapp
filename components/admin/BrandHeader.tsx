@@ -23,9 +23,9 @@ export function BrandHeader() {
                 className="text-2xl font-bold"
                 style={{ color: "var(--secondary)" }}
               >
-                Learn AI
+                Learn.ai 4all
               </h1>
-              <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+              <p className="" style={{ color: "var(--secondary-70)" }}>
                 Administrator Portal
               </p>
             </div>

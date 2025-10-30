@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Quick Status Check Script for Learn AI Questionnaire System
+ * Quick Status Check Script for Learn.ai 4all Questionnaire System
  * Run with: node status-check.js
  */
 
@@ -68,7 +68,7 @@ class StatusChecker {
   }
 
   async run() {
-    console.log("🔍 Learn AI Questionnaire System - Quick Status Check");
+    console.log("🔍 Learn.ai 4all Questionnaire System - Quick Status Check");
     console.log("=".repeat(55));
 
     // Check if server is running

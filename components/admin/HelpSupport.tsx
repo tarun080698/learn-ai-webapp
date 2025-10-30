@@ -97,14 +97,11 @@ export function HelpSupport() {
               >
                 {item.title}
               </h3>
-              <p
-                className="text-sm mb-4"
-                style={{ color: "var(--secondary-70)" }}
-              >
+              <p className=" mb-4" style={{ color: "var(--secondary-70)" }}>
                 {item.description}
               </p>
               <button
-                className="font-medium text-sm flex items-center space-x-1 transition-colors duration-200"
+                className="font-medium  flex items-center space-x-1 transition-colors duration-200"
                 style={{ color: item.linkColor }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = item.linkColorHover;

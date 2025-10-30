@@ -5,7 +5,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { CourseWizard } from "@/components/admin/CourseWizard";
+import { EnhancedCourseWizard } from "@/components/admin/EnhancedCourseWizard";
 import { useAuthenticatedMutation } from "@/hooks/useAuthenticatedFetch";
 import { useAuth } from "@/app/(auth)/AuthProvider";
 
@@ -150,11 +150,11 @@ export default function NewAdminDashboard() {
                       </span>
                     </div>
 
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    <p className="text-gray-600  mb-4 line-clamp-3">
                       {course.description}
                     </p>
 
-                    <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
+                    <div className="flex justify-between items-center  text-gray-500 mb-4">
                       <span className="capitalize">{course.level}</span>
                       <span>{course.durationMinutes} min</span>
                       <span>{course.moduleCount} modules</span>
@@ -163,7 +163,7 @@ export default function NewAdminDashboard() {
                     <div className="flex space-x-2">
                       <button
                         onClick={() => handleEditCourse(course)}
-                        className="flex-1 px-3 py-2 text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-400 rounded text-sm font-medium transition-colors"
+                        className="flex-1 px-3 py-2 text-blue-600 hover:text-blue-800 border border-blue-300 hover:border-blue-400 rounded  font-medium transition-colors"
                       >
                         Edit
                       </button>
@@ -171,7 +171,7 @@ export default function NewAdminDashboard() {
                         onClick={() => {
                           /* TODO: Navigate to modules */
                         }}
-                        className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors"
+                        className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded  font-medium transition-colors"
                       >
                         Modules
                       </button>
@@ -200,7 +200,7 @@ export default function NewAdminDashboard() {
             </p>
           </div>
 
-          <CourseWizard
+          <EnhancedCourseWizard
             mode="create"
             onComplete={handleCourseCreated}
             onCancel={() => setView("dashboard")}
@@ -220,15 +220,18 @@ export default function NewAdminDashboard() {
             <p className="mt-2 text-gray-600">Update your course details</p>
           </div>
 
-          <CourseWizard
+          <EnhancedCourseWizard
             mode="edit"
+            courseId={selectedCourse.id}
             initialData={{
               courseId: selectedCourse.id,
-              title: selectedCourse.title,
-              description: selectedCourse.description,
-              level: selectedCourse.level,
-              durationMinutes: selectedCourse.durationMinutes,
-              heroImageUrl: selectedCourse.heroImageUrl,
+              courseData: {
+                title: selectedCourse.title,
+                description: selectedCourse.description,
+                level: selectedCourse.level,
+                durationHours: selectedCourse.durationMinutes / 60,
+                heroImageUrl: selectedCourse.heroImageUrl,
+              },
             }}
             onComplete={handleCourseCreated}
             onCancel={() => setView("dashboard")}

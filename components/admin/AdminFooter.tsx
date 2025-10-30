@@ -12,7 +12,7 @@ export function AdminFooter() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-xl font-bold mb-4">Learn AI Admin</h3>
+            <h3 className="text-xl font-bold mb-4">Learn.ai 4all Admin</h3>
             <p
               className="mb-4"
               style={{ color: "var(--secondary-foreground-80)" }}
@@ -71,7 +71,8 @@ export function AdminFooter() {
           style={{ borderColor: "var(--secondary-foreground-20)" }}
         >
           <p style={{ color: "var(--secondary-foreground-70)" }}>
-            &copy; 2024 Learn AI. All rights reserved.
+            &copy; {new Date().getUTCFullYear()} Learn.ai 4all. All rights
+            reserved.
           </p>
         </div>
       </div>

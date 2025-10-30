@@ -8,6 +8,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { formatDate } from "@/utils/dateUtils";
 import {
   useAuthenticatedFetch,
   useAuthenticatedMutation,
@@ -94,20 +95,7 @@ export default function AdminCoursesPage() {
     }
   };
 
-  const formatDate = (timestamp: { seconds: number } | Date | null) => {
-    if (!timestamp) return "Unknown";
-
-    let date: Date;
-    if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === "object" && "seconds" in timestamp) {
-      date = new Date(timestamp.seconds * 1000);
-    } else {
-      return "Unknown";
-    }
-
-    return date.toLocaleDateString();
-  };
+  // Using centralized date utilities from @/utils/dateUtils
 
   if (!firebaseUser) {
     return (
@@ -173,7 +161,7 @@ export default function AdminCoursesPage() {
               Create your first course
             </Link>
           </div>
-          <div className="text-sm text-black">
+          <div className=" text-black">
             <div className="mb-2">After creating a course:</div>
             <div>
               1. Click the{" "}
@@ -219,10 +207,10 @@ export default function AdminCoursesPage() {
                   <tr key={course.id} className="hover:bg-white">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="text-sm font-medium text-black">
+                        <div className=" font-medium text-black">
                           {course.title}
                         </div>
-                        <div className="text-sm text-black mt-1">
+                        <div className=" text-black mt-1">
                           {course.description}
                         </div>
                         <div className="text-xs text-black mt-1">
@@ -241,7 +229,7 @@ export default function AdminCoursesPage() {
                         {course.published ? "Published" : "Draft"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-black">
+                    <td className="px-6 py-4  text-black">
                       <Link
                         href={`/admin/courses/${course.id}/modules`}
                         className="inline-flex items-center gap-1 bg-white text-black border border-black hover:bg-white px-3 py-1 rounded-lg font-medium transition-colors"
@@ -249,10 +237,10 @@ export default function AdminCoursesPage() {
                         📝 {course.moduleCount || 0} modules
                       </Link>
                     </td>
-                    <td className="px-6 py-4 text-sm text-black">
+                    <td className="px-6 py-4  text-black">
                       {formatDate(course.updatedAt)}
                     </td>
-                    <td className="px-6 py-4 text-sm space-x-2">
+                    <td className="px-6 py-4  space-x-2">
                       {/* Edit Course */}
                       <Link
                         href={`/admin/courses/${course.id}`}
@@ -304,19 +292,19 @@ export default function AdminCoursesPage() {
       {!isLoading && courses.length > 0 && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg border border-black">
-            <div className="text-sm text-black">Total Courses</div>
+            <div className=" text-black">Total Courses</div>
             <div className="text-2xl font-bold text-black">
               {courses.length}
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg border border-black">
-            <div className="text-sm text-black">Published</div>
+            <div className=" text-black">Published</div>
             <div className="text-2xl font-bold text-black">
               {courses.filter((c) => c.published).length}
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg border border-black">
-            <div className="text-sm text-black">Drafts</div>
+            <div className=" text-black">Drafts</div>
             <div className="text-2xl font-bold text-black">
               {courses.filter((c) => !c.published).length}
             </div>

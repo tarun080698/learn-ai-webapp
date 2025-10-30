@@ -90,7 +90,7 @@ function CreateCourseWizardContent() {
               <div key={step} className="flex items-center space-x-2">
                 <div
                   onClick={() => goToStep(step)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors duration-150 ${
+                  className={`w-8 h-8 rounded-full flex items-center justify-center  font-medium transition-colors duration-150 ${
                     step <= wizardState.currentStep
                       ? "bg-blue-600 text-white cursor-pointer hover:bg-blue-700"
                       : "border-2 border-gray-300 text-gray-400 cursor-not-allowed"
@@ -186,7 +186,7 @@ function CreateCourseWizardContent() {
           <div className="space-y-4">
             <div className="p-4 bg-gray-50 rounded-xl">
               <h4 className="font-medium text-gray-900 mb-2">Course Title</h4>
-              <p className="text-gray-600 text-sm">
+              <p className="text-gray-600 ">
                 {wizardState.courseData.title || "Untitled Course"}
               </p>
             </div>
@@ -203,7 +203,7 @@ function CreateCourseWizardContent() {
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((step) => (
                   <div key={step} className="flex items-center justify-between">
-                    <span className="text-gray-600 text-sm">
+                    <span className="text-gray-600 ">
                       {STEP_NAMES[step as keyof typeof STEP_NAMES]}
                     </span>
                     {step <= wizardState.currentStep ? (
@@ -220,13 +220,13 @@ function CreateCourseWizardContent() {
               <h4 className="font-medium text-gray-900 mb-2">Quick Stats</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 text-sm">Modules</span>
+                  <span className="text-gray-600 ">Modules</span>
                   <span className="text-gray-900 font-medium">
                     {wizardState.modules.length}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 text-sm">Assets</span>
+                  <span className="text-gray-600 ">Assets</span>
                   <span className="text-gray-900 font-medium">
                     {wizardState.modules.reduce(
                       (acc, module) => acc + (module.assets?.length || 0),
@@ -235,7 +235,7 @@ function CreateCourseWizardContent() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 text-sm">Assessments</span>
+                  <span className="text-gray-600 ">Assessments</span>
                   <span className="text-gray-900 font-medium">
                     {(() => {
                       let count = 0;
@@ -333,7 +333,7 @@ function CreateCourseWizardContent() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
               <h1 className="text-xl font-semibold text-secondary">
-                Learn AI — Admin
+                Learn.ai 4all — Admin
               </h1>
               <nav className="hidden md:flex items-center space-x-6">
                 <a
@@ -350,7 +350,7 @@ function CreateCourseWizardContent() {
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-accent/10 transition-colors duration-150">
-                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground text-sm font-medium">
+                  <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground  font-medium">
                     A
                   </div>
                   <i className="fa-solid fa-chevron-down text-secondary text-xs"></i>

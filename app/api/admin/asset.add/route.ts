@@ -80,11 +80,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Add asset to module
-    const assetId = await addAssetToModule(
-      adminDb,
-      parsed.moduleId,
-      parsed.asset
-    );
+    const assetId = await addAssetToModule(adminDb, parsed.moduleId, {
+      kind: parsed.type,
+      url: parsed.url,
+      title: parsed.title,
+      meta: parsed.description ? { description: parsed.description } : {},
+    });
 
     return Response.json({
       ok: true,

@@ -170,7 +170,7 @@ export default function AdminTestingPage() {
         {/* Seed Data Testing */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">1. Create Seed Data</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className=" text-muted-foreground">
             Creates a sample course with 3 modules for testing
           </p>
           <button
@@ -303,7 +303,7 @@ export default function AdminTestingPage() {
         {/* Course Publishing */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">4. Publish Course</h2>
-          <p className="text-sm text-muted-foreground">
+          <p className=" text-muted-foreground">
             Makes the course visible to users for enrollment
           </p>
           <input
@@ -359,7 +359,7 @@ export default function AdminTestingPage() {
           <h3 className="font-semibold text-yellow-800 mb-2">
             Expected Results:
           </h3>
-          <ul className="text-sm text-yellow-700 space-y-1">
+          <ul className=" text-yellow-700 space-y-1">
             <li>• Seed data creates 1 course + 3 modules</li>
             <li>• Course creation returns a course ID</li>
             <li>• Module creation updates course.moduleCount</li>

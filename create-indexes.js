@@ -4,10 +4,10 @@
  * Firestore Index Management Script
  *
  * This script helps create and manage Firestore composite indexes
- * required for the Learn AI Questionnaire System.
+ * required for the Learn.ai 4all Questionnaire System.
  */
 
-console.log("🔥 Firestore Index Management for Learn AI System");
+console.log("🔥 Firestore Index Management for Learn.ai 4all System");
 console.log("=".repeat(55));
 
 console.log("\n📋 Required Composite Indexes:");

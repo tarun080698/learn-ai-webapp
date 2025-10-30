@@ -17,6 +17,7 @@ import { getUserFromRequest, requireAdmin, jsonError } from "@/lib/auth";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { COL } from "@/lib/firestore";
 import { CourseDoc } from "@/types/models";
+import { toDate } from "@/utils/dateUtils";
 
 export async function GET(req: NextRequest) {
   try {
@@ -84,8 +85,8 @@ export async function GET(req: NextRequest) {
     // Sort courses in memory by updatedAt
     filteredCourses.sort((a, b) => {
       // Handle Firestore Timestamp or regular date/string
-      const aTime = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(0);
-      const bTime = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(0);
+      const aTime = toDate(a.updatedAt) || new Date(0);
+      const bTime = toDate(b.updatedAt) || new Date(0);
 
       if (orderDirection === "asc") {
         return aTime.getTime() - bTime.getTime();

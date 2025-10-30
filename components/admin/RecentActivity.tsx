@@ -107,10 +107,7 @@ export function RecentActivity() {
                   >
                     {activity.title}
                   </p>
-                  <p
-                    className="text-sm"
-                    style={{ color: "var(--secondary-70)" }}
-                  >
+                  <p className="" style={{ color: "var(--secondary-70)" }}>
                     {activity.subtitle}
                   </p>
                   <div

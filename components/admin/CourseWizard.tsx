@@ -141,7 +141,10 @@ export function CourseWizard({
         ...formData,
       };
 
-      const result = await saveCourse("/api/admin/course.upsert", payload);
+      const result = (await saveCourse(
+        "/api/admin/course.upsert",
+        payload
+      )) as { courseId: string; isUpdate: boolean };
 
       if (onComplete) {
         onComplete({
@@ -159,7 +162,7 @@ export function CourseWizard({
           error instanceof Error ? error.message : "Failed to save course",
       });
     } finally {
-      setIsSubmitting(false);
+      // isSubmitting is handled by the mutation hook
     }
   }, [
     formData,
@@ -183,7 +186,7 @@ export function CourseWizard({
         return (
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block  font-medium text-gray-700 mb-2">
                 Course Title *
               </label>
               <input
@@ -198,12 +201,12 @@ export function CourseWizard({
                 }`}
               />
               {errors.title && (
-                <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+                <p className="mt-1  text-red-600">{errors.title}</p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block  font-medium text-gray-700 mb-2">
                 Description *
               </label>
               <textarea
@@ -221,15 +224,13 @@ export function CourseWizard({
                 }`}
               />
               {errors.description && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.description}
-                </p>
+                <p className="mt-1  text-red-600">{errors.description}</p>
               )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block  font-medium text-gray-700 mb-2">
                   Difficulty Level
                 </label>
                 <select
@@ -249,7 +250,7 @@ export function CourseWizard({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block  font-medium text-gray-700 mb-2">
                   Estimated Duration (minutes) *
                 </label>
                 <input
@@ -270,9 +271,7 @@ export function CourseWizard({
                   }`}
                 />
                 {errors.durationMinutes && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.durationMinutes}
-                  </p>
+                  <p className="mt-1  text-red-600">{errors.durationMinutes}</p>
                 )}
               </div>
             </div>
@@ -345,29 +344,25 @@ export function CourseWizard({
 
             <div className="bg-gray-50 rounded-lg p-6 space-y-4">
               <div>
-                <dt className="text-sm font-medium text-gray-500">Title</dt>
+                <dt className=" font-medium text-gray-500">Title</dt>
                 <dd className="mt-1 text-lg text-gray-900">{formData.title}</dd>
               </div>
 
               <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Description
-                </dt>
+                <dt className=" font-medium text-gray-500">Description</dt>
                 <dd className="mt-1 text-gray-700">{formData.description}</dd>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">Level</dt>
+                  <dt className=" font-medium text-gray-500">Level</dt>
                   <dd className="mt-1 text-gray-900 capitalize">
                     {formData.level}
                   </dd>
                 </div>
 
                 <div>
-                  <dt className="text-sm font-medium text-gray-500">
-                    Duration
-                  </dt>
+                  <dt className=" font-medium text-gray-500">Duration</dt>
                   <dd className="mt-1 text-gray-900">
                     {formData.durationMinutes} minutes
                   </dd>
@@ -376,7 +371,7 @@ export function CourseWizard({
 
               {formData.heroImageUrl && (
                 <div>
-                  <dt className="text-sm font-medium text-gray-500 mb-2">
+                  <dt className=" font-medium text-gray-500 mb-2">
                     Hero Image
                   </dt>
                   <dd>
@@ -433,7 +428,7 @@ export function CourseWizard({
 
               <div className="ml-3 min-w-0">
                 <p
-                  className={`text-sm font-medium ${
+                  className={` font-medium ${
                     index <= currentStepIndex
                       ? "text-blue-600"
                       : "text-gray-400"

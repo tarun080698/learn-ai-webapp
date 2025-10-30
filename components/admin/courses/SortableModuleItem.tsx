@@ -102,7 +102,7 @@ export function SortableModuleItem({
             </button>
 
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">
+              <span className=" font-medium text-gray-700">
                 Module {index + 1}
               </span>
               {module.primaryContentType &&
@@ -147,7 +147,7 @@ export function SortableModuleItem({
         </div>
 
         {errors?.title && (
-          <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+          <p className="mt-1  text-red-600">{errors.title.message}</p>
         )}
       </div>
 
@@ -155,7 +155,7 @@ export function SortableModuleItem({
         <div className="p-4 space-y-4">
           {/* Module Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block  font-medium text-gray-700 mb-1">
               Description
             </label>
             <Controller
@@ -166,7 +166,7 @@ export function SortableModuleItem({
                   {...field}
                   rows={2}
                   placeholder="Brief description of this module..."
-                  className="block w-full border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-input border rounded-xl px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-150"
+                  className="block w-full border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm: bg-input border rounded-xl px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-150"
                 />
               )}
             />
@@ -174,7 +174,7 @@ export function SortableModuleItem({
 
           {/* Primary Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block  font-medium text-gray-700 mb-2">
               Primary Content
             </label>
 
@@ -193,7 +193,7 @@ export function SortableModuleItem({
                         checked={field.value === "text"}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Text</span>
+                      <span className="ml-2  text-gray-700">Text</span>
                     </label>
                     <label className="flex items-center">
                       <input
@@ -203,7 +203,7 @@ export function SortableModuleItem({
                         checked={field.value === "video"}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Video</span>
+                      <span className="ml-2  text-gray-700">Video</span>
                     </label>
                     <label className="flex items-center">
                       <input
@@ -213,7 +213,7 @@ export function SortableModuleItem({
                         checked={field.value === "file"}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                       />
-                      <span className="ml-2 text-sm text-gray-700">File</span>
+                      <span className="ml-2  text-gray-700">File</span>
                     </label>
                   </div>
                 )}
@@ -229,7 +229,7 @@ export function SortableModuleItem({
                       {...field}
                       rows={4}
                       placeholder="Enter your module content..."
-                      className="w-full bg-input border rounded-xl px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-150 block border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className="w-full bg-input border rounded-xl px-4 py-3 text-secondary focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-150 block border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:"
                     />
                   )}
                 />
@@ -244,7 +244,7 @@ export function SortableModuleItem({
                       {...field}
                       type="url"
                       placeholder="https://youtube.com/watch?v=..."
-                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:"
                     />
                   )}
                 />
@@ -256,9 +256,7 @@ export function SortableModuleItem({
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
                       <div className="flex items-center space-x-2">
                         <DocumentIcon className="h-5 w-5 text-gray-400" />
-                        <span className="text-sm text-gray-700">
-                          File uploaded
-                        </span>
+                        <span className=" text-gray-700">File uploaded</span>
                       </div>
                       <button
                         type="button"
@@ -269,7 +267,7 @@ export function SortableModuleItem({
                           ) as HTMLInputElement;
                           if (input) input.value = "";
                         }}
-                        className="text-sm text-red-600 hover:text-red-800"
+                        className=" text-red-600 hover:text-red-800"
                       >
                         Remove
                       </button>
@@ -281,7 +279,7 @@ export function SortableModuleItem({
                         type="file"
                         onChange={handleFileChange}
                         disabled={isUploading}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                        className="block w-full  text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file: file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                       />
                       {isUploading && (
                         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">

@@ -9,6 +9,7 @@ import {
 } from "@/hooks/useAuthenticatedFetch";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { formatDate } from "@/utils/dateUtils";
 
 interface Enrollment {
   id: string;
@@ -105,9 +106,7 @@ export default function DashboardPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
+  // Using centralized date utilities now
 
   const getLevelColor = (level: string) => {
     switch (level.toLowerCase()) {
@@ -175,20 +174,18 @@ export default function DashboardPage() {
                 <div className="text-2xl font-bold text-primary">
                   {currentStreakDays || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Current Streak
-                </div>
+                <div className=" text-muted-foreground">Current Streak</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-secondary">
                   {bestStreakDays || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">Best Streak</div>
+                <div className=" text-muted-foreground">Best Streak</div>
               </div>
             </div>
             <div className="flex-1">
               <h3 className="font-semibold mb-2">Keep Learning!</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className=" text-muted-foreground">
                 Maintain your daily learning streak to build consistent habits
                 and track your progress.
               </p>
@@ -243,7 +240,7 @@ export default function DashboardPage() {
                         <p className="text-muted-foreground mb-2">
                           {enrollment.course.description}
                         </p>
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-4 ">
                           <span
                             className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(
                               enrollment.course.level
@@ -263,7 +260,7 @@ export default function DashboardPage() {
                         <div className="text-2xl font-bold text-primary mb-1">
                           {Math.round(enrollment.progressPct)}%
                         </div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className=" text-muted-foreground">
                           {enrollment.completedCount} of{" "}
                           {enrollment.course.moduleCount} modules
                         </div>
@@ -277,7 +274,7 @@ export default function DashboardPage() {
                       ></div>
                     </div>
 
-                    <div className="flex justify-between items-center text-sm">
+                    <div className="flex justify-between items-center ">
                       <span className="text-muted-foreground">
                         Enrolled on {formatDate(enrollment.enrolledAt)}
                       </span>

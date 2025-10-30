@@ -75,7 +75,7 @@ export function AdminLoginForm() {
               Admin Sign-In
             </h2>
             <p style={{ color: "var(--secondary-70)" }}>
-              Enter your credentials to access the Learn AI admin dashboard
+              Enter your credentials to access the Learn.ai 4all admin dashboard
             </p>
           </div>
 
@@ -91,7 +91,7 @@ export function AdminLoginForm() {
                   <p className="text-destructive font-medium">
                     Invalid credentials
                   </p>
-                  <p className="text-destructive/80 text-sm">{error}</p>
+                  <p className="text-destructive/80 ">{error}</p>
                 </div>
               </div>
             </div>
@@ -103,7 +103,7 @@ export function AdminLoginForm() {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium mb-2"
+                className="block  font-medium mb-2"
                 style={{ color: "var(--secondary)" }}
               >
                 Email Address
@@ -141,7 +141,7 @@ export function AdminLoginForm() {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium mb-2"
+                className="block  font-medium mb-2"
                 style={{ color: "var(--secondary)" }}
               >
                 Password
@@ -210,7 +210,7 @@ export function AdminLoginForm() {
                 />
                 <label
                   htmlFor="remember-me"
-                  className="ml-2 text-sm"
+                  className="ml-2 "
                   style={{ color: "var(--secondary)" }}
                 >
                   Remember me
@@ -218,7 +218,7 @@ export function AdminLoginForm() {
               </div>
               <button
                 type="button"
-                className="text-sm font-medium transition-colors duration-200"
+                className=" font-medium transition-colors duration-200"
                 style={{ color: "var(--primary)" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = "var(--primary-80)";
@@ -257,7 +257,7 @@ export function AdminLoginForm() {
 
           {/* Additional Security Info */}
           <div className="mt-8 pt-6 border-t border-secondary/15">
-            <div className="flex items-center justify-center space-x-6 text-sm text-secondary/70">
+            <div className="flex items-center justify-center space-x-6  text-secondary/70">
               <div className="flex items-center space-x-2">
                 <FontAwesomeIcon icon={faShield} className="text-primary" />
                 <span>SSL Encrypted</span>
@@ -272,7 +272,7 @@ export function AdminLoginForm() {
 
         {/* Admin Only Notice */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-secondary/70">
+          <p className=" text-secondary/70">
             <FontAwesomeIcon icon={faInfoCircle} className="mr-1" />
             This portal is restricted to authorized administrators only
           </p>

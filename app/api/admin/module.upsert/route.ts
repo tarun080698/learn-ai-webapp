@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
           code: "missing_body",
         });
       }
-    } else if (["video", "pdf", "link"].includes(parsed.contentType)) {
+    } else if (["video", "pdf", "link", "image"].includes(parsed.contentType)) {
       if (!parsed.contentUrl) {
         throw Object.assign(
           new Error("contentUrl required for " + parsed.contentType),

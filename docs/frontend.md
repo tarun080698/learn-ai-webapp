@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Learn AI frontend is a comprehensive **Next.js 16** and **React 19** learning management system with a full-featured course creation wizard, advanced admin interface, and seamless user experience. Built with modern App Router architecture and production-ready components.
+The Learn.ai 4all frontend is a comprehensive **Next.js 16** and **React 19** learning management system with a full-featured course creation wizard, advanced admin interface, and seamless user experience. Built with modern App Router architecture and production-ready components.
 
 ### Tech Stack
 
@@ -503,9 +503,7 @@ const moduleSchema = z.object({
 
 ```typescript
 {
-  errors.title && (
-    <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
-  );
+  errors.title && <p className="mt-1  text-red-600">{errors.title.message}</p>;
 }
 ```
 

@@ -1,10 +1,10 @@
-# Learn AI - Interactive Learning Platform
+# Learn.ai 4all - Interactive Learning Platform
 
 A comprehensive learning management system built with Next.js 16 and Firebase, featuring course enrollment, progress tracking, questionnaire-based assessments, and complete course detail functionality.
 
 ## Overview
 
-Learn AI is a modern web application that provides:
+Learn.ai 4all is a modern web application that provides:
 
 - **Course Management**: Create and publish interactive courses with modules
 - **Course Catalog**: Public browsing of available courses with enrollment capability

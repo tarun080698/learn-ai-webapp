@@ -164,7 +164,7 @@ export function QuestionnaireAssignmentModal({
 
           {/* Scope Info */}
           <div className="mb-4 p-3 bg-white border border-black rounded-lg">
-            <div className="text-sm text-black">
+            <div className=" text-black">
               Assigning to:{" "}
               <span className="font-medium capitalize">
                 {moduleId ? "module" : "course"}
@@ -174,7 +174,7 @@ export function QuestionnaireAssignmentModal({
 
           {/* Error Display */}
           {error && (
-            <div className="mb-4 p-3 bg-white border border-black text-black rounded-lg text-sm">
+            <div className="mb-4 p-3 bg-white border border-black text-black rounded-lg ">
               {error}
             </div>
           )}
@@ -193,7 +193,7 @@ export function QuestionnaireAssignmentModal({
               <div>
                 <label
                   htmlFor="questionnaire"
-                  className="block text-sm font-medium text-black mb-1"
+                  className="block  font-medium text-black mb-1"
                 >
                   Select Questionnaire
                 </label>
@@ -215,7 +215,7 @@ export function QuestionnaireAssignmentModal({
 
               {/* Timing Selection */}
               <div>
-                <label className="block text-sm font-medium text-black mb-2">
+                <label className="block  font-medium text-black mb-2">
                   Timing
                 </label>
                 <div className="flex gap-4">
@@ -230,7 +230,7 @@ export function QuestionnaireAssignmentModal({
                       }
                       className="mr-2"
                     />
-                    <span className="text-sm text-black">
+                    <span className=" text-black">
                       Pre-{moduleId ? "Module" : "Course"}
                     </span>
                   </label>
@@ -245,7 +245,7 @@ export function QuestionnaireAssignmentModal({
                       }
                       className="mr-2"
                     />
-                    <span className="text-sm text-black">
+                    <span className=" text-black">
                       Post-{moduleId ? "Module" : "Course"}
                     </span>
                   </label>
@@ -255,7 +255,7 @@ export function QuestionnaireAssignmentModal({
               {questionnaires.length === 0 && !isLoading && (
                 <div className="text-center py-4 text-black">
                   <div className="mb-2">No questionnaires available</div>
-                  <div className="text-sm">Create a questionnaire first</div>
+                  <div className="">Create a questionnaire first</div>
                 </div>
               )}
 

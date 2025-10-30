@@ -1,5 +1,5 @@
 /**
- * Browser Console Testing Script for Learn AI Questionnaire System
+ * Browser Console Testing Script for Learn.ai 4all Questionnaire System
  *
  * Copy and paste this into your browser's developer console
  * while on http://localhost:3000 to run frontend validation tests
@@ -353,7 +353,7 @@ class FrontendValidator {
   // Run all tests
   async runAllTests() {
     this.log("🚀 Starting frontend validation tests...", "info");
-    this.log("Testing Learn AI Questionnaire System Frontend", "info");
+    this.log("Testing Learn.ai 4all Questionnaire System Frontend", "info");
     this.log("=".repeat(60), "info");
 
     await this.testCurrentPage();
@@ -372,7 +372,7 @@ class FrontendValidator {
 // Auto-run if in browser
 if (typeof window !== "undefined") {
   console.log(
-    "%c🚀 Learn AI Frontend Validator Loaded!",
+    "%c🚀 Learn.ai 4all Frontend Validator Loaded!",
     "color: #4CAF50; font-size: 16px; font-weight: bold;"
   );
   console.log(

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Learn AI platform uses **Firebase Firestore**, a comprehensive NoSQL document database designed for a learning management system with course enrollment, progress tracking, questionnaire assessments, and content management capabilities.
+The Learn.ai 4all platform uses **Firebase Firestore**, a comprehensive NoSQL document database designed for a learning management system with course enrollment, progress tracking, questionnaire assessments, and content management capabilities.
 
 ### Database Architecture
 

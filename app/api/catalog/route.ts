@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { getUserFromRequest } from "@/lib/auth";
 import { COL, enrollmentId } from "@/lib/firestore";
+import { formatDateISO } from "@/utils/dateUtils";
 
 /**
  * GET /api/catalog
@@ -41,10 +42,9 @@ export async function GET(req: NextRequest) {
       ...doc.data(),
       // Convert Firestore timestamps for JSON serialization
       createdAt:
-        doc.data().createdAt?.toDate()?.toISOString() ||
-        new Date().toISOString(),
-      updatedAt: doc.data().updatedAt?.toDate()?.toISOString(),
-      publishedAt: doc.data().publishedAt?.toDate()?.toISOString(),
+        formatDateISO(doc.data().createdAt) || new Date().toISOString(),
+      updatedAt: formatDateISO(doc.data().updatedAt),
+      publishedAt: formatDateISO(doc.data().publishedAt),
     }));
 
     // If user is authenticated, decorate with enrollment information

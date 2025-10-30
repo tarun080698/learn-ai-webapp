@@ -1,5 +1,5 @@
 // =============================================================================
-// Consolidated Type Definitions for Learn AI Platform
+// Consolidated Type Definitions for Learn.ai 4all Platform
 // =============================================================================
 // This file contains all TypeScript interfaces and types used throughout the application.
 // All interfaces have been consolidated here for consistency and maintainability.
@@ -73,7 +73,8 @@ export interface ModuleAsset {
   kind: "pdf" | "video" | "image" | "link";
   url: string;
   title?: string;
-  meta?: Record<string, any>; // Flexible metadata storage
+  body?: string; // Rich text markdown description
+  meta?: Record<string, unknown>; // Flexible metadata storage
   order: number;
 }
 

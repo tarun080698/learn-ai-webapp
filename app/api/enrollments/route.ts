@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebaseAdmin";
+import { formatDateISO } from "@/utils/dateUtils";
 
 /**
  * GET /api/enrollments
@@ -45,8 +46,8 @@ export async function GET(req: NextRequest) {
 
     // Sort enrollments by date in JavaScript for development compatibility
     const sortedEnrollmentDocs = userEnrollmentsSnapshot.docs.sort((a, b) => {
-      const aDate = a.data().enrolledAt?.toDate() || new Date(0);
-      const bDate = b.data().enrolledAt?.toDate() || new Date(0);
+      const aDate = a.data().enrolledAt?.toDate?.() || new Date(0);
+      const bDate = b.data().enrolledAt?.toDate?.() || new Date(0);
       return bDate.getTime() - aDate.getTime();
     });
 
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
         enrollments.push({
           id: enrollmentDoc.id,
           courseId: enrollmentData.courseId,
-          enrolledAt: enrollmentData.enrolledAt?.toDate()?.toISOString(),
+          enrolledAt: formatDateISO(enrollmentData.enrolledAt),
           completed: enrollmentData.completed || false,
           lastModuleIndex: enrollmentData.lastModuleIndex || 0,
           completedCount: enrollmentData.completedCount || 0,
