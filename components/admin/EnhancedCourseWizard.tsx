@@ -119,7 +119,7 @@ export function EnhancedCourseWizard({
     if (onCancel) {
       onCancel();
     } else {
-      router.push("/admin/courses");
+      router.push("/admin");
     }
   };
 
@@ -173,65 +173,69 @@ export function EnhancedCourseWizard({
 
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-2 shadow-sm">
             {STEPS.map((step, index) => (
-              <div
-                key={step.id}
-                className={`flex items-center ${
-                  index < STEPS.length - 1 ? "flex-1" : ""
-                }`}
-              >
+              <div key={step.id}>
                 <div
-                  className={`flex items-center justify-center w-12 h-12 rounded-full border-2 cursor-pointer transition-all ${
-                    index < currentStepIndex
-                      ? "bg-green-600 border-green-600 text-white"
-                      : index === currentStepIndex
-                      ? "bg-blue-600 border-blue-600 text-white"
-                      : "border-gray-300 text-gray-400 hover:border-gray-400"
+                  key={step.id}
+                  className={`flex items-center ${
+                    index < STEPS.length - 1 ? "flex-1" : ""
                   }`}
-                  onClick={() => goToStep(step.id)}
                 >
-                  {index < currentStepIndex ? (
-                    <svg
-                      className="w-6 h-6"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
+                  <div
+                    className={`flex items-center justify-center w-6 h-6 rounded-full border-2 cursor-pointer transition-all ${
+                      index < currentStepIndex
+                        ? "bg-green-600 border-green-600 text-white"
+                        : index === currentStepIndex
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "border-gray-300 text-gray-400 hover:border-gray-400"
+                    }`}
+                    onClick={() => goToStep(step.id)}
+                  >
+                    {index < currentStepIndex ? (
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    ) : (
+                      <span className=" font-semibold">{index + 1}</span>
+                    )}
+                  </div>
+
+                  <div className="ml-4 min-w-0 flex-1">
+                    <p
+                      className={` font-semibold ${
+                        index <= currentStepIndex
+                          ? index < currentStepIndex
+                            ? "text-green-600"
+                            : "text-blue-600"
+                          : "text-gray-400"
+                      }`}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  ) : (
-                    <span className=" font-semibold">{index + 1}</span>
+                      {step.title}
+                    </p>
+                  </div>
+
+                  {index < STEPS.length - 1 && (
+                    <div
+                      className={`flex-1 mx-6 h-0.5 transition-colors ${
+                        index < currentStepIndex
+                          ? "bg-green-600"
+                          : "bg-gray-200"
+                      }`}
+                    />
                   )}
                 </div>
-
-                <div className="ml-4 min-w-0 flex-1">
-                  <p
-                    className={` font-semibold ${
-                      index <= currentStepIndex
-                        ? index < currentStepIndex
-                          ? "text-green-600"
-                          : "text-blue-600"
-                        : "text-gray-400"
-                    }`}
-                  >
-                    {step.title}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {step.description}
-                  </p>
+                <div className="text-xs text-gray-500 mt-1">
+                  {step.description}
                 </div>
-
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={`flex-1 mx-6 h-0.5 transition-colors ${
-                      index < currentStepIndex ? "bg-green-600" : "bg-gray-200"
-                    }`}
-                  />
-                )}
               </div>
             ))}
           </div>

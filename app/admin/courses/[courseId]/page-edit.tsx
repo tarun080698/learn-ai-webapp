@@ -93,7 +93,7 @@ function AdminCourseEdit() {
             </h2>
             <p className="text-red-700 mb-4">{error}</p>
             <Link
-              href="/admin/courses"
+              href="/admin"
               className="inline-block text-red-600 hover:text-red-800 underline"
             >
               ← Back to Courses
@@ -118,7 +118,7 @@ function AdminCourseEdit() {
               The course you&apos;re looking for doesn&apos;t exist.
             </p>
             <Link
-              href="/admin/courses"
+              href="/admin"
               className="inline-block text-blue-600 hover:text-blue-800 underline"
             >
               ← Back to Courses
@@ -140,7 +140,7 @@ function AdminCourseEdit() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Link
-              href="/admin/courses"
+              href="/admin"
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
               ← Back to Courses

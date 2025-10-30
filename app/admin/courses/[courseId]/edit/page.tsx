@@ -482,7 +482,7 @@ export default function CourseEditPage() {
       await archiveCourse(courseId);
 
       // Navigate back to courses list
-      router.push("/admin/courses");
+      router.push("/admin");
     } catch (err) {
       console.error("Failed to archive course:", err);
       // TODO: Show error toast
@@ -584,7 +584,7 @@ export default function CourseEditPage() {
         <div className="text-center">
           <p className="text-destructive mb-4">{error || "Course not found"}</p>
           <button
-            onClick={() => router.push("/admin/courses")}
+            onClick={() => router.push("/admin")}
             className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
           >
             Back to Courses
@@ -603,7 +603,7 @@ export default function CourseEditPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <button
-              onClick={() => router.push("/admin/courses")}
+              onClick={() => router.push("/admin")}
               className="flex items-center text-muted-foreground hover:text-foreground mb-2"
             >
               <svg

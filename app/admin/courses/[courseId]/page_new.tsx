@@ -8,7 +8,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { formatDate } from "@/utils/helper";
+import { formatDate } from "@/utils/dateUtils";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { getCourseComplete } from "@/lib/api/admin";
@@ -383,22 +383,16 @@ export default function AdminCoursePreviewPage() {
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                       <div>
                         <span className="font-medium">Created:</span>{" "}
-                        {formatDate(
-                          course.createdAt?.toDate?.() || course.createdAt
-                        )}
+                        {formatDate(course.createdAt)}
                       </div>
                       <div>
                         <span className="font-medium">Last Updated:</span>{" "}
-                        {formatDate(
-                          course.updatedAt?.toDate?.() || course.updatedAt
-                        )}
+                        {formatDate(course.updatedAt)}
                       </div>
                       {course.publishedAt && (
                         <div>
                           <span className="font-medium">Published:</span>{" "}
-                          {formatDate(
-                            course.publishedAt?.toDate?.() || course.publishedAt
-                          )}
+                          {formatDate(course.publishedAt)}
                         </div>
                       )}
                     </div>

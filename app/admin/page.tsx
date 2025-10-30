@@ -144,7 +144,7 @@ function ConfirmationModal({
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg font-medium transition-colors duration-150"
+            className="px-4 py-2 rounded-lg font-medium transition-colors duration-150  cursor-pointer"
             style={{
               backgroundColor: "var(--card)",
               color: "var(--secondary)",
@@ -156,7 +156,7 @@ function ConfirmationModal({
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="px-4 py-2 rounded-lg font-medium transition-colors duration-150 flex items-center space-x-2"
+            className="px-4 py-2 rounded-lg font-medium transition-colors duration-150 flex items-center space-x-2  cursor-pointer"
             style={buttonStyle}
           >
             {isLoading && (
@@ -198,7 +198,7 @@ function Toast({
         borderLeft: `4px solid ${borderColor}`,
       }}
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between  cursor-pointer">
         <p style={{ color: "var(--secondary)" }}>{message}</p>
         <button
           onClick={onClose}
@@ -557,7 +557,7 @@ export default function AdminDashboard() {
             <div className="flex items-center space-x-2">
               <Link href={`/admin/courses/${course.id}/edit`}>
                 <button
-                  className="p-2 rounded-lg transition-colors duration-150"
+                  className="p-2 rounded-lg transition-colors duration-150 cursor-pointer"
                   title="Edit"
                   style={{ color: "var(--secondary)" }}
                   onMouseEnter={(e) => {
@@ -574,7 +574,7 @@ export default function AdminDashboard() {
               </Link>
               <Link href={`/admin/courses/${course.id}`}>
                 <button
-                  className="p-2 rounded-lg transition-colors duration-150"
+                  className="p-2 rounded-lg transition-colors duration-150  cursor-pointer"
                   title="Preview"
                   style={{ color: "var(--secondary)" }}
                   onMouseEnter={(e) => {
@@ -592,7 +592,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => handleArchiveToggle(course.id, course.archived)}
                 disabled={actionLoading === course.id}
-                className="p-2 rounded-lg transition-colors duration-150"
+                className="p-2 rounded-lg transition-colors duration-150  cursor-pointer"
                 title={course.archived ? "Restore" : "Archive"}
                 style={{ color: "var(--secondary)" }}
                 onMouseEnter={(e) => {
@@ -612,7 +612,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => handlePublishToggle(course.id, course.published)}
                 disabled={actionLoading === course.id}
-                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150"
+                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150 cursor-pointer"
                 style={{
                   backgroundColor: "var(--primary)",
                   color: "var(--primary-foreground)",
@@ -631,7 +631,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => handleArchiveToggle(course.id, course.archived)}
                 disabled={actionLoading === course.id}
-                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150"
+                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150  cursor-pointer"
                 style={{
                   backgroundColor: "var(--card)",
                   color: "var(--secondary)",
@@ -688,7 +688,7 @@ export default function AdminDashboard() {
             <div className="flex items-center space-x-4 mt-4 md:mt-0">
               <Link href="/admin/courses/new">
                 <button
-                  className="px-6 py-3 rounded-xl font-medium transition-colors duration-150 flex items-center space-x-2"
+                  className="px-6 py-3 rounded-xl font-medium transition-colors duration-150 flex items-center space-x-2  cursor-pointer"
                   style={{
                     backgroundColor: "var(--primary)",
                     color: "var(--primary-foreground)",
@@ -994,7 +994,7 @@ export default function AdminDashboard() {
               {courses.length === 0 && (
                 <Link href="/admin/courses/new">
                   <button
-                    className="px-6 py-3 rounded-lg font-medium transition-colors duration-150"
+                    className="px-6 py-3 rounded-lg font-medium transition-colors duration-150  cursor-pointer"
                     style={{
                       backgroundColor: "var(--primary)",
                       color: "var(--primary-foreground)",

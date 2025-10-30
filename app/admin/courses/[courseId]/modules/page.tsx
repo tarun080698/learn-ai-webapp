@@ -267,7 +267,7 @@ export default function AdminModulesPage() {
         <div className="text-center">
           <div className="text-black mb-4">Course not found</div>
           <Link
-            href="/admin/courses"
+            href="/admin"
             className="text-black hover:text-black border-b border-black"
           >
             ← Back to Courses

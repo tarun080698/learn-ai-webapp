@@ -36,6 +36,10 @@ body {
   font-family: var(--font-inter);
 }
 
+button {
+  cursor: pointer;
+}
+
 ::-webkit-scrollbar {
   display: none;
 }
