@@ -1,7 +1,7 @@
 "use client";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBrain } from "@fortawesome/free-solid-svg-icons";
+import Image from "next/image";
+import Logo from "@/public/learn-ai-logo.png";
 
 export function BrandHeader() {
   return (
@@ -10,13 +10,14 @@ export function BrandHeader() {
         <div className="flex items-center justify-center fade-in-top">
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center">
-                <FontAwesomeIcon
-                  icon={faBrain}
-                  className="text-primary-foreground text-xl"
+              <div className="max-w-12 bg-primary rounded-2xl flex items-center justify-center">
+                <Image
+                  src={Logo}
+                  alt="Logo"
+                  className="p-2 text-primary-foreground text-xl w-auto aspect-square"
                 />
               </div>
-              <div className="absolute -inset-1 bg-primary rounded-2xl opacity-20 pulse-ring"></div>
+              <div className="absolute -inset-1 bg-primary! rounded-2xl opacity-20 pulse-ring"></div>
             </div>
             <div>
               <h1

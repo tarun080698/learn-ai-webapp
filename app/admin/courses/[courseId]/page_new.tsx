@@ -182,9 +182,9 @@ export default function AdminCoursePreviewPage() {
           )}
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <span>Order: {asset.order}</span>
-            {asset.meta?.size && typeof asset.meta.size === "number" && (
+            {asset.meta?.size && typeof asset.meta.size === "number" ? (
               <span>Size: {formatFileSize(asset.meta.size)}</span>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -226,10 +226,7 @@ export default function AdminCoursePreviewPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">Error: {error}</div>
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Link href="/admin" className="text-blue-600 hover:text-blue-800">
             ← Back to Courses
           </Link>
         </div>
@@ -242,10 +239,7 @@ export default function AdminCoursePreviewPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-gray-600 mb-4">Course not found</div>
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Link href="/admin" className="text-blue-600 hover:text-blue-800">
             ← Back to Courses
           </Link>
         </div>
