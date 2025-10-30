@@ -2,50 +2,57 @@
 
 ## Overview
 
-The Learn AI backend is built on **Next.js 16 App Router** with **Firebase** as the primary backend service. It provides a comprehensive learning management system with course enrollment, progress tracking, questionnaire-based assessments, and complete course detail functionality.
+The Learn AI backend is a **production-ready Next.js 16 App Router** API implementing a comprehensive learning management system with advanced course creation, module management, assessment workflows, and administrative controls. Built on Firebase infrastructure with enterprise-grade security and performance optimizations.
 
 ### Architecture
 
-- **Runtime**: Next.js 15+ App Router with serverless API routes (43 endpoints)
-- **Database**: Firebase Firestore NoSQL with ownership model and archiving system
-- **Authentication**: Firebase Auth with dual provider model (Google OAuth + Email/Password)
-- **Authorization**: Role-based access control with admin ownership enforcement
-- **Admin SDK**: Firebase Admin SDK for server-side operations and data management
-- **Validation**: Zod schema validation for all request/response payloads
-- **Security**: Bearer token authentication with comprehensive security rules
-- **File Storage**: Firebase Storage with organized asset management system
-- **Performance**: Composite indexes and denormalized counters for optimal queries
-- **Data Integrity**: Idempotency keys, transactional updates, and audit logging
+- **Runtime**: Next.js 16.0.0 App Router with serverless API routes (55+ endpoints)
+- **Database**: Firebase Firestore NoSQL with ownership model, soft delete, and audit logging
+- **Authentication**: Firebase Auth with dual provider support (Google OAuth + Email/Password)
+- **Authorization**: Multi-tier role-based access control with resource ownership enforcement
+- **Admin SDK**: Firebase Admin SDK with custom initialization and connection pooling
+- **Validation**: Comprehensive Zod schema validation for all request/response payloads
+- **Security**: Bearer token authentication with CORS, rate limiting, and input sanitization
+- **File Storage**: Firebase Storage with organized paths, metadata, and access controls
+- **Performance**: Composite indexes, denormalized counters, and optimized query patterns
+- **Data Integrity**: Idempotency system, transactional updates, and comprehensive audit trails
+- **Error Handling**: Structured error responses with detailed logging and monitoring
 
 ### Current Implementation Status
 
-**✅ Production Ready (43 API endpoints)**:
+**✅ Production Ready (55+ API endpoints)**:
 
-- **Authentication & Session Management**: Login processing with streak tracking, user profiles
-- **Public Course Discovery**: Course catalog, detailed course information with enrollment status
-- **User Learning Workflow**: Course enrollment, progress tracking, module access control
-- **Assessment System**: Complete questionnaire workflow with assignments, responses, and scoring
-- **Admin Management Suite**: Course/module/questionnaire CRUD operations with ownership model
-- **User & Role Management**: Admin user management, role assignments, account administration
-- **Asset Management**: File upload system for course heroes and module assets
-- **Data Migration**: Database migration tools for schema updates and ownership assignment
-- **Health Monitoring**: API health checks and status monitoring
+- **Authentication & Session Management**: Login processing, streak tracking, role management
+- **Public Course Discovery**: Course catalog with enrollment status and progress tracking
+- **User Learning Workflow**: Course enrollment, module progression, completion tracking
+- **Assessment System**: Complete questionnaire lifecycle with assignments and scoring
+- **Admin Course Management**: Advanced course creation wizard with 4-step workflow
+- **Module Management**: Content creation, reordering, asset management, and validation
+- **Questionnaire Management**: Template creation, assignment workflow, response processing
+- **Asset Management**: File upload system with Firebase Storage integration
+- **Audit System**: Comprehensive action logging with admin oversight
+- **Health Monitoring**: API health checks, database connectivity, and system metrics
 
-**🏗️ Key Architectural Features**:
+**🏗️ Advanced Architectural Features**:
 
-- **Ownership Model**: Admin-owned resources with isolated access control
-- **Archiving System**: Soft delete functionality across all major collections
-- **Counter Management**: Denormalized counters for enrollment and completion tracking
-- **Idempotency System**: Request deduplication for critical operations
-- **Gating Logic**: Questionnaire-based course/module access control
-- **Asset Pipeline**: Multi-format asset support with metadata and ordering
+- **Course Creation Wizard**: 4-step guided workflow with auto-save and validation
+- **Module Content System**: Support for text, video, PDF, image, and link content types
+- **Asset Reordering**: Drag-and-drop interface with backend persistence
+- **Assessment Integration**: Pre/post questionnaire assignment with gating logic
+- **Admin Audit Trail**: Complete action logging with user identification and timestamps
+- **Soft Delete System**: Archive functionality with restoration capabilities
+- **Ownership Isolation**: Admin-scoped resource access with inheritance models
+- **Idempotency Protection**: Duplicate operation prevention for critical workflows
+- **Counter Denormalization**: Performance-optimized aggregation tracking
+- **Content Validation**: Schema-driven validation with detailed error reporting
 
-**❌ Future Enhancements**:
+**🚀 Recent Enhancements**:
 
-- Advanced analytics dashboards
-- Bulk operation APIs for mass management
-- Content versioning and rollback system
-- Advanced reporting and data export
+- **Module Creation API**: Fixed validation and content type handling
+- **Course Wizard Integration**: Seamless frontend-backend communication
+- **Assessment Counter Fix**: Accurate assessment tracking in UI
+- **Hydration Error Resolution**: Client-server consistency improvements
+- **File Upload Optimization**: Enhanced drag-and-drop with progress tracking
 
 ### Authentication Flow
 
@@ -202,9 +209,31 @@ The Learn AI backend is built on **Next.js 16 App Router** with **Firebase** as 
 
 #### `POST /api/admin/module.upsert`
 
-**Purpose**: Create or update course modules with asset management
+**Purpose**: Create or update course modules with comprehensive content management
 **Auth**: Admin required (course owner only)
-**Features**: Module CRUD, asset management, ordering, content handling
+**Request Schema**:
+
+```typescript
+{
+  moduleId?: string;        // For updates
+  courseId: string;         // Parent course
+  index: number;            // Module order (0-based)
+  title: string;            // Module title
+  summary: string;          // Module description
+  contentType: "video" | "text" | "pdf" | "image" | "link";
+  contentUrl?: string;      // For non-text content
+  body?: string;            // For text content (required if contentType=text)
+  estMinutes: number;       // Estimated completion time
+}
+```
+
+**Features**:
+
+- Content type validation (text requires body, others require contentUrl)
+- Module ordering and indexing
+- Course module count updates
+- Asset management integration
+- Audit logging for all changes
 
 #### `POST /api/admin/module.archive`
 

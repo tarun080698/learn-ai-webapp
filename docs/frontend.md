@@ -2,17 +2,20 @@
 
 ## Overview
 
-The Learn AI frontend is built with **Next.js 16** and **React 19**, utilizing the App Router architecture. The current implementation provides core authentication, course catalog browsing, and admin management functionality.
+The Learn AI frontend is a comprehensive **Next.js 16** and **React 19** learning management system with a full-featured course creation wizard, advanced admin interface, and seamless user experience. Built with modern App Router architecture and production-ready components.
 
 ### Tech Stack
 
 - **Framework**: Next.js 16.0.0 with App Router
-- **React**: 19.2.0 with modern features
-- **Styling**: TailwindCSS v4.1.16
-- **Authentication**: Firebase Auth with custom AuthProvider
-- **HTTP Client**: Native `fetch()` API
-- **Validation**: Zod schemas for form data
-- **State Management**: React Context + useState/useEffect
+- **React**: 19.2.0 with Concurrent Features and RSC
+- **Styling**: TailwindCSS v4.1.16 with custom design system
+- **Authentication**: Firebase Auth with dual provider support
+- **HTTP Client**: Native `fetch()` with authenticated mutation hooks
+- **Validation**: Zod schemas with React Hook Form integration
+- **State Management**: React Context + TanStack Query for server state
+- **File Uploads**: Custom FileUpload component with drag-and-drop
+- **UI Components**: Custom Toast system, Modal dialogs, Form controls
+- **Drag & Drop**: @dnd-kit for module and asset reordering
 
 ## App Router Structure
 
@@ -57,7 +60,22 @@ app/
 
 ```
 app/admin/
-└── page.tsx                  # Admin dashboard and management
+├── layout.tsx                # Admin layout with navigation
+├── page.tsx                  # Admin dashboard with analytics
+├── login/
+│   └── page.tsx              # Admin email/password login
+├── courses/
+│   ├── page.tsx              # Course management dashboard
+│   ├── new/
+│   │   └── page.tsx          # Advanced 4-step course creation wizard
+│   └── [courseId]/
+│       ├── page.tsx          # Course details and management
+│       └── modules/
+│           └── page.tsx      # Module management with reordering
+├── questionnaires/
+│   └── page.tsx              # Questionnaire management
+└── test/
+    └── page.tsx              # Admin testing and debugging tools
 ```
 
 ### API Routes
@@ -221,130 +239,344 @@ if (role === "admin" && !pathname.startsWith("/admin")) {
 
 ### Admin Dashboard (`app/admin/page.tsx`)
 
-**Status**: ✅ Complete
-**Current Features**:
+**Status**: ✅ Production Ready
+**Features**:
 
-- Course management (create, edit, publish)
-- Module management (create, edit, order)
-- Questionnaire template creation
-- Assignment management
-- Database seeding tools
-- User role management
+- **Analytics Overview**: Course statistics, enrollment metrics, completion rates
+- **Quick Actions**: Direct access to course creation and management
+- **Recent Activity**: Latest course updates and user activities
+- **Role Management**: User promotion/demotion interface
+- **System Health**: Database status and API monitoring
+
+### Course Creation Wizard (`app/admin/courses/new/page.tsx`)
+
+**Status**: ✅ Production Ready - Advanced Implementation
+**Features**:
+
+- **4-Step Guided Workflow**:
+
+  1. **Details**: Course metadata, hero image upload, difficulty level
+  2. **Modules**: Content creation with drag-and-drop reordering
+  3. **Gating**: Pre/post assessments assignment with questionnaire selector
+  4. **Review**: Final validation and course publishing
+
+- **Advanced State Management**:
+
+  - Auto-save functionality with debounced updates
+  - Form validation with Zod schemas
+  - Progress persistence across steps
+  - Error handling with rollback capability
+
+- **Real-time Features**:
+
+  - Live preview of course summary
+  - Module/asset counters
+  - Assessment configuration display
+  - Draft status indicators
+
+- **Content Management**:
+  - Hero image upload with drag-and-drop
+  - Module content editor (text, video, file support)
+  - Asset attachment system
+  - Content validation and requirements
+
+### Course Management (`app/admin/courses/[courseId]/page.tsx`)
+
+**Status**: ✅ Complete
+**Features**:
+
+- **Course Overview**: Metadata display and editing
+- **Module Management**: Full CRUD operations with reordering
+- **Assessment Assignment**: Questionnaire configuration
+- **Publishing Controls**: Draft/published status management
+- **Analytics**: Enrollment and completion statistics
+
+### Module Editor (`app/admin/courses/[courseId]/modules/page.tsx`)
+
+**Status**: ✅ Production Ready
+**Features**:
+
+- **Drag-and-Drop Reordering**: Visual module sequencing
+- **Content Types**: Support for text, video, PDF, image, and link content
+- **Form Validation**: Real-time validation with error feedback
+- **Asset Management**: File upload and organization
+- **Assessment Integration**: Module-level questionnaire assignment
 
 ### Questionnaires Page (`app/questionnaires/page.tsx`)
 
-**Status**: ⚠️ Partial Implementation
-**Current Features**:
+**Status**: ✅ Production Ready
+**Features**:
 
-- Assignment listing for courses/modules
-- Questionnaire template rendering
-- Response form handling
-- Progress tracking
+- **Assignment Discovery**: Automatic course/module questionnaire detection
+- **Question Types**: Multiple choice, text, rating scale support
+- **Response Management**: Form validation and submission handling
+- **Progress Tracking**: Completion status and scoring
+- **Testing Interface**: Admin questionnaire testing and validation tools
 
-**Missing Features**:
+## Component Architecture
 
-- Enhanced question types (scale, multi-select)
-- Progress saving (resume incomplete)
-- Results display
-- Retry functionality
+### Core Components
+
+#### CreateCourseWizard (`components/admin/courses/CreateCourseWizard.tsx`)
+
+**Status**: ✅ Production Ready
+**Architecture**: Multi-step wizard with centralized state management
+
+**Key Features**:
+
+- **State Management**: Centralized WizardState with `updateWizardState` callback
+- **Step Navigation**: Progress bar with step validation and navigation controls
+- **Auto-save**: Debounced draft saving with error handling
+- **Course Summary**: Real-time sidebar with statistics and status
+- **Toast Notifications**: Success/error feedback system
+
+**Step Components**:
+
+1. **StepDetails**: Course metadata and hero image upload
+2. **StepModules**: Module creation with content editing
+3. **StepGating**: Assessment assignment with questionnaire selection
+4. **StepReview**: Final validation and course creation
+
+#### FileUpload (`components/FileUpload.tsx`)
+
+**Status**: ✅ Production Ready
+**Features**:
+
+- **Drag-and-Drop**: Visual file drop zone with hover states
+- **File Validation**: Size limits, type checking, error handling
+- **Upload Progress**: Real-time progress indicators
+- **Firebase Storage**: Direct integration with organized file paths
+- **Responsive Design**: Mobile-friendly interface
+
+#### AdminLayout (`components/admin/AdminLayout.tsx`)
+
+**Status**: ✅ Production Ready
+**Features**:
+
+- **Navigation Sidebar**: Course, module, questionnaire management
+- **Breadcrumb System**: Contextual navigation trails
+- **Role Verification**: Admin-only access protection
+- **Responsive Design**: Mobile-optimized admin interface
 
 ## Integration Points
 
-### API Communication
+### API Communication & Custom Hooks
 
-**Authentication**: All API calls include Firebase ID token
+#### useAuthenticatedFetch (`hooks/useAuthenticatedFetch.ts`)
+
+**Status**: ✅ Production Ready
+**Purpose**: Centralized API communication with authentication
+
+**Features**:
+
+- **Automatic Token Management**: Firebase ID token refresh and injection
+- **Error Handling**: Consistent error processing and user feedback
+- **Loading States**: Built-in loading indicators
+- **Request Configuration**: Headers, methods, body serialization
 
 ```typescript
-const idToken = await getFreshIdToken();
-const response = await fetch("/api/endpoint", {
+const authenticatedFetch = useAuthenticatedFetch();
+const data = await authenticatedFetch("/api/courses", {
   method: "POST",
-  headers: {
-    Authorization: `Bearer ${idToken}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify(data),
+  body: JSON.stringify(courseData),
 });
 ```
 
-**Error Handling**: Consistent error response processing
+#### useAuthenticatedMutation (`hooks/useAuthenticatedFetch.ts`)
+
+**Status**: ✅ Production Ready
+**Purpose**: Mutation hook for data-changing operations
+
+**Features**:
+
+- **Mutation State**: Loading, error, success states
+- **Optimistic Updates**: UI updates before server confirmation
+- **Error Recovery**: Automatic retry and rollback mechanisms
+- **Toast Integration**: Success/error notifications
 
 ```typescript
-if (!response.ok) {
-  const error = await response.json();
-  throw new Error(error.message || "Request failed");
+const { mutate, loading, error } = useAuthenticatedMutation();
+await mutate("/api/admin/course.upsert", courseData);
+```
+
+#### useFileUpload (`hooks/useFileUpload.ts`)
+
+**Status**: ✅ Production Ready
+**Purpose**: File upload management with Firebase Storage
+
+**Features**:
+
+- **Upload Progress**: Real-time progress tracking
+- **File Validation**: Size, type, and format validation
+- **Error Handling**: Upload failure recovery
+- **Path Organization**: Structured Firebase Storage paths
+
+### State Management Architecture
+
+#### Wizard State Management
+
+**Pattern**: Centralized state with callback updates
+**Implementation**: `WizardState` interface with `updateWizardState` function
+
+```typescript
+interface WizardState {
+  currentStep: number;
+  courseId?: string;
+  courseData: Partial<CourseFormData>;
+  modules: ModuleFormData[];
+  assignments: AssignmentConfiguration;
 }
 ```
 
-**Idempotency**: Critical endpoints require idempotency keys
+#### Form State Management
+
+**Library**: React Hook Form with Zod validation
+**Pattern**: Schema-driven validation with real-time feedback
 
 ```typescript
-headers: {
-  'x-idempotency-key': `enroll-${courseId}-${Date.now()}`
+const {
+  control,
+  handleSubmit,
+  formState: { errors },
+} = useForm({
+  resolver: zodResolver(courseSchema),
+  defaultValues: initialData,
+});
+```
+
+#### Server State Management
+
+**Library**: TanStack Query for caching and synchronization
+**Pattern**: Query keys with automatic invalidation
+
+```typescript
+const { data, isLoading } = useQuery({
+  queryKey: ["questionnaires"],
+  queryFn: getQuestionnaires,
+});
+```
+
+## UI/UX Design System
+
+### Custom Components
+
+#### Toast System (`components/ui/Toast.tsx`)
+
+**Status**: ✅ Production Ready
+**Features**:
+
+- **Multiple Types**: Success, error, info, warning notifications
+- **Auto-dismiss**: Configurable timeout with manual dismiss
+- **Queue Management**: Multiple toast stacking and management
+- **Animation**: Smooth slide-in/out transitions
+
+#### Modal System
+
+**Status**: ✅ Production Ready
+**Features**:
+
+- **Overlay Management**: Click-outside to close, ESC key support
+- **Focus Management**: Keyboard navigation and focus trap
+- **Responsive**: Mobile-optimized modal layouts
+- **Customizable**: Header, body, footer composition
+
+### Form Validation & Error Handling
+
+#### Validation Strategy
+
+**Library**: Zod schemas with React Hook Form integration
+**Pattern**: Schema-first validation with TypeScript inference
+
+```typescript
+const moduleSchema = z.object({
+  title: z.string().min(1, "Module title is required"),
+  summary: z.string().min(1, "Summary is required"),
+  estMinutes: z.number().int().min(1, "Duration must be at least 1 minute"),
+  contentType: z.enum(["video", "text", "pdf", "image", "link"]),
+});
+```
+
+#### Error Display
+
+**Pattern**: Field-level errors with visual indicators
+**Implementation**: Consistent error styling and messaging
+
+```typescript
+{
+  errors.title && (
+    <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+  );
 }
 ```
 
-### State Management Patterns
+### Responsive Design
 
-**Local State**: `useState` for component-specific data
-**Global State**: React Context for authentication
-**Server State**: Direct API calls (no caching layer)
-**Form State**: Controlled components with validation
+#### Breakpoint Strategy
 
-## Phase 4 Implementation Plan
+**Framework**: TailwindCSS responsive utilities
+**Breakpoints**: Mobile-first responsive design
 
-### Module Viewer Component
+- **Mobile**: `base` (default)
+- **Tablet**: `md:` (768px+)
+- **Desktop**: `lg:` (1024px+)
+- **Large**: `xl:` (1280px+)
 
-**Priority**: High
-**Requirements**:
+#### Layout Patterns
 
-- Video/text/PDF content rendering
-- Progress tracking integration
-- Navigation between modules
-- Completion marking
-- Responsive design
+**Admin Interface**: Sidebar navigation with collapsible mobile menu
+**Wizard Interface**: Single-column with progress indicator
+**Dashboard**: Card-based responsive grid layout
 
-### Enhanced Course Catalog
+## Performance Optimizations
 
-**Priority**: Medium
-**Requirements**:
+### Code Splitting
 
-- Search functionality
-- Level/duration filtering
-- Course detail modal/page
-- Enrollment workflow
-- Preview capabilities
+**Strategy**: Route-based code splitting with Next.js App Router
+**Implementation**: Automatic chunking with dynamic imports
 
-### Questionnaire Enhancements
+### Image Optimization
 
-**Priority**: Medium
-**Requirements**:
+**Library**: Next.js Image component with automatic optimization
+**Features**: WebP conversion, responsive sizing, lazy loading
 
-- Scale question UI (1-10 rating)
-- Multi-select checkbox groups
-- Text area for open responses
-- Progress saving/resume
-- Results visualization
+### Bundle Analysis
 
-### Progress Visualization
+**Tools**: Built-in Next.js bundle analyzer
+**Monitoring**: Core Web Vitals tracking and optimization
 
-**Priority**: Medium
-**Requirements**:
+## Development Workflow
 
-- Progress bars/circles
-- Module completion indicators
-- Learning path visualization
-- Achievement system
-- Statistics dashboard
+### Component Development
 
-### Admin Enhancements
+**Pattern**: Composition over inheritance
+**Testing**: Manual testing with comprehensive test scenarios
+**Documentation**: Inline documentation with usage examples
 
-**Priority**: Low
-**Requirements**:
+### State Updates
 
-- Bulk operations
-- User management interface
-- Analytics dashboard
-- Content import/export
+**Pattern**: Immutable updates with functional setState
+**Validation**: Runtime validation with Zod schemas
+**Error Boundaries**: Graceful error handling and recovery
+
+## Future Enhancements
+
+### Content Management
+
+- **Rich Text Editor**: WYSIWYG content creation
+- **Media Library**: Asset browser and management
+- **Content Templates**: Reusable content blocks
+
+### User Experience
+
+- **Keyboard Navigation**: Full keyboard accessibility
+- **Dark Mode**: Theme switching capability
+- **Offline Support**: Progressive Web App features
+
+### Analytics Integration
+
+- **User Behavior**: Click tracking and heatmaps
+- **Performance Monitoring**: Real-time performance metrics
+- **A/B Testing**: Feature flag system for experiments
 - System health monitoring
 
 ## UI Framework & Patterns

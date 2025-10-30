@@ -1,17 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: light;
+  --background: 0 0% 100%;
+  --foreground: 220 15% 5%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 15% 5%;
+  --primary: 174 63% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 201 42% 25%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 100%;
+  --muted-foreground: 220 15% 5%;
+  --accent: 38 70% 63%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 9 75% 61%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 201 42% 25%;
+  --input: 0 0% 100%;
+  --ring: 220 13% 58%;
+  --radius: 0.75rem;
+  --shadow: -2px 4px 12px 4px rgba(38, 70, 83, 0.05);
+  --font-inter: "Inter", sans-serif;
+  --font-poppins: "Poppins", serif;
 }
 
 html,
 body {
   height: 100%;
-  background-color: white;
-  color: black;
+  scroll-behavior: smooth;
 }
 
-* {
-  color: black !important;
-  background-color: white;
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-inter);
+}
+
+::-webkit-scrollbar {
+  display: none;
 }

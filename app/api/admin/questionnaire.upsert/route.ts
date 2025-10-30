@@ -92,13 +92,6 @@ export async function POST(req: NextRequest) {
               }
             );
           }
-          // Check version
-          if (validated.version < existing.version) {
-            return NextResponse.json(
-              { error: "Version must be >= current version" },
-              { status: 422 }
-            );
-          }
         }
       }
     }
@@ -106,7 +99,6 @@ export async function POST(req: NextRequest) {
     const questionnaireData = {
       title: validated.title,
       purpose: validated.purpose,
-      version: validated.version,
       questions: validated.questions,
       ownerUid: user.uid, // Set ownership
       updatedAt: now,

@@ -69,7 +69,7 @@ export async function GET(
         summary: module.summary,
         contentType: module.contentType,
       }))
-      .sort((a, b) => (a.index || 0) - (b.index || 0));
+      .sort((a, b) => Number(a.index || 0) - Number(b.index || 0));
 
     // Get course-level questionnaire assignments (active and non-archived)
     const assignmentsSnapshot = await adminDb

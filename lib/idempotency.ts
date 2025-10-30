@@ -1,4 +1,5 @@
 import { firestore } from "firebase-admin";
+import { v4 as uuidv4 } from "uuid";
 
 type Scope = {
   kind: "enroll" | "progress" | "response";
@@ -7,6 +8,11 @@ type Scope = {
   moduleId?: string;
   assignmentId?: string;
 };
+
+// Generate UUID for idempotency headers
+export function generateIdempotencyKey(): string {
+  return uuidv4();
+}
 
 /**
  * Wraps idempotent operations with deduplication via idempotentWrites collection.

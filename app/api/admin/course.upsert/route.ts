@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
 
     return Response.json({
       ok: true,
-      courseId,
+      id: courseId,
       isUpdate,
     });
   } catch (error) {

@@ -24,7 +24,6 @@ export function QuestionnaireBuilder({
     title: questionnaire?.title || "",
     purpose:
       questionnaire?.purpose || ("survey" as "survey" | "quiz" | "assessment"),
-    version: questionnaire?.version || 1,
   });
 
   const [questions, setQuestions] = useState<Question[]>(
@@ -233,24 +232,6 @@ export function QuestionnaireBuilder({
               <option value="assessment">Assessment</option>
             </select>
           </div>
-        </div>
-
-        <div className="w-32">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Version
-          </label>
-          <input
-            type="number"
-            min="1"
-            value={formData.version}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                version: parseInt(e.target.value) || 1,
-              }))
-            }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          />
         </div>
       </div>
 

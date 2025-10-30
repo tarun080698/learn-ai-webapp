@@ -207,7 +207,6 @@ export async function POST(req: NextRequest) {
           uid: user.uid,
           assignmentId: validated.assignmentId,
           questionnaireId: assignmentData.questionnaireId,
-          questionnaireVersion: assignmentData.questionnaireVersion,
           scope: assignmentData.scope,
           answers,
           isComplete: true,

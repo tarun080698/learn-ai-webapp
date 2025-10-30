@@ -24,7 +24,7 @@ export const ALLOWED_TYPES = {
 export const MAX_SIZES = {
   heroImage: 5 * 1024 * 1024, // 5MB for images
   image: 5 * 1024 * 1024, // 5MB for images
-  pdf: 10 * 1024 * 1024, // 10MB for PDFs
+  pdf: 100 * 1024 * 1024, // 10MB for PDFs
   video: 200 * 1024 * 1024, // 200MB for videos
   moduleAsset: 200 * 1024 * 1024, // 200MB max for any module asset
 } as const;

@@ -1,387 +1,1068 @@
-/**
- * Admin Dashboard
- * Overview of admin's content and quick actions using new admin architecture
- */
 "use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { AdminLayout } from "@/components/admin/AdminLayout";
+import Image from "next/image";
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { useAuthenticatedFetch } from "@/hooks/useAuthenticatedFetch";
+import { AdminCourse, CourseStats } from "@/types/admin";
+import { CourseDoc } from "@/types/models";
+import { formatDate, calculateCompletionRate } from "@/utils/helper";
+import { generateIdempotencyKey } from "@/utils/uuid";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faBook,
+  faUsers,
+  faTrophy,
+  faPlus,
+  faEdit,
+  faEye,
+  faArchive,
+  faSearch,
+  faSpinner,
+  faExclamationTriangle,
+} from "@fortawesome/free-solid-svg-icons";
 
-interface DashboardStats {
-  courses: {
-    total: number;
-    published: number;
-    drafts: number;
-  };
-  modules: {
-    total: number;
-  };
-  questionnaires: {
-    total: number;
-    byType: {
-      survey: number;
-      quiz: number;
-      assessment: number;
-    };
-  };
-  assignments: {
-    total: number;
-    active: number;
-  };
+// Loading skeleton components
+function StatCardSkeleton() {
+  return (
+    <div
+      className="rounded-2xl p-6 animate-pulse"
+      style={{
+        backgroundColor: "var(--card)",
+        boxShadow:
+          "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div
+          className="p-3 rounded-xl"
+          style={{ backgroundColor: "var(--secondary-10)" }}
+        >
+          <div className="w-6 h-6 bg-gray-300 rounded"></div>
+        </div>
+        <div className="w-12 h-1 bg-gray-300 rounded-full"></div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+        <div className="h-8 bg-gray-300 rounded w-1/3"></div>
+        <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+      </div>
+    </div>
+  );
 }
 
-interface RecentItem {
-  id: string;
+function CourseCardSkeleton() {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden animate-pulse"
+      style={{
+        backgroundColor: "var(--card)",
+        boxShadow:
+          "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+      }}
+    >
+      <div className="h-48 bg-gray-300"></div>
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-3">
+          <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+          <div className="h-6 bg-gray-300 rounded w-16"></div>
+        </div>
+        <div className="space-y-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+            <div className="w-8 h-8 bg-gray-300 rounded-lg"></div>
+          </div>
+          <div className="h-8 bg-gray-300 rounded-lg w-20"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Confirmation modal component
+function ConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  confirmText,
+  confirmStyle = "primary",
+  isLoading = false,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
   title: string;
-  type: "course" | "questionnaire";
-  status: string;
-  updatedAt: Date;
+  message: string;
+  confirmText: string;
+  confirmStyle?: "primary" | "destructive";
+  isLoading?: boolean;
+}) {
+  if (!isOpen) return null;
+
+  const buttonStyle =
+    confirmStyle === "destructive"
+      ? {
+          backgroundColor: "var(--destructive)",
+          color: "var(--destructive-foreground)",
+        }
+      : {
+          backgroundColor: "var(--primary)",
+          color: "var(--primary-foreground)",
+        };
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div
+        className="rounded-2xl p-6 max-w-md w-full mx-4"
+        style={{ backgroundColor: "var(--card)" }}
+      >
+        <h3
+          className="text-lg font-semibold mb-4"
+          style={{ color: "var(--secondary)" }}
+        >
+          {title}
+        </h3>
+        <p className="mb-6" style={{ color: "var(--secondary-70)" }}>
+          {message}
+        </p>
+        <div className="flex items-center justify-end space-x-3">
+          <button
+            onClick={onClose}
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg font-medium transition-colors duration-150"
+            style={{
+              backgroundColor: "var(--card)",
+              color: "var(--secondary)",
+              border: "1px solid var(--secondary-15)",
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="px-4 py-2 rounded-lg font-medium transition-colors duration-150 flex items-center space-x-2"
+            style={buttonStyle}
+          >
+            {isLoading && (
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            )}
+            <span>{confirmText}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-interface Course {
-  id: string;
-  title: string;
-  published: boolean;
-  updatedAt: { _seconds: number };
-}
+// Toast notification component
+function Toast({
+  message,
+  type = "success",
+  onClose,
+}: {
+  message: string;
+  type?: "success" | "error";
+  onClose: () => void;
+}) {
+  const borderColor =
+    type === "success" ? "var(--accent)" : "var(--destructive)";
 
-interface Questionnaire {
-  id: string;
-  title: string;
-  purpose: "survey" | "quiz" | "assessment";
-  updatedAt: { seconds: number };
-}
+  useEffect(() => {
+    if (type === "success") {
+      const timer = setTimeout(onClose, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [type, onClose]);
 
-interface Assignment {
-  id: string;
-  active: boolean;
-}
-
-interface Module {
-  id: string;
+  return (
+    <div
+      className="fixed top-4 right-4 rounded-lg p-4 shadow-lg z-50 min-w-80"
+      style={{
+        backgroundColor: "var(--background)",
+        borderLeft: `4px solid ${borderColor}`,
+      }}
+    >
+      <div className="flex items-center justify-between">
+        <p style={{ color: "var(--secondary)" }}>{message}</p>
+        <button
+          onClick={onClose}
+          className="ml-4"
+          style={{ color: "var(--secondary-50)" }}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentItems, setRecentItems] = useState<RecentItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { firebaseUser } = useAuth();
+  const { firebaseUser: user, role, loading: authLoading } = useAuth();
   const authenticatedFetch = useAuthenticatedFetch();
 
-  // Fetch dashboard data
+  const [mounted, setMounted] = useState(false);
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
+  const [stats, setStats] = useState<CourseStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: "publish" | "archive";
+    courseId: string;
+    courseName: string;
+    newState: boolean;
+  }>({
+    isOpen: false,
+    type: "publish",
+    courseId: "",
+    courseName: "",
+    newState: false,
+  });
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+
+  // Prevent hydration mismatch by ensuring client-side rendering
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!firebaseUser) return;
+    setMounted(true);
+  }, []);
 
-      setIsLoading(true);
-      setError(null);
+  // Check admin access
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (role !== "admin") {
+        window.location.href = "/admin/login";
+        return;
+      }
+    } else if (!authLoading && !user) {
+      window.location.href = "/admin/login";
+      return;
+    }
+  }, [user, role, authLoading]);
 
+  // Fetch courses data
+  useEffect(() => {
+    if (!user || authLoading) return;
+
+    const fetchCourses = async () => {
       try {
-        // Fetch data from all endpoints using standardized auth
-        const [coursesRes, modulesRes, questionnairesRes, assignmentsRes] =
-          await Promise.all([
-            authenticatedFetch("/api/admin/courses.mine?limit=100"),
-            authenticatedFetch("/api/admin/modules.mine?limit=100"),
-            authenticatedFetch("/api/admin/questionnaires.mine?limit=100"),
-            authenticatedFetch("/api/admin/assignments.mine?limit=100"),
-          ]);
+        setLoading(true);
+        const response = await authenticatedFetch("/api/admin/courses.mine");
 
-        const [coursesData, modulesData, questionnairesData, assignmentsData] =
-          await Promise.all([
-            coursesRes.json(),
-            modulesRes.json(),
-            questionnairesRes.json(),
-            assignmentsRes.json(),
-          ]);
+        if (!response.ok) {
+          throw new Error("Failed to fetch courses");
+        }
 
-        // Calculate stats with proper typing
-        const courses = (coursesData.courses || []) as Course[];
-        const questionnaires = (questionnairesData.questionnaires ||
-          []) as Questionnaire[];
-        const assignments = (assignmentsData.assignments || []) as Assignment[];
-        const modules = (modulesData.modules || []) as Module[];
+        const apiResponse = await response.json();
+        console.log({ apiResponse });
 
-        const courseStats = {
-          total: courses.length,
-          published: courses.filter((c) => c.published).length,
-          drafts: courses.filter((c) => !c.published).length,
-        };
+        // Convert CourseDoc to AdminCourse format
+        const adminCourses: AdminCourse[] = apiResponse.courses.map(
+          (course: CourseDoc & { id: string }) => ({
+            id: course.id,
+            title: course.title,
+            description: course.description,
+            heroImageUrl: course.heroImageUrl,
+            published: course.published,
+            archived: course.archived,
+            updatedAt: course.updatedAt?.toDate
+              ? course.updatedAt.toDate().toISOString()
+              : course.updatedAt,
+            moduleCount: course.moduleCount || 0,
+            enrolledCount: course.enrolledCount || 0,
+            completedCount: course.completedCount || 0,
+          })
+        );
 
-        const questionnaireStats = {
-          total: questionnaires.length,
-          byType: {
-            survey: questionnaires.filter((q) => q.purpose === "survey").length,
-            quiz: questionnaires.filter((q) => q.purpose === "quiz").length,
-            assessment: questionnaires.filter((q) => q.purpose === "assessment")
-              .length,
-          },
-        };
+        setCourses(adminCourses);
+
+        // Calculate stats
+        const totalEnrollments = adminCourses.reduce(
+          (sum, course) => sum + course.enrolledCount,
+          0
+        );
+        const totalCompletions = adminCourses.reduce(
+          (sum, course) => sum + course.completedCount,
+          0
+        );
 
         setStats({
-          courses: courseStats,
-          modules: {
-            total: modules.length,
-          },
-          questionnaires: questionnaireStats,
-          assignments: {
-            total: assignments.length,
-            active: assignments.filter((a) => a.active).length,
-          },
+          totalCourses: adminCourses.length,
+          totalEnrollments,
+          totalCompletions,
         });
-        console.log({ courses });
-
-        // Get recent items with proper typing
-        const recentCourses = courses.slice(0, 3).map((course) => ({
-          id: course.id,
-          title: course.title,
-          type: "course" as const,
-          status: course.published ? "Published" : "Draft",
-          updatedAt: new Date(course.updatedAt._seconds * 1000),
-        }));
-
-        const recentQuestionnaires = questionnaires.slice(0, 2).map((q) => ({
-          id: q.id,
-          title: q.title,
-          type: "questionnaire" as const,
-          status: q.purpose,
-          updatedAt: new Date(q.updatedAt.seconds * 1000),
-        }));
-
-        const recent = [...recentCourses, ...recentQuestionnaires]
-          .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-          .slice(0, 5);
-
-        setRecentItems(recent);
-      } catch (error) {
-        setError(
-          error instanceof Error ? error.message : "Failed to load dashboard"
-        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load courses");
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
-    fetchDashboardData();
-  }, [firebaseUser, authenticatedFetch]);
+    fetchCourses();
+  }, [user, authLoading, authenticatedFetch]);
 
-  const StatCard = ({
-    title,
-    value,
-    subtitle,
-    color = "blue",
-  }: {
-    title: string;
-    value: number | string;
-    subtitle?: string;
-    color?: "blue" | "green" | "purple" | "orange";
-  }) => {
-    const colorClasses = {
-      blue: "bg-blue-50 text-blue-700",
-      green: "bg-green-50 text-green-700",
-      purple: "bg-purple-50 text-purple-700",
-      orange: "bg-orange-50 text-orange-700",
-    };
+  // Filter courses based on search
+  const filteredCourses = courses.filter((course) =>
+    course.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle publish/unpublish
+  const handlePublishToggle = async (
+    courseId: string,
+    currentPublished: boolean
+  ) => {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) return;
+
+    setConfirmModal({
+      isOpen: true,
+      type: "publish",
+      courseId,
+      courseName: course.title,
+      newState: !currentPublished,
+    });
+  };
+
+  // Handle archive/restore
+  const handleArchiveToggle = async (
+    courseId: string,
+    currentArchived: boolean
+  ) => {
+    const course = courses.find((c) => c.id === courseId);
+    if (!course) return;
+
+    setConfirmModal({
+      isOpen: true,
+      type: "archive",
+      courseId,
+      courseName: course.title,
+      newState: !currentArchived,
+    });
+  };
+
+  // Execute confirmation action
+  const executeAction = async () => {
+    if (!confirmModal.isOpen) return;
+
+    setActionLoading(confirmModal.courseId);
+    try {
+      const endpoint =
+        confirmModal.type === "publish"
+          ? "/api/admin/course.publish"
+          : "/api/admin/course.archive";
+
+      const body =
+        confirmModal.type === "publish"
+          ? {
+              courseId: confirmModal.courseId,
+              published: confirmModal.newState,
+            }
+          : {
+              courseId: confirmModal.courseId,
+              archived: confirmModal.newState,
+            };
+
+      const response = await authenticatedFetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-idempotency-key": generateIdempotencyKey(),
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${confirmModal.type} course`);
+      }
+
+      // Update local state
+      setCourses((prev) =>
+        prev.map((course) =>
+          course.id === confirmModal.courseId
+            ? {
+                ...course,
+                [confirmModal.type === "publish" ? "published" : "archived"]:
+                  confirmModal.newState,
+              }
+            : course
+        )
+      );
+
+      setToast({
+        message: `Course ${
+          confirmModal.type === "publish"
+            ? confirmModal.newState
+              ? "published"
+              : "unpublished"
+            : confirmModal.newState
+            ? "archived"
+            : "restored"
+        } successfully`,
+        type: "success",
+      });
+    } catch (err) {
+      setToast({
+        message:
+          err instanceof Error
+            ? err.message
+            : `Failed to ${confirmModal.type} course`,
+        type: "error",
+      });
+    } finally {
+      setActionLoading(null);
+      setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+    }
+  };
+
+  // Course card component
+  function CourseCard({ course }: { course: AdminCourse }) {
+    const completionRate = calculateCompletionRate(
+      course.completedCount,
+      course.enrolledCount
+    );
+
+    // Status chip
+    let statusChip;
+    if (course.archived) {
+      statusChip = (
+        <span
+          className="text-xs font-medium px-2 py-1 rounded-lg border"
+          style={{
+            backgroundColor: "var(--secondary-20)",
+            color: "var(--secondary-70)",
+            borderColor: "var(--secondary-15)",
+          }}
+        >
+          Archived
+        </span>
+      );
+    } else if (course.published) {
+      statusChip = (
+        <span
+          className="text-xs font-medium px-2 py-1 rounded-lg"
+          style={{
+            backgroundColor: "var(--accent)",
+            color: "var(--secondary)",
+          }}
+        >
+          Published
+        </span>
+      );
+    } else {
+      statusChip = (
+        <span
+          className="text-xs font-medium px-2 py-1 rounded-lg"
+          style={{
+            backgroundColor: "var(--accent)",
+            color: "var(--secondary)",
+          }}
+        >
+          Draft
+        </span>
+      );
+    }
 
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600">{title}</p>
-            <p className="text-3xl font-bold text-gray-900">{value}</p>
-            {subtitle && (
-              <p
-                className={`text-sm font-medium mt-1 px-2 py-1 rounded-full inline-block ${colorClasses[color]}`}
+      <div
+        className="rounded-2xl overflow-hidden transition-all duration-150 hover:scale-[1.02]"
+        style={{
+          backgroundColor: "var(--card)",
+          boxShadow:
+            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow =
+            "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow =
+            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
+        }}
+      >
+        <div className="h-48 overflow-hidden">
+          {course.heroImageUrl ? (
+            <Image
+              className="w-full h-full object-cover"
+              src={course.heroImageUrl}
+              alt={`${course.title} thumbnail`}
+              width={300}
+              height={192}
+            />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                backgroundColor: "var(--background)",
+                border: "1px solid var(--secondary-15)",
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faBook}
+                className="text-4xl"
+                style={{ color: "var(--secondary)" }}
+              />
+            </div>
+          )}
+        </div>
+        {console.log({ course })}
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-3">
+            <h3
+              className="text-lg font-semibold line-clamp-2"
+              style={{ color: "var(--secondary)" }}
+            >
+              {course.title}
+            </h3>
+            {statusChip}
+          </div>
+          <div className="space-y-3 mb-4">
+            <div
+              className="flex items-center justify-between text-sm"
+              style={{ color: "var(--secondary-70)" }}
+            >
+              <span>Updated: {formatDate(course.updatedAt._seconds)}</span>
+              <span>{course.moduleCount} modules</span>
+            </div>
+            <div
+              className="flex items-center justify-between text-sm"
+              style={{ color: "var(--secondary-70)" }}
+            >
+              <span>{course.enrolledCount} enrolled</span>
+              <span>
+                {course.enrolledCount > 0
+                  ? `${completionRate}% completion`
+                  : "-"}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Link href={`/admin/courses/${course.id}/edit`}>
+                <button
+                  className="p-2 rounded-lg transition-colors duration-150"
+                  title="Edit"
+                  style={{ color: "var(--secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--primary)";
+                    e.currentTarget.style.backgroundColor = "var(--primary-10)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--secondary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <FontAwesomeIcon icon={faEdit} className="text-sm" />
+                </button>
+              </Link>
+              <Link href={`/admin/courses/${course.id}/preview`}>
+                <button
+                  className="p-2 rounded-lg transition-colors duration-150"
+                  title="Preview"
+                  style={{ color: "var(--secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--accent)";
+                    e.currentTarget.style.backgroundColor = "var(--accent-10)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--secondary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <FontAwesomeIcon icon={faEye} className="text-sm" />
+                </button>
+              </Link>
+              <button
+                onClick={() => handleArchiveToggle(course.id, course.archived)}
+                disabled={actionLoading === course.id}
+                className="p-2 rounded-lg transition-colors duration-150"
+                title={course.archived ? "Restore" : "Archive"}
+                style={{ color: "var(--secondary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--destructive)";
+                  e.currentTarget.style.backgroundColor =
+                    "var(--destructive-10)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--secondary)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
-                {subtitle}
-              </p>
+                <FontAwesomeIcon icon={faArchive} className="text-sm" />
+              </button>
+            </div>
+            {!course.archived && (
+              <button
+                onClick={() => handlePublishToggle(course.id, course.published)}
+                disabled={actionLoading === course.id}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  color: "var(--primary-foreground)",
+                }}
+              >
+                {actionLoading === course.id ? (
+                  <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                ) : course.published ? (
+                  "Unpublish"
+                ) : (
+                  "Publish"
+                )}
+              </button>
+            )}
+            {course.archived && (
+              <button
+                onClick={() => handleArchiveToggle(course.id, course.archived)}
+                disabled={actionLoading === course.id}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors duration-150"
+                style={{
+                  backgroundColor: "var(--card)",
+                  color: "var(--secondary)",
+                  border: "1px solid var(--secondary-15)",
+                }}
+              >
+                {actionLoading === course.id ? (
+                  <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                ) : (
+                  "Restore"
+                )}
+              </button>
             )}
           </div>
         </div>
       </div>
     );
-  };
+  }
 
-  const QuickAction = ({
-    href,
-    icon,
-    title,
-    description,
-  }: {
-    href: string;
-    icon: string;
-    title: string;
-    description: string;
-  }) => (
-    <Link
-      href={href}
-      className="block bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-start gap-4">
-        <div className="text-2xl">{icon}</div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
-          <p className="text-sm text-gray-600">{description}</p>
-        </div>
-        <div className="text-gray-400">→</div>
-      </div>
-    </Link>
-  );
-
-  if (isLoading) {
+  // Prevent hydration mismatch - show loading until mounted
+  if (!mounted || authLoading) {
     return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center py-12">
-              <div className="text-gray-600">Loading dashboard...</div>
-            </div>
-          </div>
-        </div>
-      </AdminLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
     );
   }
 
-  if (error) {
-    return (
-      <AdminLayout>
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <div className="text-red-800">
-                <strong>Error:</strong> {error}
-              </div>
-            </div>
-          </div>
-        </div>
-      </AdminLayout>
-    );
+  if (!user) {
+    return null; // Will redirect
   }
 
   return (
-    <AdminLayout>
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-8">
-          {/* Header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-            <p className="text-gray-600 mt-1">
-              Welcome back! Here&apos;s an overview of your content.
-            </p>
+    <div
+      style={{ backgroundColor: "var(--background)" }}
+      className="min-h-screen "
+    >
+      {/* Main Dashboard Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Dashboard Header */}
+        <section className="mb-12">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+              <h1
+                className="text-3xl font-bold mb-2"
+                style={{ color: "var(--secondary)" }}
+              >
+                Dashboard Overview
+              </h1>
+              <p className="text-lg" style={{ color: "var(--secondary-75)" }}>
+                Monitor your courses, enrollments, and student progress
+              </p>
+            </div>
+            <div className="flex items-center space-x-4 mt-4 md:mt-0">
+              <Link href="/admin/courses/new">
+                <button
+                  className="px-6 py-3 rounded-xl font-medium transition-colors duration-150 flex items-center space-x-2"
+                  style={{
+                    backgroundColor: "var(--primary)",
+                    color: "var(--primary-foreground)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--primary-90)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--primary)";
+                  }}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                  <span>Create Course</span>
+                </button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Cards Row */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading || !stats ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : (
+              <>
+                {/* Total Courses Card */}
+                <div
+                  className="rounded-2xl p-6 transition-shadow duration-150"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    boxShadow:
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="p-3 rounded-xl"
+                      style={{ backgroundColor: "var(--primary-10)" }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faBook}
+                        className="text-xl"
+                        style={{ color: "var(--primary)" }}
+                      />
+                    </div>
+                    <div
+                      className="w-12 h-1 rounded-full"
+                      style={{ backgroundColor: "var(--accent)" }}
+                    ></div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3
+                      className="text-sm font-medium uppercase tracking-wide"
+                      style={{ color: "var(--secondary-70)" }}
+                    >
+                      Total Courses
+                    </h3>
+                    <p
+                      className="text-4xl font-bold"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      {stats.totalCourses}
+                    </p>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span style={{ color: "var(--secondary-70)" }}>
+                        owner total
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Enrollments Card */}
+                <div
+                  className="rounded-2xl p-6 transition-shadow duration-150"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    boxShadow:
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="p-3 rounded-xl"
+                      style={{ backgroundColor: "var(--accent-10)" }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faUsers}
+                        className="text-xl"
+                        style={{ color: "var(--accent)" }}
+                      />
+                    </div>
+                    <div
+                      className="w-12 h-1 rounded-full"
+                      style={{ backgroundColor: "var(--accent)" }}
+                    ></div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3
+                      className="text-sm font-medium uppercase tracking-wide"
+                      style={{ color: "var(--secondary-70)" }}
+                    >
+                      Total Enrollments
+                    </h3>
+                    <p
+                      className="text-4xl font-bold"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      {stats.totalEnrollments.toLocaleString()}
+                    </p>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span style={{ color: "var(--secondary-70)" }}>
+                        owner total
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Total Completions Card */}
+                <div
+                  className="rounded-2xl p-6 transition-shadow duration-150"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    boxShadow:
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow =
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className="p-3 rounded-xl"
+                      style={{ backgroundColor: "var(--primary-10)" }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faTrophy}
+                        className="text-xl"
+                        style={{ color: "var(--primary)" }}
+                      />
+                    </div>
+                    <div
+                      className="w-12 h-1 rounded-full"
+                      style={{ backgroundColor: "var(--accent)" }}
+                    ></div>
+                  </div>
+                  <div className="space-y-2">
+                    <h3
+                      className="text-sm font-medium uppercase tracking-wide"
+                      style={{ color: "var(--secondary-70)" }}
+                    >
+                      Total Completions
+                    </h3>
+                    <p
+                      className="text-4xl font-bold"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      {stats.totalCompletions.toLocaleString()}
+                    </p>
+                    <div className="flex items-center space-x-2 text-sm">
+                      <span style={{ color: "var(--secondary-70)" }}>
+                        owner total
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Courses Grid */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-8">
+            <h2
+              className="text-2xl font-bold"
+              style={{ color: "var(--secondary)" }}
+            >
+              Course Management
+            </h2>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search courses..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="rounded-lg px-4 py-2 pl-10 w-80 focus:outline-none focus:ring-2 transition-all duration-150"
+                  style={{
+                    backgroundColor: "var(--input)",
+                    border: "1px solid var(--secondary-15)",
+                    color: "var(--secondary)",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "var(--primary)";
+                    e.currentTarget.style.boxShadow =
+                      "0 0 0 2px var(--primary-10)";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "var(--secondary-15)";
+                    e.currentTarget.style.boxShadow = "none";
+                  }}
+                />
+                <FontAwesomeIcon
+                  icon={faSearch}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2"
+                  style={{ color: "var(--secondary-50)" }}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Stats Grid */}
-          {stats && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <StatCard
-                title="Total Courses"
-                value={stats.courses.total}
-                subtitle={`${stats.courses.published} published`}
-                color="blue"
+          <div className="flex items-center justify-between mb-6">
+            <h2
+              className="text-2xl font-bold"
+              style={{ color: "var(--secondary)" }}
+            >
+              Your Courses
+            </h2>
+            <div
+              className="flex items-center space-x-2 text-sm"
+              style={{ color: "var(--secondary-70)" }}
+            >
+              <span>Showing {filteredCourses.length} courses</span>
+            </div>
+          </div>
+
+          {error && (
+            <div
+              className="rounded-lg p-4 mb-6 flex items-center space-x-3"
+              style={{
+                backgroundColor: "var(--background)",
+                border: "1px solid var(--destructive)",
+                borderLeft: "4px solid var(--destructive)",
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                style={{ color: "var(--destructive)" }}
               />
-              <StatCard
-                title="Course Modules"
-                value={stats.modules.total}
-                color="green"
-              />
-              <StatCard
-                title="Questionnaires"
-                value={stats.questionnaires.total}
-                subtitle={`${stats.questionnaires.byType.survey} surveys`}
-                color="purple"
-              />
-              <StatCard
-                title="Assignments"
-                value={stats.assignments.total}
-                subtitle={`${stats.assignments.active} active`}
-                color="orange"
-              />
+              <span style={{ color: "var(--secondary)" }}>{error}</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Quick Actions */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Quick Actions
-              </h2>
-              <div className="space-y-4">
-                <QuickAction
-                  href="/admin/new"
-                  icon="➕"
-                  title="Create New Course"
-                  description="Start building a new course with the course wizard"
-                />
-                <QuickAction
-                  href="/admin/questionnaires"
-                  icon="📝"
-                  title="Manage Questionnaires"
-                  description="Create surveys, quizzes, and assessments"
-                />
-                <QuickAction
-                  href="/admin/courses"
-                  icon="📚"
-                  title="View All Courses"
-                  description="Manage your existing courses and modules"
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <CourseCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="text-center py-16">
+              <div
+                className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{
+                  backgroundColor: "var(--secondary-10)",
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faBook}
+                  className="text-2xl"
+                  style={{ color: "var(--secondary)" }}
                 />
               </div>
+              <h3
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--secondary)" }}
+              >
+                {courses.length === 0
+                  ? "Create your first course"
+                  : "No courses found"}
+              </h3>
+              <p className="mb-6" style={{ color: "var(--secondary-70)" }}>
+                {courses.length === 0
+                  ? "Get started by creating your first course"
+                  : "Try adjusting your search terms"}
+              </p>
+              {courses.length === 0 && (
+                <Link href="/admin/courses/new">
+                  <button
+                    className="px-6 py-3 rounded-lg font-medium transition-colors duration-150"
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }}
+                  >
+                    Create Course
+                  </button>
+                </Link>
+              )}
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {filteredCourses.map((course) => (
+                <CourseCard key={course.id} course={course} />
+              ))}
+            </div>
+          )}
+        </section>
+      </main>
 
-            {/* Recent Activity */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Recent Activity
-              </h2>
-              <div className="bg-white rounded-lg border border-gray-200">
-                {recentItems.length === 0 ? (
-                  <div className="p-6 text-center text-gray-600">
-                    No recent activity. Start creating content!
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {recentItems.map((item) => (
-                      <div key={`${item.type}-${item.id}`} className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm">
-                                {item.type === "course" ? "📚" : "📝"}
-                              </span>
-                              <span className="font-medium text-gray-900">
-                                {item.title}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  item.status === "Published"
-                                    ? "bg-green-100 text-green-700"
-                                    : item.status === "Draft"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {item.status}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {item.updatedAt.toLocaleDateString()}
-                              </span>
-                              {console.log({ item })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </AdminLayout>
+      {/* Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={executeAction}
+        title={`${
+          confirmModal.type === "publish"
+            ? confirmModal.newState
+              ? "Publish"
+              : "Unpublish"
+            : confirmModal.newState
+            ? "Archive"
+            : "Restore"
+        } Course`}
+        message={`Are you sure you want to ${
+          confirmModal.type === "publish"
+            ? confirmModal.newState
+              ? "publish"
+              : "unpublish"
+            : confirmModal.newState
+            ? "archive"
+            : "restore"
+        } "${confirmModal.courseName}"?`}
+        confirmText={
+          confirmModal.type === "publish"
+            ? confirmModal.newState
+              ? "Publish"
+              : "Unpublish"
+            : confirmModal.newState
+            ? "Archive"
+            : "Restore"
+        }
+        confirmStyle={
+          confirmModal.type === "archive" && confirmModal.newState
+            ? "destructive"
+            : "primary"
+        }
+        isLoading={!!actionLoading}
+      />
+
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+    </div>
   );
 }

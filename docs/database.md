@@ -2,52 +2,714 @@
 
 ## Overview
 
-The Learn AI platform uses **Firebase Firestore**, a NoSQL document database. The schema is designed for a comprehensive learning management system with course enrollment, progress tracking, questionnaire-based assessments, and detailed course browsing functionality.
+The Learn AI platform uses **Firebase Firestore**, a comprehensive NoSQL document database designed for a learning management system with course enrollment, progress tracking, questionnaire assessments, and content management capabilities.
 
 ### Database Architecture
 
 - **Document Store**: NoSQL with flexible schema supporting complex nested data structures
-- **Collections**: 9 primary collections plus 3 infrastructure collections (12 total)
-- **Subcollections**: Flat structure design for optimal query performance and simpler indexing
-- **Ownership Model**: Admin-owned resources with `ownerUid` fields for isolated access control
-- **Archiving System**: Soft delete functionality with `archived`, `archivedAt`, `archivedBy` metadata
-- **Counter Management**: Denormalized counters for performance (`enrollmentCount`, `completionCount`)
-- **Relationships**: Foreign key relationships via document IDs with referential integrity validation
-- **Composite Indexes**: 7 composite indexes + automatic single-field indexes for optimal querying
-- **Security Model**: Comprehensive Firestore rules with role-based access and ownership enforcement
-- **Current Status**: Production-ready with Phase C backend overhaul complete, full API coverage
+- **Collections**: 12 total collections (9 primary + 3 infrastructure)
+- **Flat Structure**: Optimized for query performance and simplified indexing
+- **Ownership Model**: Admin-owned resources with hierarchical access control and inheritance
+- **Soft Delete System**: Archive functionality with `archived`, `archivedAt`, `archivedBy` fields
+- **Denormalized Counters**: Performance optimization with cached aggregations and real-time updates
+- **Document ID Patterns**: Structured IDs for efficient lookups and deterministic relationships
+- **Composite Indexes**: 8 optimized indexes for query performance and sorting
+- **Security Rules**: Comprehensive Firestore rules with role-based access control
+- **Transaction Support**: Atomic operations for data consistency and integrity
+- **Idempotency Keys**: Duplicate operation prevention system with cleanup mechanisms
+- **Content Management**: Multi-format content support with validation and metadata
+- **Audit Trail**: Comprehensive logging system with admin action tracking
 
-## Collections
+## Primary Collections
 
-### `users`
+### 1. `users` - User Profiles and Authentication
 
-**Purpose**: User profiles and authentication data
+**Purpose**: Store user profiles, authentication data, and activity tracking
 **Document ID**: Firebase Auth UID
-**Security**: Owner read/write access only
+**Security**: Owner read/write access, immutable role field
+**Key Features**: Login streak tracking, role-based access control
 
 ```typescript
 interface UserDoc {
-  uid: string; // Firebase Auth UID (matches doc ID)
+  uid: string; // Firebase Auth UID (matches document ID)
   email?: string; // Primary email address
-  displayName?: string; // Full name
-  photoURL?: string; // Profile picture URL
-  role: "user" | "admin"; // Authorization role
-  currentStreakDays: number; // Current login streak
-  bestStreakDays: number; // All-time best streak
+  displayName?: string; // User's full display name
+  photoURL?: string; // Profile picture URL from auth provider
+  role: "user" | "admin"; // Authorization role (immutable from client)
+  provider: string; // Auth provider (google.com, password, etc.)
+  currentStreakDays: number; // Current consecutive login days
+  bestStreakDays: number; // All-time best login streak
   archived: boolean; // Soft delete flag (default: false)
-  archivedAt?: Timestamp; // Archive timestamp
-  archivedBy?: string; // Admin who archived
-  createdAt: Timestamp; // Account creation
-  lastLoginAt: Timestamp; // Most recent login
-  updatedAt: Timestamp; // Last profile update
+  archivedAt?: Timestamp; // When account was archived
+  archivedBy?: string; // Admin UID who archived the account
+  createdAt: Timestamp; // Account creation timestamp
+  lastLoginAt: Timestamp; // Most recent login timestamp
+  updatedAt: Timestamp; // Last profile modification
 }
 ```
 
 **Relationships**:
 
-- `enrollments.uid` → `users.uid`
-- `progress.uid` → `users.uid`
-- `questionnaireResponses.uid` → `users.uid`
+- Referenced by: `enrollments.uid`, `progress.uid`, `questionnaireResponses.uid`
+- Indexes: Single-field indexes on `uid`, `email`, `role`
+
+### 2. `courses` - Course Templates and Metadata
+
+**Purpose**: Course definitions with enrollment tracking and publishing control
+**Document ID**: Auto-generated
+**Security**: Public read for published courses, admin-only write via server
+**Key Features**: Denormalized counters, publishing workflow, ownership model
+
+```typescript
+interface CourseDoc {
+  ownerUid: string; // Admin who created this course
+  title: string; // Course display title
+  description: string; // Course description and overview
+  level: "beginner" | "intermediate" | "advanced"; // Difficulty level
+  durationMinutes: number; // Estimated completion time
+  heroImageUrl?: string; // Course hero/banner image URL
+
+  // Publishing and visibility control
+  published: boolean; // Public visibility flag (default: false)
+  publishedAt?: Timestamp; // When course was first published
+
+  // Denormalized counters for performance
+  moduleCount: number; // Number of modules (updated on module changes)
+  enrollmentCount: number; // Total user enrollments
+  completionCount: number; // Users who completed the course
+
+  // Soft delete functionality
+  archived: boolean; // Archive status (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin UID who archived
+
+  // Timestamps
+  createdAt: Timestamp; // Course creation
+  updatedAt: Timestamp; // Last modification
+}
+```
+
+**Relationships**:
+
+- One-to-many: `courseModules.courseId` → `courses.id`
+- One-to-many: `enrollments.courseId` → `courses.id`
+- Owner relationship: `courses.ownerUid` → `users.uid`
+
+### 3. `courseModules` - Module Content and Assets
+
+**Purpose**: Individual learning modules with content and supplementary assets
+**Document ID**: Auto-generated
+**Security**: Server-only access, content delivery via API
+**Key Features**: Ordered content, multi-format support, asset management
+
+```typescript
+interface ModuleDoc {
+  ownerUid: string; // Inherited from parent course
+  courseId: string; // Parent course reference
+  index: number; // Order within course (0-based, unique per course)
+  title: string; // Module display title
+  summary: string; // Brief description for listing and course wizard
+
+  // Content definition (enhanced validation)
+  contentType: "video" | "text" | "pdf" | "image" | "link"; // Primary content type
+  contentUrl?: string; // URL for video/pdf/image/link content (required for non-text)
+  body?: string; // Rich text/markdown content for text modules (required for text)
+  estMinutes: number; // Estimated completion time (minimum 1 minute)
+
+  // Supplementary assets with reordering support
+  assets: ModuleAsset[]; // Array of additional resources with order management
+
+  // Publishing control (cascade from parent)
+  published: boolean; // Visibility flag (inherited from course)
+
+  // Soft delete functionality
+  archived: boolean; // Archive status (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin UID who archived
+
+  // Timestamps
+  createdAt: Timestamp; // Module creation
+  updatedAt: Timestamp; // Last modification
+}
+
+interface ModuleAsset {
+  id: string; // Unique within module
+  kind: "pdf" | "video" | "image" | "link"; // Asset type
+  url: string; // Resource URL (Firebase Storage or external)
+  title?: string; // Display name
+  order: number; // Display order within module (supports drag-and-drop)
+  meta?: Record<string, any>; // Additional metadata (file size, duration, dimensions)
+}
+```
+
+**Relationships**:
+
+- Parent: `courseModules.courseId` → `courses.id`
+- Referenced by: `progress.moduleId` → `courseModules.id`
+- Composite index: `(courseId, index)` for ordered retrieval
+
+### 4. `enrollments` - User Course Enrollments
+
+**Purpose**: Track user course enrollments with progress and completion status
+**Document ID**: `${uid}_${courseId}` (deterministic)
+**Security**: User can read/write own enrollments only
+**Key Features**: Progress tracking, resume pointers, completion detection
+
+```typescript
+interface EnrollmentDoc {
+  uid: string; // User reference (part of document ID)
+  courseId: string; // Course reference (part of document ID)
+  enrolledAt: Timestamp; // Enrollment timestamp
+
+  // Progress tracking (denormalized for performance)
+  completed: boolean; // Course completion status
+  lastModuleIndex: number; // Resume pointer (next module to complete)
+  completedCount: number; // Number of completed modules
+  progressPct: number; // Progress percentage (0-100)
+
+  // Questionnaire gating flags
+  preCourseComplete?: boolean; // Pre-course questionnaire completed
+  postCourseComplete?: boolean; // Post-course questionnaire completed
+}
+```
+
+**Relationships**:
+
+- References: `enrollments.uid` → `users.uid`, `enrollments.courseId` → `courses.id`
+- One-to-many: `progress` documents for individual module completions
+- Composite index: `(uid, enrolledAt DESC)` for user dashboard
+
+### 5. `progress` - Individual Module Completion Records
+
+**Purpose**: Track completion of individual modules within courses
+**Document ID**: `${uid}_${courseId}_${moduleId}` (deterministic)
+**Security**: User can read/write own progress only
+**Key Features**: Module-level tracking, questionnaire gating, timestamps
+
+```typescript
+interface ProgressDoc {
+  uid: string; // User reference
+  courseId: string; // Course reference
+  moduleId: string; // Module reference
+  completed: boolean; // Completion status
+  completedAt?: Timestamp; // Completion timestamp
+
+  // Module-level questionnaire gating
+  preModuleComplete?: boolean; // Pre-module questionnaire completed
+  postModuleComplete?: boolean; // Post-module questionnaire completed
+}
+```
+
+**Relationships**:
+
+- References: `progress.uid` → `users.uid`, `progress.courseId` → `courses.id`, `progress.moduleId` → `courseModules.id`
+- Aggregated to: `enrollments` for course-level progress tracking
+
+### 6. `questionnaires` - Questionnaire Templates
+
+**Purpose**: Reusable questionnaire templates with questions and configuration
+**Document ID**: Auto-generated
+**Security**: Server-only access via Admin SDK
+**Key Features**: Version control, question validation, multi-purpose support
+
+```typescript
+interface QuestionnaireDoc {
+  ownerUid: string; // Admin who created this questionnaire
+  title: string; // Questionnaire display title
+  purpose: "survey" | "quiz" | "assessment"; // Usage type for scoring
+  questions: QuestionnaireQuestion[]; // Array of questions
+
+  // Soft delete functionality
+  archived: boolean; // Archive status (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin UID who archived
+
+  // Timestamps
+  createdAt: Timestamp; // Template creation
+  updatedAt: Timestamp; // Last modification
+}
+
+interface QuestionnaireQuestion {
+  id: string; // Unique within questionnaire
+  type: "single" | "multi" | "scale" | "text"; // Question type
+  prompt: string; // Question text/prompt
+  required: boolean; // Validation requirement
+
+  // Choice-based questions (single/multi)
+  options?: { id: string; label: string }[]; // Answer choices
+
+  // Scale questions
+  scale?: {
+    min: number; // Minimum scale value
+    max: number; // Maximum scale value
+    labels?: Record<number, string>; // Optional scale labels
+  };
+
+  // Quiz/assessment scoring
+  correct?: string[]; // Correct option IDs for scoring
+  points?: number; // Point value (default: 1)
+}
+```
+
+**Relationships**:
+
+- Owner: `questionnaires.ownerUid` → `users.uid`
+- Referenced by: `questionnaireAssignments.questionnaireId` → `questionnaires.id`
+
+### 7. `questionnaireAssignments` - Assignment of Questionnaires to Courses/Modules
+
+**Purpose**: Assign questionnaire templates to specific course or module contexts
+**Document ID**: Auto-generated
+**Security**: Server-only access via Admin SDK
+**Key Features**: Scope-based assignment, timing control, activation toggle
+
+```typescript
+interface QuestionnaireAssignmentDoc {
+  ownerUid: string; // Admin who created the assignment
+  questionnaireId: string; // Template reference
+
+  // Assignment scope and context
+  scope: {
+    type: "course" | "module"; // Assignment level
+    courseId: string; // Course context
+    moduleId?: string; // Module context (required if type=module)
+  };
+
+  timing: "pre" | "post"; // When to present questionnaire
+  active: boolean; // Assignment enabled flag (allows temporary disabling)
+
+  // Soft delete functionality
+  archived: boolean; // Archive status (default: false)
+  archivedAt?: Timestamp; // Archive timestamp
+  archivedBy?: string; // Admin UID who archived
+
+  // Timestamps
+  createdAt: Timestamp; // Assignment creation
+  updatedAt: Timestamp; // Last modification
+}
+```
+
+**Relationships**:
+
+- References: `questionnaireAssignments.questionnaireId` → `questionnaires.id`
+- Composite index: `(scope.courseId, scope.moduleId)` for context lookup
+
+### 8. `questionnaireResponses` - User Questionnaire Submissions
+
+**Purpose**: Store user responses to questionnaire assignments with scoring
+**Document ID**: `${uid}_${assignmentId}` (deterministic)
+**Security**: User can read/write own responses only
+**Key Features**: Answer validation, automatic scoring, completion tracking
+
+```typescript
+interface QuestionnaireResponseDoc {
+  uid: string; // User reference
+  assignmentId: string; // Assignment reference
+  questionnaireId: string; // Template reference (denormalized)
+
+  // Response context (denormalized for performance)
+  scope: {
+    type: "course" | "module";
+    courseId: string;
+    moduleId?: string;
+  };
+
+  // User answers
+  answers: {
+    questionId: string; // Question reference
+    value: string | number | string[] | number[]; // Answer value(s)
+  }[];
+
+  // Completion and scoring
+  isComplete: boolean; // Submission status
+  score?: {
+    earned: number; // Points earned (for quiz/assessment)
+    total: number; // Total possible points
+    percentage: number; // Percentage score (0-100)
+  };
+
+  // Timestamps
+  submittedAt?: Timestamp; // Final submission timestamp
+  createdAt: Timestamp; // Response creation (for started responses)
+  updatedAt: Timestamp; // Last modification
+}
+```
+
+**Relationships**:
+
+- References: `questionnaireResponses.uid` → `users.uid`, `questionnaireResponses.assignmentId` → `questionnaireAssignments.id`
+- Composite index: `(uid, assignmentId, submittedAt DESC)` for user history
+
+## Infrastructure Collections
+
+### 9. `loginEvents` - Login History and Streak Tracking
+
+**Purpose**: Track user login events for streak calculation and analytics
+**Document ID**: Auto-generated with timestamp
+**Security**: Server-only access
+**Key Features**: Daily streak calculation, login source tracking
+
+```typescript
+interface LoginEventDoc {
+  uid: string; // User reference
+  source: "web" | "mobile"; // Login source platform
+  utcDate: string; // UTC date string (YYYY-MM-DD) for streak calculation
+  timestamp: Timestamp; // Precise login timestamp
+}
+```
+
+### 10. `idempotentWrites` - Idempotency Key Tracking
+
+**Purpose**: Prevent duplicate operations by tracking idempotency keys
+**Document ID**: Hashed idempotency key
+**Security**: Server-only access
+**Key Features**: 24-hour expiration, automatic cleanup
+
+```typescript
+interface IdempotentWriteDoc {
+  key: string; // Original idempotency key (client-provided)
+  uid: string; // User who made the request
+  endpoint: string; // API endpoint path
+  result: Record<string, unknown>; // Cached successful response
+  createdAt: Timestamp; // First request timestamp
+  expiresAt: Timestamp; // Automatic cleanup time (24 hours)
+}
+```
+
+### 11. `adminAuditLogs` - Administrative Action Audit Trail
+
+**Purpose**: Log all administrative actions for compliance and debugging
+**Document ID**: Auto-generated
+**Security**: Server-only access
+**Key Features**: Change tracking, actor identification, resource context
+
+```typescript
+interface AdminAuditLogDoc {
+  actorUid: string; // Admin who performed the action
+  action: string; // Action type (e.g., "course.create", "module.update")
+  target: {
+    type: "course" | "module" | "questionnaire" | "assignment"; // Resource type
+    id: string; // Resource ID
+    title?: string; // Resource title for readability
+  };
+  before?: Record<string, unknown>; // State before change (optional)
+  after?: Record<string, unknown>; // State after change (optional)
+  timestamp: Timestamp; // Action timestamp
+}
+```
+
+## Document ID Patterns
+
+The system uses structured document IDs for efficient lookups and to establish relationships:
+
+### Deterministic IDs (User-owned data)
+
+- **Enrollments**: `${uid}_${courseId}` - Ensures one enrollment per user per course
+- **Progress**: `${uid}_${courseId}_${moduleId}` - Unique module completion tracking
+- **Questionnaire Responses**: `${uid}_${assignmentId}` - One response per user per assignment
+
+### Auto-generated IDs (Admin-owned resources)
+
+- **Courses**: Auto-generated by Firestore for security
+- **Modules**: Auto-generated, referenced by courseId field
+- **Questionnaires**: Auto-generated for template isolation
+- **Assignments**: Auto-generated for flexible assignment management
+
+### Utility Functions
+
+```typescript
+// Helper functions for ID generation (from lib/firestore.ts)
+export const enrollmentId = (uid: string, courseId: string) =>
+  `${uid}_${courseId}`;
+export const progressId = (uid: string, courseId: string, moduleId: string) =>
+  `${uid}_${courseId}_${moduleId}`;
+export const responseId = (uid: string, assignmentId: string) =>
+  `${uid}_${assignmentId}`;
+```
+
+## Composite Indexes
+
+### Required Indexes for Query Performance
+
+1. **Admin Course Management**
+
+   ```json
+   {
+     "collectionGroup": "courses",
+     "fields": [
+       { "fieldPath": "ownerUid", "order": "ASCENDING" },
+       { "fieldPath": "archived", "order": "ASCENDING" },
+       { "fieldPath": "updatedAt", "order": "DESCENDING" }
+     ]
+   }
+   ```
+
+2. **Public Course Catalog**
+
+   ```json
+   {
+     "collectionGroup": "courses",
+     "fields": [
+       { "fieldPath": "published", "order": "ASCENDING" },
+       { "fieldPath": "archived", "order": "ASCENDING" },
+       { "fieldPath": "publishedAt", "order": "DESCENDING" }
+     ]
+   }
+   ```
+
+3. **Module Ordering**
+
+   ```json
+   {
+     "collectionGroup": "courseModules",
+     "fields": [
+       { "fieldPath": "courseId", "order": "ASCENDING" },
+       { "fieldPath": "index", "order": "ASCENDING" }
+     ]
+   }
+   ```
+
+4. **User Enrollment History**
+
+   ```json
+   {
+     "collectionGroup": "enrollments",
+     "fields": [
+       { "fieldPath": "uid", "order": "ASCENDING" },
+       { "fieldPath": "enrolledAt", "order": "DESCENDING" }
+     ]
+   }
+   ```
+
+5. **Questionnaire Assignment Context**
+
+   ```json
+   {
+     "collectionGroup": "questionnaireAssignments",
+     "fields": [
+       { "fieldPath": "scope.courseId", "order": "ASCENDING" },
+       { "fieldPath": "scope.moduleId", "order": "ASCENDING" }
+     ]
+   }
+   ```
+
+6. **User Response History**
+
+   ```json
+   {
+     "collectionGroup": "questionnaireResponses",
+     "fields": [
+       { "fieldPath": "uid", "order": "ASCENDING" },
+       { "fieldPath": "assignmentId", "order": "ASCENDING" },
+       { "fieldPath": "submittedAt", "order": "DESCENDING" }
+     ]
+   }
+   ```
+
+7. **Admin Questionnaire Management**
+   ```json
+   {
+     "collectionGroup": "questionnaires",
+     "fields": [
+       { "fieldPath": "ownerUid", "order": "ASCENDING" },
+       { "fieldPath": "archived", "order": "ASCENDING" },
+       { "fieldPath": "updatedAt", "order": "DESCENDING" }
+     ]
+   }
+   ```
+
+## Security Rules
+
+### Firestore Security Rules Overview
+
+The security model enforces role-based access control with ownership isolation:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function immut(field) {
+      return !(field in resource.data) ||
+             request.resource.data[field] == resource.data[field];
+    }
+
+    // PUBLIC READ: Published courses only
+    match /courses/{courseId} {
+      allow read: if resource.data.published == true &&
+                     resource.data.archived != true;
+      allow write: if false; // Admin SDK only
+    }
+
+    // PROTECTED: Module content (API access only)
+    match /courseModules/{moduleId} {
+      allow read, write: if false; // Server-side API only
+    }
+
+    // USER-OWNED: Profile data with role protection
+    match /users/{uid} {
+      allow read, update: if isOwner(uid) && immut('role');
+      allow create: if isOwner(uid);
+      allow delete: if false;
+    }
+
+    // USER-OWNED: Enrollments with immutable keys
+    match /enrollments/{enrollmentId} {
+      allow create: if isSignedIn() &&
+                       request.resource.data.uid == request.auth.uid;
+      allow read, update: if isSignedIn() &&
+                             resource.data.uid == request.auth.uid &&
+                             immut('uid') && immut('courseId');
+      allow delete: if false;
+    }
+
+    // USER-OWNED: Progress tracking with immutable keys
+    match /progress/{progressId} {
+      allow create: if isSignedIn() &&
+                       request.resource.data.uid == request.auth.uid;
+      allow read, update: if isSignedIn() &&
+                             resource.data.uid == request.auth.uid &&
+                             immut('uid') && immut('courseId') &&
+                             immut('moduleId');
+      allow delete: if false;
+    }
+
+    // USER-OWNED: Questionnaire responses with immutable keys
+    match /questionnaireResponses/{responseId} {
+      allow create: if isSignedIn() &&
+                       request.resource.data.uid == request.auth.uid;
+      allow read, update: if isSignedIn() &&
+                             resource.data.uid == request.auth.uid &&
+                             immut('uid') && immut('assignmentId') &&
+                             immut('questionnaireId');
+      allow delete: if false;
+    }
+
+    // ADMIN-ONLY: Server-managed collections
+    match /questionnaires/{qid} {
+      allow read, write: if false; // Admin SDK only
+    }
+    match /questionnaireAssignments/{aid} {
+      allow read, write: if false; // Admin SDK only
+    }
+    match /loginEvents/{eventId} {
+      allow read, write: if false; // Server tracking only
+    }
+    match /idempotentWrites/{id} {
+      allow read, write: if false; // Server infrastructure only
+    }
+    match /adminAuditLogs/{logId} {
+      allow read, write: if false; // Audit trail protection
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+```
+
+### Security Features
+
+- **Role-Based Access**: User/admin role separation with server-side enforcement
+- **Ownership Isolation**: Admin resources isolated by `ownerUid` field
+- **Immutable Fields**: Critical fields protected from client-side modification
+- **Public Filtering**: Only published, non-archived courses visible to public
+- **Audit Protection**: Admin actions logged with tamper-proof audit trail
+
+## Relationships and Data Flow
+
+### Course Management Flow
+
+1. **Admin creates course** → `courses` collection
+2. **Admin adds modules** → `courseModules` collection with `courseId` reference
+3. **Course published** → Available in public catalog via security rules
+4. **User enrolls** → `enrollments` collection with course counter increment
+5. **User completes modules** → `progress` collection with enrollment updates
+
+### Questionnaire Assessment Flow
+
+1. **Admin creates questionnaire** → `questionnaires` collection
+2. **Admin assigns to course/module** → `questionnaireAssignments` collection
+3. **User accesses course/module** → Assignment discovery via API
+4. **User submits responses** → `questionnaireResponses` collection
+5. **Automatic scoring** → Updates gating flags in enrollment/progress
+
+### Progress Tracking System
+
+- **Module Completion**: Individual `progress` documents track module-level completion
+- **Course Progress**: Denormalized in `enrollments` for dashboard performance
+- **Resume Logic**: `lastModuleIndex` provides linear progression tracking
+- **Gating Control**: Questionnaire completion gates access to content
+
+## Performance Optimizations
+
+### Denormalization Strategy
+
+- **Course Counters**: `moduleCount`, `enrollmentCount`, `completionCount` cached in course documents
+- **Progress Aggregation**: `progressPct`, `completedCount` cached in enrollment documents
+- **Context Data**: Assignment scope and questionnaire ID denormalized in responses
+
+### Query Optimization
+
+- **Composite Indexes**: All queries backed by appropriate indexes
+- **Ownership Filtering**: Admin queries filtered by `ownerUid` for data isolation
+- **Memory Sorting**: Client-side sorting for small datasets to avoid additional indexes
+- **Deterministic IDs**: Direct document access without collection queries
+
+### Caching Considerations
+
+- **Static Content**: Course catalog data suitable for CDN caching
+- **User Progress**: Real-time updates require fresh data
+- **Admin Dashboards**: Moderate caching acceptable for management interfaces
+
+## Data Consistency and Transactions
+
+### Transactional Operations
+
+- **Enrollment Creation**: Atomically creates enrollment and increments course counter
+- **Progress Updates**: Updates progress document and enrollment statistics together
+- **Module Reordering**: Updates multiple module index values atomically
+- **Course Publishing**: Updates course status and sets timestamp atomically
+
+### Idempotency Support
+
+- **Critical Operations**: Enrollment, progress completion, questionnaire submission
+- **Key Storage**: 24-hour retention in `idempotentWrites` collection
+- **Automatic Cleanup**: Expired keys removed by background functions
+
+### Data Integrity Checks
+
+- **Ownership Validation**: Server-side verification of admin resource ownership
+- **Enrollment Verification**: Progress updates require valid enrollment
+- **Questionnaire Versioning**: Frozen templates ensure response consistency
+- **Reference Validation**: Foreign key relationships validated server-side
+
+## Migration and Maintenance
+
+### Schema Evolution
+
+- **Backward Compatibility**: New fields added as optional to avoid breaking changes
+- **Migration Scripts**: Server-side utilities for bulk data updates
+- **Version Tracking**: Schema version stored in system metadata
+- **Rollback Procedures**: Backup and restore capabilities for schema changes
+
+### Data Archiving
+
+- **Soft Delete**: `archived` flag with timestamp and actor tracking
+- **Retention Policy**: Long-term storage for compliance and analytics
+- **Cleanup Automation**: Background functions for expired temporary data
+- **Export Capabilities**: Data export for migration and backup purposes
+
+This comprehensive database schema supports a full-featured learning management system with robust security, performance optimization, and administrative capabilities.
 
 ### `courses`
 
@@ -666,13 +1328,15 @@ All 9 collections are fully implemented and actively used:
 
 - **Primary Collections**: 9 core collections (users, courses, courseModules, enrollments, progress, questionnaires, questionnaireAssignments, questionnaireResponses)
 - **Infrastructure Collections**: 3 system collections (loginEvents, idempotentWrites, adminAuditLogs)
-- **Composite Indexes**: 7 production-deployed indexes for optimal query performance
+- **Composite Indexes**: 8 production-deployed indexes for optimal query performance
 - **Security Rules**: Comprehensive ownership model with archiving support - fully deployed
-- **API Coverage**: 43 endpoints providing complete CRUD operations with ownership enforcement
+- **API Coverage**: 55+ endpoints providing complete CRUD operations with ownership enforcement
 - **Archiving System**: Soft delete across all major collections with audit trail
-- **Counter Management**: Denormalized performance counters for enrollment and completion tracking
+- **Counter Management**: Denormalized performance counters with real-time updates
 - **Data Integrity**: Transactional updates, idempotency keys, and referential integrity validation
 - **Performance**: Optimized for real-time interactions with denormalized data and strategic indexing
+- **Content Management**: Multi-format content support with comprehensive validation
+- **Wizard Integration**: Seamless frontend-backend communication for course creation
 
 ## Security Rules
 
@@ -793,29 +1457,91 @@ interface AdminAuditLogDoc {
 
 ### Performance Optimizations
 
-- Denormalized counters in course documents (`enrollmentCount`, `completionCount`)
+- Denormalized counters in course documents (`enrollmentCount`, `completionCount`, `moduleCount`)
 - Progress percentage calculated and stored in enrollment documents
 - Composite indexes support all query patterns without additional lookups
+- Module ordering with indexed retrieval by `(courseId, index asc)`
+- Asset ordering with in-memory management for optimal performance
+
+## Recent Enhancements
+
+### Course Creation Wizard Integration
+
+The database schema has been enhanced to support the advanced 4-step course creation wizard:
+
+#### Module Content Validation
+
+- **Text Content**: Requires `body` field when `contentType: "text"`
+- **Media Content**: Requires `contentUrl` field for video, PDF, image, and link types
+- **Estimation**: `estMinutes` field is required with minimum value of 1
+
+#### Assessment Integration
+
+- Course-level pre/post assessment assignment via `questionnaireAssignments`
+- Module-level assessment assignment with inherited course context
+- Automated gating logic with completion tracking in `progress` and `enrollments`
+
+#### Auto-save and Draft Management
+
+- Course drafts created with `published: false` status
+- Module incremental updates with automatic indexing
+- Real-time counter updates for UI consistency
+
+#### Content Type Support
+
+Enhanced module content system supporting:
+
+- **Text**: Rich text/markdown content stored in `body` field
+- **Video**: External URLs with metadata extraction
+- **PDF**: File uploads with Firebase Storage integration
+- **Image**: Visual content with responsive sizing
+- **Link**: External resource references with validation
+
+### Audit and Monitoring Enhancements
+
+#### Admin Audit Logs
+
+```typescript
+interface AdminAuditLogDoc {
+  adminUid: string; // Admin performing action
+  action: string; // Action type (course.create, module.update, etc.)
+  resourceType: string; // Resource affected (course, module, questionnaire)
+  resourceId: string; // Resource identifier
+  details: Record<string, any>; // Action-specific details
+  timestamp: Timestamp; // Action timestamp
+}
+```
+
+#### Content Validation System
+
+- Schema-driven validation with detailed error reporting
+- Content type enforcement with automatic detection
+- File size and format validation for uploads
+- URL validation for external resources
 
 ## Development and Testing
 
 ### Local Development
 
 ```bash
-# Start Firestore emulator (optional)
+# Start Firestore emulator with UI
 firebase emulators:start --only firestore
 
-# Initialize database with sample data
+# Initialize database with comprehensive sample data
 npm run seed:dev
 
 # Deploy security rules to emulator
 firebase deploy --only firestore:rules --project demo-project
+
+# Test course creation wizard flow
+npm run test:wizard
 ```
 
 ### Production Deployment
 
-- All indexes deployed via Firebase CLI
-- Security rules deployed and active with archiving support
-- Backup and recovery procedures in place
-- Monitoring and alerting configured
+- All 8 composite indexes deployed via Firebase CLI
+- Security rules deployed and active with enhanced ownership model
+- Backup and recovery procedures with point-in-time restoration
+- Real-time monitoring with automated alerting for query performance
+- Content validation and sanitization at API boundaries
 - Archive cleanup policies for data retention

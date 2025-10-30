@@ -40,27 +40,73 @@ export async function GET(req: NextRequest) {
     let query = adminDb
       .collection(COL.courses)
       .where("ownerUid", "==", user.uid);
+    console.log({ query });
 
-    // Add archived filter (always exclude archived)
-    query = query.where("archived", "==", false);
+    // Add archived filter (include non-archived and documents without archived field)
+    // Note: We'll filter archived courses in memory since Firestore doesn't handle != null well with compound queries
 
     // Add published filter if specified
     if (published !== null) {
+      console.log(`Filtering by published: ${published === "true"}`);
       query = query.where("published", "==", published === "true");
     }
 
-    // Use composite index: (ownerUid, archived, updatedAt desc)
-    // Only support updatedAt ordering to match available index
-    query = query.orderBy("updatedAt", orderDirection as "asc" | "desc");
+    // Remove orderBy to avoid requiring composite index
+    // We'll sort in memory after fetching
     query = query.limit(limit);
 
     const snapshot = await query.get();
+    console.log(
+      `Found ${snapshot.docs.length} total courses for user ${user.uid}`
+    );
 
-    const courses: (CourseDoc & { id: string })[] = snapshot.docs.map(
-      (doc) => ({
-        id: doc.id,
-        ...(doc.data() as CourseDoc),
-      })
+    const allCourses: (CourseDoc & { id: string })[] = snapshot.docs.map(
+      (doc) => {
+        const data = doc.data() as CourseDoc;
+        console.log(`Course ${doc.id}:`, {
+          title: data.title,
+          published: data.published,
+          archived: data.archived,
+          ownerUid: data.ownerUid,
+        });
+        return {
+          id: doc.id,
+          ...data,
+        };
+      }
+    );
+
+    // Filter out archived courses (including handling undefined archived field)
+    const filteredCourses = allCourses.filter(
+      (course) => course.archived !== true
+    );
+
+    // Sort courses in memory by updatedAt
+    filteredCourses.sort((a, b) => {
+      // Handle Firestore Timestamp or regular date/string
+      const aTime = a.updatedAt?.toDate ? a.updatedAt.toDate() : new Date(0);
+      const bTime = b.updatedAt?.toDate ? b.updatedAt.toDate() : new Date(0);
+
+      if (orderDirection === "asc") {
+        return aTime.getTime() - bTime.getTime();
+      } else {
+        return bTime.getTime() - aTime.getTime();
+      }
+    });
+
+    // Apply limit after sorting
+    const courses = filteredCourses.slice(0, limit);
+
+    console.log(`After filtering archived: ${filteredCourses.length} courses`);
+    console.log(`After limit: ${courses.length} courses`);
+    console.log(
+      "Final courses:",
+      courses.map((c) => ({
+        id: c.id,
+        title: c.title,
+        published: c.published,
+        archived: c.archived,
+      }))
     );
 
     return Response.json({
