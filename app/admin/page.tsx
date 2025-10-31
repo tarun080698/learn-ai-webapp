@@ -265,7 +265,10 @@ export default function AdminDashboard() {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await authenticatedFetch("/api/admin/courses.mine");
+        // Admin should see ALL courses in the system, not just their own
+        const response = await authenticatedFetch(
+          "/api/admin/courses.mine?all=true"
+        );
 
         if (!response.ok) {
           throw new Error("Failed to fetch courses");
@@ -791,7 +794,7 @@ export default function AdminDashboard() {
           )}
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
                 <CourseCardSkeleton key={i} />
               ))}
@@ -838,7 +841,7 @@ export default function AdminDashboard() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {filteredCourses.map((course) => (
                 <CourseCard
                   key={course.id}

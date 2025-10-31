@@ -36,12 +36,19 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
     const orderBy = searchParams.get("orderBy") || "updatedAt";
     const orderDirection = searchParams.get("orderDirection") || "desc";
+    const showAllCourses = searchParams.get("all") === "true"; // New parameter for admin to see all courses
 
-    // Build query with ownership filter
-    let query = adminDb
-      .collection(COL.courses)
-      .where("ownerUid", "==", user.uid);
-    console.log({ query });
+    // Build query - if admin wants to see all courses, don't filter by owner
+    let query = adminDb.collection(COL.courses);
+    
+    if (!showAllCourses) {
+      query = query.where("ownerUid", "==", user.uid);
+    }
+    
+    console.log({ 
+      showAllCourses, 
+      userUid: user.uid 
+    });
 
     // Add archived filter (include non-archived and documents without archived field)
     // Note: We'll filter archived courses in memory since Firestore doesn't handle != null well with compound queries
@@ -77,10 +84,10 @@ export async function GET(req: NextRequest) {
       }
     );
 
-    // Filter out archived courses (including handling undefined archived field)
-    const filteredCourses = allCourses.filter(
-      (course) => course.archived !== true
-    );
+    // For admin dashboard, show ALL courses including archived ones when showAllCourses is true
+    const filteredCourses = showAllCourses 
+      ? allCourses  // Show all courses including archived
+      : allCourses.filter((course) => course.archived !== true); // Original behavior for personal courses
 
     // Sort courses in memory by updatedAt
     filteredCourses.sort((a, b) => {

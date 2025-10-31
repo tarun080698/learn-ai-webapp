@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "./(auth)/AuthProvider";
 import { Inter, Poppins } from "next/font/google";
 import "@/lib/fontawesome";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,8 +15,6 @@ const poppins = Poppins({
   weight: ["300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-poppins",
 });
-
-
 
 export const metadata: Metadata = {
   title: "Learn.ai 4all",
@@ -33,7 +32,6 @@ export const metadata: Metadata = {
   },
 };
 
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -47,6 +45,7 @@ export default function RootLayout({
       >
         <AuthProvider>{children}</AuthProvider>
       </body>
+      <Analytics />
     </html>
   );
 }
