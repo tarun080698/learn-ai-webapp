@@ -138,10 +138,7 @@ export default function AdminCourseEditPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-600 mb-4">Error: {error}</div>
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Link href="/admin" className="text-blue-600 hover:text-blue-800">
             ← Back to Courses
           </Link>
         </div>
@@ -154,10 +151,7 @@ export default function AdminCourseEditPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-gray-600 mb-4">Course not found</div>
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800"
-          >
+          <Link href="/admin" className="text-blue-600 hover:text-blue-800">
             ← Back to Courses
           </Link>
         </div>
@@ -236,14 +230,14 @@ export default function AdminCourseEditPage() {
               // Display Mode
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block  font-medium text-gray-700 mb-1">
                     Title
                   </label>
                   <p className="text-gray-900">{course.title}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block  font-medium text-gray-700 mb-1">
                     Description
                   </label>
                   <p className="text-gray-900">{course.description}</p>
@@ -251,7 +245,7 @@ export default function AdminCourseEditPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block  font-medium text-gray-700 mb-1">
                       Duration
                     </label>
                     <p className="text-gray-900">
@@ -260,18 +254,18 @@ export default function AdminCourseEditPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block  font-medium text-gray-700 mb-1">
                       Level
                     </label>
                     <p className="text-gray-900 capitalize">{course.level}</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block  font-medium text-gray-700 mb-1">
                       Status
                     </label>
                     <span
-                      className={`inline-flex px-2 py-1 text-sm font-medium rounded-full ${
+                      className={`inline-flex px-2 py-1  font-medium rounded-full ${
                         course.published
                           ? "bg-green-100 text-green-800"
                           : "bg-yellow-100 text-yellow-800"
@@ -282,7 +276,7 @@ export default function AdminCourseEditPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm text-gray-600">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6  text-gray-600">
                   <div>
                     <span className="font-medium">Created:</span>{" "}
                     {formatDate(course.createdAt)}
@@ -299,7 +293,7 @@ export default function AdminCourseEditPage() {
                 <div>
                   <label
                     htmlFor="title"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block  font-medium text-gray-700 mb-1"
                   >
                     Title
                   </label>
@@ -317,7 +311,7 @@ export default function AdminCourseEditPage() {
                 <div>
                   <label
                     htmlFor="description"
-                    className="block text-sm font-medium text-gray-700 mb-1"
+                    className="block  font-medium text-gray-700 mb-1"
                   >
                     Description
                   </label>
@@ -336,7 +330,7 @@ export default function AdminCourseEditPage() {
                   <div>
                     <label
                       htmlFor="duration"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block  font-medium text-gray-700 mb-1"
                     >
                       Duration (minutes)
                     </label>
@@ -357,7 +351,7 @@ export default function AdminCourseEditPage() {
                   <div>
                     <label
                       htmlFor="level"
-                      className="block text-sm font-medium text-gray-700 mb-1"
+                      className="block  font-medium text-gray-700 mb-1"
                     >
                       Level
                     </label>
@@ -382,7 +376,7 @@ export default function AdminCourseEditPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block  font-medium text-gray-700 mb-1">
                       Published
                     </label>
                     <div className="flex items-center mt-2">
@@ -400,7 +394,7 @@ export default function AdminCourseEditPage() {
                       />
                       <label
                         htmlFor="published"
-                        className="ml-2 text-sm text-gray-700"
+                        className="ml-2  text-gray-700"
                       >
                         Publish this course
                       </label>
@@ -444,7 +438,7 @@ export default function AdminCourseEditPage() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-1 rounded-full">
+                          <span className="bg-blue-100 text-blue-800  font-medium px-2.5 py-1 rounded-full">
                             {index + 1}
                           </span>
                           <h3 className="text-lg font-medium text-gray-900">
@@ -452,7 +446,7 @@ export default function AdminCourseEditPage() {
                           </h3>
                         </div>
                         <p className="text-gray-600 mb-2">{module.summary}</p>
-                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-4  text-gray-500">
                           <span>{module.estMinutes} min</span>
                           {module.assets && (
                             <span>{module.assets.length} assets</span>
@@ -532,10 +526,10 @@ export default function AdminCourseEditPage() {
                           {assignment.questionnaire?.title ||
                             "Untitled Assessment"}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className=" text-gray-600 mt-1">
                           {assignment.questionnaire?.purpose}
                         </p>
-                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                        <div className="flex items-center gap-4 mt-2  text-gray-500">
                           <span>Timing: {assignment.timing}</span>
                           <span
                             className={`px-2 py-1 rounded-full text-xs ${

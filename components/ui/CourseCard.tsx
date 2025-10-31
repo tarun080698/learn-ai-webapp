@@ -130,7 +130,7 @@ export function CourseCard({
       image: "h-32",
       padding: "p-4",
       title: "text-base",
-      text: "text-sm",
+      text: "",
     },
     md: {
       container: "rounded-xl",
@@ -291,7 +291,7 @@ export function CourseCard({
 
               {showStats && (
                 <div
-                  className="flex items-center text-sm mb-4 space-x-4"
+                  className="flex items-center  mb-4 space-x-4"
                   style={{ color: "var(--muted-foreground)" }}
                 >
                   <div className="flex items-center">
@@ -319,7 +319,7 @@ export function CourseCard({
 
               {showProgress && course.enrolled && (
                 <div className="mb-4">
-                  <div className="flex justify-between text-sm mb-1">
+                  <div className="flex justify-between  mb-1">
                     <span style={{ color: "var(--muted-foreground)" }}>
                       Progress
                     </span>
@@ -394,7 +394,7 @@ export function CourseCard({
           {course.category && (
             <div className="absolute top-4 left-4">
               <span
-                className="px-3 py-1 rounded-full text-sm font-medium"
+                className="px-3 py-1 rounded-full  font-medium"
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "var(--accent-foreground)",
@@ -408,7 +408,7 @@ export function CourseCard({
           {/* Level overlay */}
           <div className="absolute top-4 right-4">
             <span
-              className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+              className="px-3 py-1 rounded-full  font-medium capitalize"
               style={getLevelColor(course.level)}
             >
               {course.level}
@@ -446,7 +446,7 @@ export function CourseCard({
 
         {showStats && (
           <div
-            className="flex items-center text-sm mb-4 space-x-4"
+            className="flex items-center  mb-4 space-x-4"
             style={{ color: "var(--muted-foreground)" }}
           >
             <div className="flex items-center">
@@ -474,7 +474,7 @@ export function CourseCard({
 
         {showProgress && course.enrolled && (
           <div className="mb-4">
-            <div className="flex justify-between text-sm mb-1">
+            <div className="flex justify-between  mb-1">
               <span style={{ color: "var(--muted-foreground)" }}>Progress</span>
               <span style={{ color: "var(--secondary)" }}>
                 {course.progressPct || 0}%

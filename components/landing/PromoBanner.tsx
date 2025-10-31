@@ -18,7 +18,7 @@ export function PromoBanner() {
       className="text-center py-3 relative overflow-hidden"
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-center text-sm font-medium">
+        <div className="flex items-center justify-center  font-medium">
           <i className="fa-solid fa-fire mr-2 animate-pulse"></i>
           <span>
             🎉 Limited Time: Get 40% off all courses with code LEARN2024 - Ends
@@ -29,7 +29,7 @@ export function PromoBanner() {
       </div>
       <button
         onClick={() => setIsVisible(false)}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-primary-foreground hover:text-accent transition-colors"
+        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-primary-foreground hover:text-accent transition-colors cursor-pointer"
       >
         <i className="fa-solid fa-xmark"></i>
       </button>

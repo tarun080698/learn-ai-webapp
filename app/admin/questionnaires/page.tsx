@@ -96,7 +96,7 @@ export default function AdminQuestionnairesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -175,7 +175,7 @@ export default function AdminQuestionnairesPage() {
             <button
               key={value}
               onClick={() => setFilter(value as typeof filter)}
-              className="px-3 py-1 rounded-md text-sm font-medium transition-colors"
+              className="px-3 py-1 rounded-md  font-medium transition-colors"
               style={{
                 backgroundColor:
                   filter === value ? "var(--primary-10)" : "var(--card)",
@@ -309,10 +309,7 @@ export default function AdminQuestionnairesPage() {
 
               {/* Stats */}
               <div className="mb-4">
-                <div
-                  className="text-sm"
-                  style={{ color: "var(--secondary-70)" }}
-                >
+                <div className="" style={{ color: "var(--secondary-70)" }}>
                   {questionnaire.questions.length} question
                   {questionnaire.questions.length !== 1 ? "s" : ""}
                 </div>
@@ -328,7 +325,7 @@ export default function AdminQuestionnairesPage() {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/admin/questionnaires/${questionnaire.id}`}
-                  className="flex-1 py-2 px-3 rounded-md text-sm font-medium text-center transition-colors"
+                  className="flex-1 py-2 px-3 rounded-md  font-medium text-center transition-colors"
                   style={{
                     backgroundColor: "var(--primary-10)",
                     color: "var(--primary)",
@@ -347,7 +344,7 @@ export default function AdminQuestionnairesPage() {
                 </Link>
                 <button
                   onClick={() => handleEdit(questionnaire.id)}
-                  className="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors"
+                  className="flex-1 py-2 px-3 rounded-md  font-medium transition-colors"
                   style={{
                     backgroundColor: "var(--secondary-10)",
                     color: "var(--secondary)",

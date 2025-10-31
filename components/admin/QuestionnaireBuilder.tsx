@@ -175,7 +175,7 @@ export function QuestionnaireBuilder({
   ];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div className="max-w-7xl mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="border-b pb-4">
         <h1 className="text-2xl font-bold text-gray-900">

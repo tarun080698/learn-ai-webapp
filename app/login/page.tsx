@@ -46,13 +46,13 @@ function LoginContent() {
         >
           <div className="absolute inset-0 opacity-5"></div>
           <div className="container mx-auto px-4 py-20">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="grid lg:grid-cols-2 gap-16 items-center">
                 {/* Left Side - Welcome Content */}
                 <div className="space-y-8">
                   <div className="space-y-4">
                     <div
-                      className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium"
+                      className="inline-flex items-center px-4 py-2 rounded-full  font-medium"
                       style={{
                         backgroundColor: "var(--primary)",
                         color: "var(--primary-foreground)",
@@ -92,7 +92,7 @@ function LoginContent() {
                         ></i>
                       </div>
                       <div
-                        className="text-sm font-medium"
+                        className=" font-medium"
                         style={{ color: "var(--secondary)" }}
                       >
                         Secure
@@ -117,7 +117,7 @@ function LoginContent() {
                         ></i>
                       </div>
                       <div
-                        className="text-sm font-medium"
+                        className=" font-medium"
                         style={{ color: "var(--secondary)" }}
                       >
                         Trusted
@@ -142,7 +142,7 @@ function LoginContent() {
                         ></i>
                       </div>
                       <div
-                        className="text-sm font-medium"
+                        className=" font-medium"
                         style={{ color: "var(--secondary)" }}
                       >
                         24/7
@@ -180,13 +180,13 @@ function LoginContent() {
                           }}
                         >
                           <i
-                            className="fa-solid fa-robot text-sm"
+                            className="fa-solid fa-robot "
                             style={{ color: "var(--primary)" }}
                           ></i>
                         </div>
                         <div className="flex-1">
                           <div
-                            className="text-sm font-medium"
+                            className=" font-medium"
                             style={{ color: "var(--secondary)" }}
                           >
                             AI Fundamentals
@@ -207,13 +207,13 @@ function LoginContent() {
                           }}
                         >
                           <i
-                            className="fa-solid fa-brain text-sm"
+                            className="fa-solid fa-brain "
                             style={{ color: "var(--accent)" }}
                           ></i>
                         </div>
                         <div className="flex-1">
                           <div
-                            className="text-sm font-medium"
+                            className=" font-medium"
                             style={{ color: "var(--secondary)" }}
                           >
                             Machine Learning
@@ -274,7 +274,7 @@ function LoginContent() {
                       </button>
 
                       <div
-                        className="text-center text-sm"
+                        className="text-center "
                         style={{ color: "var(--muted-foreground)" }}
                       >
                         <i className="fa-solid fa-magic-wand-sparkles mr-1"></i>
@@ -304,7 +304,7 @@ function LoginContent() {
         {/* Support Section */}
         <section className="hidden py-20">
           <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div
                 className="p-12 rounded-3xl text-center"
                 style={{
@@ -350,7 +350,7 @@ function LoginContent() {
                       Help Center
                     </h3>
                     <p
-                      className="text-sm"
+                      className=""
                       style={{
                         color: "var(--primary-foreground)",
                         opacity: 0.8,
@@ -375,7 +375,7 @@ function LoginContent() {
                       Live Chat
                     </h3>
                     <p
-                      className="text-sm"
+                      className=""
                       style={{
                         color: "var(--primary-foreground)",
                         opacity: 0.8,
@@ -400,7 +400,7 @@ function LoginContent() {
                       Email Support
                     </h3>
                     <p
-                      className="text-sm"
+                      className=""
                       style={{
                         color: "var(--primary-foreground)",
                         opacity: 0.8,

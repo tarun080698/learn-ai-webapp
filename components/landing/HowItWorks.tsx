@@ -41,7 +41,7 @@ export function HowItWorks() {
                   style={{ backgroundColor: "var(--accent)" }}
                 >
                   <span
-                    className="font-bold text-sm"
+                    className="font-bold "
                     style={{ color: "var(--accent-foreground)" }}
                   >
                     1
@@ -80,7 +80,7 @@ export function HowItWorks() {
                   style={{ backgroundColor: "var(--secondary)" }}
                 >
                   <span
-                    className="font-bold text-sm"
+                    className="font-bold "
                     style={{ color: "var(--secondary-foreground)" }}
                   >
                     2
@@ -119,7 +119,7 @@ export function HowItWorks() {
                   style={{ backgroundColor: "var(--primary)" }}
                 >
                   <span
-                    className="font-bold text-sm"
+                    className="font-bold "
                     style={{ color: "var(--primary-foreground)" }}
                   >
                     3

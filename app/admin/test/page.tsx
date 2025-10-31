@@ -147,7 +147,7 @@ export default function AdminTestingPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto py-8">
+    <div className="max-w-7xl mx-auto py-8">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Admin Testing Interface</h1>
         <p className="text-muted-foreground">

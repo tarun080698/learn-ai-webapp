@@ -214,7 +214,7 @@ export default function AdminQuestionnaireViewPage() {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
             <span
-              className="text-sm font-medium px-2.5 py-1 rounded-full"
+              className=" font-medium px-2.5 py-1 rounded-full"
               style={{
                 backgroundColor: "var(--secondary-10)",
                 color: "var(--secondary)",
@@ -264,7 +264,7 @@ export default function AdminQuestionnaireViewPage() {
                   ) => (
                     <div
                       key={optIndex}
-                      className="flex items-center gap-2 text-sm text-secondary/70"
+                      className="flex items-center gap-2  text-secondary/70"
                     >
                       <div
                         className={`w-3 h-3 rounded-${
@@ -285,7 +285,7 @@ export default function AdminQuestionnaireViewPage() {
 
           {/* Scale range for scale type */}
           {question.type === "scale" && (
-            <div className="ml-4 text-sm text-secondary/70">
+            <div className="ml-4  text-secondary/70">
               <span>
                 Scale: {question.scale?.min || 1} to {question.scale?.max || 5}
               </span>
@@ -426,7 +426,7 @@ export default function AdminQuestionnaireViewPage() {
             </div>
             <div className="flex items-center gap-3">
               <span
-                className="px-3 py-1 rounded-full text-sm font-medium"
+                className="px-3 py-1 rounded-full  font-medium"
                 style={{
                   backgroundColor: questionnaire.archived
                     ? "var(--secondary-10)"
@@ -444,7 +444,7 @@ export default function AdminQuestionnaireViewPage() {
                 {questionnaire.archived ? "Archived" : "Active"}
               </span>
               <span
-                className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+                className="px-3 py-1 rounded-full  font-medium capitalize"
                 style={{
                   backgroundColor:
                     questionnaire.purpose === "quiz"
@@ -555,10 +555,7 @@ export default function AdminQuestionnaireViewPage() {
                       >
                         {stats.questionCount}
                       </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: "var(--primary)" }}
-                      >
+                      <div className="" style={{ color: "var(--primary)" }}>
                         Questions
                       </div>
                     </div>
@@ -585,10 +582,7 @@ export default function AdminQuestionnaireViewPage() {
                       >
                         {stats.assignmentCount}
                       </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: "var(--accent)" }}
-                      >
+                      <div className="" style={{ color: "var(--accent)" }}>
                         Assignments
                       </div>
                     </div>
@@ -615,10 +609,7 @@ export default function AdminQuestionnaireViewPage() {
                       >
                         {stats.activeAssignments}
                       </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: "var(--destructive)" }}
-                      >
+                      <div className="" style={{ color: "var(--destructive)" }}>
                         Active
                       </div>
                     </div>
@@ -646,7 +637,7 @@ export default function AdminQuestionnaireViewPage() {
                         {questionnaire.purpose}
                       </div>
                       <div
-                        className="text-sm"
+                        className=""
                         style={{ color: "var(--secondary-70)" }}
                       >
                         Type
@@ -657,7 +648,7 @@ export default function AdminQuestionnaireViewPage() {
               </div>
 
               <div
-                className="mt-6 grid grid-cols-2 gap-4 text-sm"
+                className="mt-6 grid grid-cols-2 gap-4 "
                 style={{ color: "var(--secondary-70)" }}
               >
                 <div>
@@ -843,14 +834,14 @@ export default function AdminQuestionnaireViewPage() {
                               : "Module Assignment"}
                           </h3>
                           <p
-                            className="text-sm mt-1"
+                            className=" mt-1"
                             style={{ color: "var(--secondary-70)" }}
                           >
                             {assignment.timing === "pre" ? "Pre-" : "Post-"}
                             {assignment.scope.type} questionnaire
                           </p>
                           <div
-                            className="flex items-center gap-4 mt-2 text-sm"
+                            className="flex items-center gap-4 mt-2 "
                             style={{ color: "var(--secondary-60)" }}
                           >
                             <span>Course ID: {assignment.scope.courseId}</span>

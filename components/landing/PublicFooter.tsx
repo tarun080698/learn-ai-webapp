@@ -183,7 +183,7 @@ export function PublicFooter() {
           }}
         >
           <p
-            className="text-sm"
+            className=""
             style={{
               color: "var(--secondary-foreground)",
               opacity: 0.6,
@@ -194,7 +194,7 @@ export function PublicFooter() {
           <div className="hidden flex items-center space-x-6 mt-4 md:mt-0">
             <Link
               href="/status"
-              className="transition-colors hover:opacity-80 text-sm"
+              className="transition-colors hover:opacity-80 "
               style={{
                 color: "var(--secondary-foreground)",
                 opacity: 0.6,
@@ -204,7 +204,7 @@ export function PublicFooter() {
             </Link>
             <Link
               href="/careers"
-              className="transition-colors hover:opacity-80 text-sm"
+              className="transition-colors hover:opacity-80 "
               style={{
                 color: "var(--secondary-foreground)",
                 opacity: 0.6,
@@ -214,7 +214,7 @@ export function PublicFooter() {
             </Link>
             <Link
               href="/blog"
-              className="transition-colors hover:opacity-80 text-sm"
+              className="transition-colors hover:opacity-80 "
               style={{
                 color: "var(--secondary-foreground)",
                 opacity: 0.6,

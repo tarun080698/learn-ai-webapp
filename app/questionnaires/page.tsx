@@ -370,7 +370,7 @@ export default function QuestionnairePage() {
     <RouteGuard>
       <div className="min-h-screen">
         <Navigation />
-        <div className="container mx-auto py-8 max-w-6xl">
+        <div className="container mx-auto py-8 max-w-7xl">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-3xl font-bold">Questionnaires</h1>

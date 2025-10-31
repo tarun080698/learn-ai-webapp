@@ -82,7 +82,7 @@ function ToastContainer() {
           <span className=" font-medium">{toast.message}</span>
           <button
             onClick={() => removeToast(toast.id)}
-            className="ml-4 text-current hover:opacity-80"
+            className="ml-4 text-current hover:opacity-80 cursor-pointer"
           >
             <i className="fa-solid fa-times" />
           </button>

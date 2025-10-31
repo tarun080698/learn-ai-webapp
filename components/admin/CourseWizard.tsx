@@ -404,7 +404,7 @@ export function CourseWizard({
   const isLastStep = currentStepIndex === STEPS.length - 1;
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       {/* Progress Steps */}
       <div className="mb-8">
         <div className="flex items-center justify-between">

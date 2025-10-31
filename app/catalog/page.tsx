@@ -73,7 +73,7 @@ export default async function CatalogPage() {
                 courses designed to advance your skills.
               </p>
               <div
-                className="flex items-center justify-center space-x-8 text-sm"
+                className="flex items-center justify-center space-x-8 "
                 style={{ color: "var(--muted-foreground)" }}
               >
                 <div className="flex items-center">

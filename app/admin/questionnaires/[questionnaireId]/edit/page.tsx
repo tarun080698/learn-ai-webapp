@@ -253,10 +253,7 @@ export default function AdminQuestionnaireEditPage() {
             >
               Error
             </div>
-            <div
-              className="text-sm mt-1"
-              style={{ color: "var(--destructive-80)" }}
-            >
+            <div className=" mt-1" style={{ color: "var(--destructive-80)" }}>
               {error}
             </div>
           </div>

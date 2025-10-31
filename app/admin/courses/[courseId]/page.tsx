@@ -379,7 +379,7 @@ export default function AdminCourseDetailPage() {
             <div className="absolute bottom-6 left-6 right-6 text-white">
               <div className="flex items-center space-x-2 mb-3">
                 <span
-                  className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+                  className="px-3 py-1 rounded-full  font-medium capitalize"
                   style={{
                     backgroundColor: "var(--accent)",
                     color: "var(--secondary)",
@@ -389,7 +389,7 @@ export default function AdminCourseDetailPage() {
                 </span>
                 {course.published && (
                   <span
-                    className="px-3 py-1 rounded-full text-sm font-medium"
+                    className="px-3 py-1 rounded-full  font-medium"
                     style={{
                       backgroundColor: "var(--primary-10)",
                       color: "white",
@@ -424,7 +424,7 @@ export default function AdminCourseDetailPage() {
                 >
                   {formatDuration(course.durationMinutes || 0)}
                 </p>
-                <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+                <p className="" style={{ color: "var(--secondary-70)" }}>
                   Total Duration
                 </p>
               </div>
@@ -444,7 +444,7 @@ export default function AdminCourseDetailPage() {
                 >
                   {stats.moduleCount}
                 </p>
-                <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+                <p className="" style={{ color: "var(--secondary-70)" }}>
                   Learning Modules
                 </p>
               </div>
@@ -464,7 +464,7 @@ export default function AdminCourseDetailPage() {
                 >
                   {stats.assignmentCount}
                 </p>
-                <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+                <p className="" style={{ color: "var(--secondary-70)" }}>
                   Assignments
                 </p>
               </div>
@@ -487,7 +487,7 @@ export default function AdminCourseDetailPage() {
                       course.level.slice(1)
                     : "General"}
                 </p>
-                <p className="text-sm" style={{ color: "var(--secondary-70)" }}>
+                <p className="" style={{ color: "var(--secondary-70)" }}>
                   Difficulty Level
                 </p>
               </div>
@@ -731,7 +731,7 @@ export default function AdminCourseDetailPage() {
                       </div>
                       <div className="flex items-center space-x-4">
                         <span
-                          className="text-sm"
+                          className=""
                           style={{ color: "var(--secondary-70)" }}
                         >
                           {module.estMinutes
@@ -794,7 +794,7 @@ export default function AdminCourseDetailPage() {
                             </span>
                             {module.contentType === "text" && module.body && (
                               <span
-                                className="text-sm"
+                                className=""
                                 style={{ color: "var(--secondary-50)" }}
                               >
                                 ({module.body.length} characters)
@@ -845,7 +845,7 @@ export default function AdminCourseDetailPage() {
                                       {asset.title || "Untitled Asset"}
                                     </p>
                                     <p
-                                      className="text-sm capitalize"
+                                      className=" capitalize"
                                       style={{ color: "var(--secondary-70)" }}
                                     >
                                       {asset.kind} asset
@@ -856,7 +856,7 @@ export default function AdminCourseDetailPage() {
                                       href={asset.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-sm transition-colors"
+                                      className=" transition-colors"
                                       style={{ color: "var(--primary)" }}
                                       onMouseEnter={(e) => {
                                         e.currentTarget.style.color =
@@ -880,7 +880,7 @@ export default function AdminCourseDetailPage() {
                           style={{ color: "var(--secondary-50)" }}
                         >
                           <DocumentIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No assets in this module</p>
+                          <p className="">No assets in this module</p>
                         </div>
                       )}
                     </div>
@@ -940,7 +940,7 @@ export default function AdminCourseDetailPage() {
                             "Untitled Questionnaire"}
                         </h3>
                         <div
-                          className="flex items-center space-x-4 text-sm"
+                          className="flex items-center space-x-4 "
                           style={{ color: "var(--secondary-70)" }}
                         >
                           <span className="capitalize">
@@ -958,7 +958,7 @@ export default function AdminCourseDetailPage() {
                         </div>
                         {assignment.scope.moduleId && (
                           <p
-                            className="text-sm mt-1"
+                            className=" mt-1"
                             style={{ color: "var(--secondary-60)" }}
                           >
                             Assigned to:{" "}
@@ -985,7 +985,7 @@ export default function AdminCourseDetailPage() {
                       </span>
                       <Link
                         href={`/admin/questionnaires/${assignment.questionnaireId}`}
-                        className="text-sm font-medium transition-colors"
+                        className=" font-medium transition-colors"
                         style={{ color: "var(--primary)" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.color = "var(--primary-80)";

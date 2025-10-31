@@ -189,7 +189,7 @@ export default function CourseDetailsPage() {
       {/* Breadcrumb Navigation */}
       <section className="py-4" style={{ backgroundColor: "var(--muted)" }}>
         <div className="container mx-auto px-4">
-          <nav className="flex items-center space-x-2 text-sm">
+          <nav className="flex items-center space-x-2 ">
             <Link
               href="/"
               className="transition-colors hover:opacity-80"
@@ -227,7 +227,7 @@ export default function CourseDetailsPage() {
               <div className="mb-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <span
-                    className="px-3 py-1 rounded-full text-sm font-medium"
+                    className="px-3 py-1 rounded-full  font-medium"
                     style={{
                       backgroundColor: "var(--accent)",
                       color: "var(--accent-foreground)",
@@ -236,7 +236,7 @@ export default function CourseDetailsPage() {
                     AI Course
                   </span>
                   <span
-                    className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+                    className="px-3 py-1 rounded-full  font-medium capitalize"
                     style={{
                       backgroundColor: "var(--primary)",
                       color: "var(--primary-foreground)",
@@ -291,7 +291,7 @@ export default function CourseDetailsPage() {
                 </div>
 
                 <div
-                  className="flex items-center space-x-8 text-sm mb-8"
+                  className="flex items-center space-x-8  mb-8"
                   style={{ color: "var(--muted-foreground)" }}
                 >
                   <div className="flex items-center">
@@ -431,7 +431,7 @@ export default function CourseDetailsPage() {
                         </button>
                       </div>
                       <div
-                        className="absolute top-4 right-4 px-3 py-1 rounded text-sm"
+                        className="absolute top-4 right-4 px-3 py-1 rounded "
                         style={{
                           backgroundColor: "rgba(0, 0, 0, 0.7)",
                           color: "white",
@@ -453,7 +453,7 @@ export default function CourseDetailsPage() {
                         </span>
                       </div>
                       <p
-                        className="text-sm"
+                        className=""
                         style={{ color: "var(--muted-foreground)" }}
                       >
                         This course is available for free to all users
@@ -527,7 +527,7 @@ export default function CourseDetailsPage() {
                     </div>
 
                     <div
-                      className="text-center text-sm mb-6"
+                      className="text-center  mb-6"
                       style={{ color: "var(--muted-foreground)" }}
                     >
                       Full lifetime access
@@ -547,7 +547,7 @@ export default function CourseDetailsPage() {
           style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
         >
           <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
+            <div className="max-w-7xl mx-auto">
               <div className="text-center mb-12">
                 <h2
                   className="text-3xl font-bold mb-4"
@@ -601,7 +601,7 @@ export default function CourseDetailsPage() {
                           </h3>
                         </div>
                         <div
-                          className="text-sm"
+                          className=""
                           style={{ color: "var(--muted-foreground)" }}
                         >
                           {section.modules.length} lessons •{" "}
@@ -642,7 +642,7 @@ export default function CourseDetailsPage() {
                                   </h4>
                                   {module.summary && (
                                     <p
-                                      className="text-sm"
+                                      className=""
                                       style={{
                                         color: "var(--muted-foreground)",
                                       }}
@@ -654,7 +654,7 @@ export default function CourseDetailsPage() {
                               </div>
                               <div className="flex items-center space-x-4">
                                 <span
-                                  className="text-sm"
+                                  className=""
                                   style={{ color: "var(--muted-foreground)" }}
                                 >
                                   {formatDuration(module.estMinutes)}
@@ -706,7 +706,7 @@ export default function CourseDetailsPage() {
       {/* Requirements & Who This Course Is For */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-2 gap-8">
               <div
                 className="p-8 rounded-2xl"

@@ -18,7 +18,7 @@ export function HeroSection() {
           <div className="space-y-8">
             <div className="space-y-4">
               <div
-                className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium"
+                className="inline-flex items-center px-4 py-2 rounded-full  font-medium"
                 style={{
                   backgroundColor: "var(--primary)",
                   color: "var(--primary-foreground)",
@@ -81,10 +81,7 @@ export function HeroSection() {
                 >
                   50K+
                 </div>
-                <div
-                  className="text-sm"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
+                <div className="" style={{ color: "var(--muted-foreground)" }}>
                   Students
                 </div>
               </div>
@@ -95,10 +92,7 @@ export function HeroSection() {
                 >
                   200+
                 </div>
-                <div
-                  className="text-sm"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
+                <div className="" style={{ color: "var(--muted-foreground)" }}>
                   Courses
                 </div>
               </div>
@@ -110,7 +104,7 @@ export function HeroSection() {
                   4.9
                 </div>
                 <div
-                  className="text-sm flex items-center"
+                  className=" flex items-center"
                   style={{ color: "var(--muted-foreground)" }}
                 >
                   <i
@@ -152,7 +146,7 @@ export function HeroSection() {
                       Machine Learning
                     </h3>
                     <p
-                      className="text-sm"
+                      className=""
                       style={{ color: "var(--muted-foreground)" }}
                     >
                       Build predictive models
@@ -189,7 +183,7 @@ export function HeroSection() {
                       ></i>
                     </div>
                     <h3
-                      className="font-semibold mb-1 text-sm"
+                      className="font-semibold mb-1 "
                       style={{ color: "var(--secondary)" }}
                     >
                       Neural Networks
@@ -234,7 +228,7 @@ export function HeroSection() {
                       ></i>
                     </div>
                     <h3
-                      className="font-semibold mb-1 text-sm"
+                      className="font-semibold mb-1 "
                       style={{ color: "var(--secondary)" }}
                     >
                       Data Science
@@ -283,7 +277,7 @@ export function HeroSection() {
                       Computer Vision
                     </h3>
                     <p
-                      className="text-sm"
+                      className=""
                       style={{ color: "var(--muted-foreground)" }}
                     >
                       Image recognition & analysis

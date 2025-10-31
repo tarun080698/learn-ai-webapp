@@ -123,7 +123,7 @@ function VideoModal({
         >
           <button
             onClick={onClose}
-            className="absolute right-3 top-3 inline-flex items-center justify-center h-10 w-10 rounded-full hover:opacity-90 focus:outline-none focus:ring-2 transition-all"
+            className="absolute right-3 top-3 inline-flex items-center justify-center h-10 w-10 rounded-full hover:opacity-90 focus:outline-none focus:ring-2 transition-all cursor-pointer"
             style={
               {
                 backgroundColor: "var(--secondary-90)",
@@ -207,7 +207,7 @@ export default function CoursePromoVideoSection({
           {/* Copy */}
           <div>
             <p
-              className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium mb-4"
+              className="inline-flex items-center rounded-full px-3 py-1  font-medium mb-4"
               style={{
                 backgroundColor: "var(--accent-10)",
                 color: "var(--accent)",
@@ -261,7 +261,7 @@ export default function CoursePromoVideoSection({
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all"
+                className="inline-flex items-center gap-2 rounded-2xl px-6 py-3 font-semibold hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all cursor-pointer"
                 style={{
                   backgroundColor: "var(--primary)",
                   color: "var(--primary-foreground)",
@@ -278,10 +278,7 @@ export default function CoursePromoVideoSection({
                 </svg>
                 {ctaLabel}
               </button>
-              <span
-                className="text-sm"
-                style={{ color: "var(--secondary-60)" }}
-              >
+              <span className="" style={{ color: "var(--secondary-60)" }}>
                 2 min demo
               </span>
             </div>
@@ -346,7 +343,7 @@ export default function CoursePromoVideoSection({
               </div>
             </div>
             <p
-              className="mt-3 text-center text-sm"
+              className="mt-3 text-center "
               style={{ color: "var(--secondary-60)" }}
             >
               Click to play • YouTube

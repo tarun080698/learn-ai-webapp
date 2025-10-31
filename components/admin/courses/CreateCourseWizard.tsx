@@ -368,7 +368,7 @@ function CreateCourseWizardContent() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex gap-8">
           {/* Left Column - Main Content */}
-          <div className="flex-1 max-w-6xl">{renderCurrentStep()}</div>
+          <div className="flex-1 max-w-7xl">{renderCurrentStep()}</div>
 
           {/* Right Column - Summary Panel */}
           {renderCourseSummary()}
