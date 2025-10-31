@@ -12,14 +12,15 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl");
+  const redirectUrl = searchParams.get("redirect");
 
   // Redirect authenticated users
   useEffect(() => {
     if (firebaseUser) {
-      const redirectTo = returnUrl || "/dashboard";
+      const redirectTo = redirectUrl || returnUrl || "/dashboard";
       router.push(redirectTo);
     }
-  }, [firebaseUser, router, returnUrl]);
+  }, [firebaseUser, router, returnUrl, redirectUrl]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -77,7 +78,7 @@ function LoginContent() {
                   </div>
 
                   {/* Trust Indicators */}
-                  <div className="grid grid-cols-3 gap-6">
+                  <div className="hidden grid grid-cols-3 gap-6">
                     <div className="text-center">
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
@@ -251,16 +252,6 @@ function LoginContent() {
                       >
                         Sign in to your account
                       </h2>
-                      <p style={{ color: "var(--muted-foreground)" }}>
-                        Don&apos;t have an account?{" "}
-                        <a
-                          href="/signup"
-                          className="font-medium transition-colors hover:opacity-80"
-                          style={{ color: "var(--primary)" }}
-                        >
-                          Sign up for free
-                        </a>
-                      </p>
                     </div>
 
                     <div className="space-y-6">
@@ -316,159 +307,10 @@ function LoginContent() {
           </div>
         </section>
 
-        {/* Security Features */}
-        <section
-          className="py-20"
-          style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
-        >
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2
-                className="text-3xl lg:text-4xl font-bold mb-4"
-                style={{ color: "var(--secondary)" }}
-              >
-                Your security is our priority
-              </h2>
-              <p
-                className="text-xl max-w-2xl mx-auto"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                We use industry-standard security measures to protect your data
-                and ensure a safe learning environment
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div
-                className="p-6 rounded-2xl text-center hover:shadow-lg transition-all duration-300"
-                style={{
-                  backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "var(--shadow-sm)",
-                }}
-              >
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{ backgroundColor: "var(--primary)", opacity: 0.1 }}
-                >
-                  <i
-                    className="fa-solid fa-shield-alt text-2xl"
-                    style={{ color: "var(--primary)" }}
-                  ></i>
-                </div>
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  SSL Encryption
-                </h3>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  256-bit SSL encryption protects all data transmission
-                </p>
-              </div>
-              <div
-                className="p-6 rounded-2xl text-center hover:shadow-lg transition-all duration-300"
-                style={{
-                  backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "var(--shadow-sm)",
-                }}
-              >
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{ backgroundColor: "var(--accent)", opacity: 0.1 }}
-                >
-                  <i
-                    className="fa-solid fa-user-shield text-2xl"
-                    style={{ color: "var(--accent)" }}
-                  ></i>
-                </div>
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  Privacy Protected
-                </h3>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  Your personal information is never shared with third parties
-                </p>
-              </div>
-              <div
-                className="p-6 rounded-2xl text-center hover:shadow-lg transition-all duration-300"
-                style={{
-                  backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "var(--shadow-sm)",
-                }}
-              >
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{ backgroundColor: "var(--secondary)", opacity: 0.1 }}
-                >
-                  <i
-                    className="fa-solid fa-key text-2xl"
-                    style={{ color: "var(--secondary)" }}
-                  ></i>
-                </div>
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  Secure Authentication
-                </h3>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  Google OAuth and secure authentication protocols
-                </p>
-              </div>
-              <div
-                className="p-6 rounded-2xl text-center hover:shadow-lg transition-all duration-300"
-                style={{
-                  backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
-                  boxShadow: "var(--shadow-sm)",
-                }}
-              >
-                <div
-                  className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{
-                    backgroundColor: "var(--destructive)",
-                    opacity: 0.1,
-                  }}
-                >
-                  <i
-                    className="fa-solid fa-database text-2xl"
-                    style={{ color: "var(--destructive)" }}
-                  ></i>
-                </div>
-                <h3
-                  className="text-lg font-semibold mb-2"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  Data Backup
-                </h3>
-                <p
-                  className="text-sm"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  Regular backups ensure your progress is never lost
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* Support Section */}
-        <section className="py-20">
+        <section className="hidden py-20">
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
               <div
                 className="p-12 rounded-3xl text-center"
                 style={{

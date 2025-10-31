@@ -28,7 +28,7 @@ export function Statistics() {
             industry-relevant AI skills
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="hidden md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="text-center">
             <div
               className="text-5xl font-bold mb-2"

@@ -230,7 +230,7 @@ export default function AdminCourseDetailPage() {
           </div>
           <p style={{ color: "var(--secondary-70)" }}>{error}</p>
           <Link
-            href="/admin/courses"
+            href="/admin"
             className="inline-flex items-center mt-4 px-4 py-2 rounded-lg transition-colors"
             style={{
               backgroundColor: "var(--secondary)",
@@ -271,7 +271,7 @@ export default function AdminCourseDetailPage() {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-4">
           <Link
-            href="/admin/courses"
+            href="/admin"
             className="flex items-center space-x-2 transition-colors"
             style={{ color: "var(--secondary)" }}
             onMouseEnter={(e) => {

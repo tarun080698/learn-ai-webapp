@@ -223,7 +223,7 @@ export default function AdminCourseEditPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto p-6">
         {/* Header with Navigation */}
         <div className="bg-white rounded-lg shadow-sm border mb-6 p-6">
           <div className="flex items-center gap-4 mb-4">

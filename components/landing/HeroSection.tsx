@@ -73,7 +73,7 @@ export function HeroSection() {
                 Get Started
               </Link>
             </div>
-            <div className="hidden md:flex items-center space-x-8 pt-4">
+            <div className="hidden items-center space-x-8 pt-4">
               <div className="text-center">
                 <div
                   className="text-2xl font-bold"

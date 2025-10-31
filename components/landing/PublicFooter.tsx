@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Logo from "@/public/learn-ai-logo.png";
+import Image from "next/image";
 
 export function PublicFooter() {
   return (
@@ -16,14 +18,12 @@ export function PublicFooter() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-2">
             <div className="flex items-center space-x-2 mb-6">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{ backgroundColor: "var(--primary)" }}
-              >
-                <i
-                  className="fa-solid fa-graduation-cap text-lg"
-                  style={{ color: "var(--primary-foreground)" }}
-                ></i>
+              <div className="max-w-12 bg-primary rounded-2xl flex items-center justify-center">
+                <Image
+                  src={Logo}
+                  alt="Logo"
+                  className="p-1 bg-primary-foreground text-xl w-auto aspect-square"
+                />
               </div>
               <span className="text-2xl font-bold">Learn.ai 4all</span>
             </div>

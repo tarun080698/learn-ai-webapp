@@ -5,7 +5,8 @@ import { useState } from "react";
 export function PromoBanner() {
   const [isVisible, setIsVisible] = useState(true);
 
-  if (!isVisible) return null;
+  //   if (!isVisible) return null;
+  if (true) return null;
 
   return (
     <div

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PublicLayout } from "@/components/PublicLayout";
+import { CourseCard, CourseCardData } from "@/components/ui/CourseCard";
 
 // Force dynamic rendering for fresh course data
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ interface Course {
   enrollmentId?: string | null;
   progressPct?: number;
   completed?: boolean;
+  heroImageUrl?: string;
 }
 
 // Phase 2: Catalog page - Server Component
@@ -52,88 +54,104 @@ export default async function CatalogPage() {
 
   return (
     <PublicLayout showPromoBanner={false}>
-      <div className="max-w-4xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-6">Course Catalog</h1>
+      <div className="bg-background">
+        {/* Hero Section */}
+        <section className="py-16 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto">
+              <h1 className="text-4xl lg:text-5xl font-bold text-secondary mb-6">
+                Course Catalog
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8">
+                Explore our comprehensive collection of AI and machine learning
+                courses designed to advance your skills.
+              </p>
+              <div className="flex items-center justify-center space-x-8 text-sm text-muted-foreground">
+                <div className="flex items-center">
+                  <i className="fa-solid fa-graduation-cap text-primary mr-2"></i>
+                  <span>{courses.length} Courses</span>
+                </div>
+                <div className="flex items-center">
+                  <i className="fa-solid fa-users text-primary mr-2"></i>
+                  <span>Expert Instructors</span>
+                </div>
+                <div className="flex items-center">
+                  <i className="fa-solid fa-certificate text-primary mr-2"></i>
+                  <span>Certificates Included</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Course Listing */}
-        <div className="mt-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Available Courses</h2>
-            <span className=" text-muted-foreground">
-              {courses.length} course{courses.length !== 1 ? "s" : ""} available
-            </span>
-          </div>
-
-          {courses.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-              <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">📚</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">No Courses Yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Courses will appear here once they are published by
-                administrators.
-              </p>
-              <Link
-                href="/admin/login"
-                className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                Admin Login
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {courses.map((course) => (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            {courses.length === 0 ? (
+              <div className="text-center py-20">
                 <div
-                  key={course.id}
-                  className="border rounded-lg p-6 transition-all duration-200"
-                  style={{
-                    backgroundColor: "var(--card)",
-                    borderColor: "var(--border)",
-                    boxShadow: "var(--shadow-sm)",
-                  }}
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6"
+                  style={{ backgroundColor: "var(--muted)" }}
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h3 className="text-lg font-semibold mb-1">
-                        {course.title}
-                      </h3>
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {course.level}
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className=" text-muted-foreground mb-4 line-clamp-3">
-                    {course.description}
-                  </p>
-
-                  <div className="flex justify-between items-center text-xs text-muted-foreground mb-4">
-                    <div className="flex items-center space-x-4">
-                      <span>📚 {course.moduleCount} modules</span>
-                      <span>⏱️ {course.durationMinutes} min</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Link
-                      href={`/courses/${course.id}`}
-                      className="flex-1 px-4 py-2 bg-primary text-primary-foreground text-center rounded-lg hover:bg-primary/90 transition-colors "
-                    >
-                      Enroll Now
-                    </Link>
-                    <Link
-                      href={`/courses/${course.id}`}
-                      className="px-4 py-2 border border-border rounded-lg hover:bg-muted transition-colors "
-                    >
-                      Preview
-                    </Link>
-                  </div>
+                  <span className="text-4xl">📚</span>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <h3 className="text-2xl font-semibold mb-4 text-secondary">
+                  No Courses Available Yet
+                </h3>
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                  Our team is working hard to bring you amazing courses. Check
+                  back soon for exciting new content!
+                </p>
+                <Link
+                  href="/admin/login"
+                  className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                >
+                  <i className="fa-solid fa-lock mr-2"></i>
+                  Admin Login
+                </Link>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-2xl font-semibold text-secondary">
+                    Available Courses
+                  </h2>
+                  <span className="text-muted-foreground">
+                    {courses.length} course{courses.length !== 1 ? "s" : ""}{" "}
+                    available
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {courses.map((course) => (
+                    <CourseCard
+                      key={course.id}
+                      course={course as CourseCardData}
+                      showImage={true}
+                      showStats={true}
+                      showProgress={course.enrolled}
+                      layout="vertical"
+                      size="md"
+                      actions={[
+                        {
+                          label: course.enrolled
+                            ? "Continue Learning"
+                            : "Enroll Now",
+                          href: `/courses/${course.id}`,
+                          variant: "primary",
+                        },
+                        {
+                          label: "Preview",
+                          href: `/courses/${course.id}`,
+                          variant: "outline",
+                        },
+                      ]}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </PublicLayout>
   );

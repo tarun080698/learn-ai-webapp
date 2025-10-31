@@ -2,23 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { useAuthenticatedFetch } from "@/hooks/useAuthenticatedFetch";
 import { AdminCourse, CourseStats } from "@/types/admin";
 import { CourseDoc } from "@/types/models";
-import { calculateCompletionRate } from "@/utils/helper";
-import { formatDate } from "@/utils/dateUtils";
 import { generateIdempotencyKey } from "@/utils/uuid";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  CourseCard,
+  CourseCardData,
+  CourseCardAction,
+} from "@/components/ui/CourseCard";
 import {
   faBook,
   faUsers,
   faTrophy,
   faPlus,
-  faEdit,
-  faEye,
-  faArchive,
   faSearch,
   faSpinner,
   faExclamationTriangle,
@@ -431,225 +430,58 @@ export default function AdminDashboard() {
     }
   };
 
-  // Course card component
-  function CourseCard({ course }: { course: AdminCourse }) {
-    const completionRate = calculateCompletionRate(
-      course.completedCount,
-      course.enrolledCount
-    );
+  // Convert admin course to generic card format
+  const convertToCardData = (course: AdminCourse): CourseCardData => {
+    return {
+      id: course.id,
+      title: course.title,
+      description: course.description || "",
+      heroImageUrl: course.heroImageUrl,
+      level: "beginner" as const, // Default since AdminCourse doesn't have level
+      durationMinutes: 0, // Default since AdminCourse doesn't have duration
+      moduleCount: course.moduleCount,
+      published: course.published,
+      archived: course.archived,
+      updatedAt: course.updatedAt,
+      enrolledCount: course.enrolledCount,
+    };
+  };
 
-    // Status chip
-    let statusChip;
-    if (course.archived) {
-      statusChip = (
-        <span
-          className="text-xs font-medium px-2 py-1 rounded-lg border"
-          style={{
-            backgroundColor: "var(--secondary-20)",
-            color: "var(--secondary-70)",
-            borderColor: "var(--secondary-15)",
-          }}
-        >
-          Archived
-        </span>
-      );
-    } else if (course.published) {
-      statusChip = (
-        <span
-          className="text-xs font-medium px-2 py-1 rounded-lg"
-          style={{
-            backgroundColor: "var(--accent)",
-            color: "var(--secondary)",
-          }}
-        >
-          Published
-        </span>
-      );
-    } else {
-      statusChip = (
-        <span
-          className="text-xs font-medium px-2 py-1 rounded-lg"
-          style={{
-            backgroundColor: "var(--accent)",
-            color: "var(--secondary)",
-          }}
-        >
-          Draft
-        </span>
-      );
+  // Generate actions for each course
+  const generateCourseActions = (course: AdminCourse): CourseCardAction[] => {
+    const actions: CourseCardAction[] = [
+      {
+        label: "Edit",
+        href: `/admin/courses/${course.id}/edit`,
+        variant: "primary",
+      },
+      {
+        label: "Preview",
+        href: `/admin/courses/${course.id}`,
+        variant: "secondary",
+      },
+    ];
+
+    // Add archive/restore action
+    actions.push({
+      label: course.archived ? "Restore" : "Archive",
+      onClick: () => handleArchiveToggle(course.id, course.archived),
+      variant: "outline",
+      disabled: actionLoading === course.id,
+    });
+
+    // Add publish/unpublish action (only for non-archived courses)
+    if (!course.archived) {
+      actions.push({
+        label: course.published ? "Unpublish" : "Publish",
+        onClick: () => handlePublishToggle(course.id, course.published),
+        variant: course.published ? "outline" : "primary",
+        disabled: actionLoading === course.id,
+      });
     }
 
-    return (
-      <div
-        className="rounded-2xl overflow-hidden transition-all duration-150 hover:scale-[1.02]"
-        style={{
-          backgroundColor: "var(--card)",
-          boxShadow:
-            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.boxShadow =
-            "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.boxShadow =
-            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
-        }}
-      >
-        <div className="h-48 overflow-hidden">
-          {course.heroImageUrl ? (
-            <Image
-              className="w-full h-full object-cover"
-              src={course.heroImageUrl}
-              alt={`${course.title} thumbnail`}
-              width={300}
-              height={192}
-            />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center"
-              style={{
-                backgroundColor: "var(--background)",
-                border: "1px solid var(--secondary-15)",
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faBook}
-                className="text-4xl"
-                style={{ color: "var(--secondary)" }}
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3
-              className="text-lg font-semibold line-clamp-2"
-              style={{ color: "var(--secondary)" }}
-            >
-              {course.title}
-            </h3>
-            {statusChip}
-          </div>
-          <div className="space-y-3 mb-4">
-            <div
-              className="flex items-center justify-between "
-              style={{ color: "var(--secondary-70)" }}
-            >
-              {/* <div>Created at: {formatDate(course.)}</div> */}
-              <div>Updated: {formatDate(course.updatedAt)}</div>
-              <span>{course.moduleCount} modules</span>
-            </div>
-            <div
-              className="flex items-center justify-between "
-              style={{ color: "var(--secondary-70)" }}
-            >
-              <span>{course.enrolledCount} enrolled</span>
-              <span>
-                {course.enrolledCount > 0
-                  ? `${completionRate}% completion`
-                  : "-"}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Link href={`/admin/courses/${course.id}/edit`}>
-                <button
-                  className="p-2 rounded-lg transition-colors duration-150 cursor-pointer"
-                  title="Edit"
-                  style={{ color: "var(--secondary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--primary)";
-                    e.currentTarget.style.backgroundColor = "var(--primary-10)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--secondary)";
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEdit} className="" />
-                </button>
-              </Link>
-              <Link href={`/admin/courses/${course.id}`}>
-                <button
-                  className="p-2 rounded-lg transition-colors duration-150  cursor-pointer"
-                  title="Preview"
-                  style={{ color: "var(--secondary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--accent)";
-                    e.currentTarget.style.backgroundColor = "var(--accent-10)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--secondary)";
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <FontAwesomeIcon icon={faEye} className="" />
-                </button>
-              </Link>
-              <button
-                onClick={() => handleArchiveToggle(course.id, course.archived)}
-                disabled={actionLoading === course.id}
-                className="p-2 rounded-lg transition-colors duration-150  cursor-pointer"
-                title={course.archived ? "Restore" : "Archive"}
-                style={{ color: "var(--secondary)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--destructive)";
-                  e.currentTarget.style.backgroundColor =
-                    "var(--destructive-10)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--secondary)";
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <FontAwesomeIcon icon={faArchive} className="" />
-              </button>
-            </div>
-            {!course.archived && (
-              <button
-                onClick={() => handlePublishToggle(course.id, course.published)}
-                disabled={actionLoading === course.id}
-                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150 cursor-pointer"
-                style={{
-                  backgroundColor: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                }}
-              >
-                {actionLoading === course.id ? (
-                  <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                ) : course.published ? (
-                  "Unpublish"
-                ) : (
-                  "Publish"
-                )}
-              </button>
-            )}
-            {course.archived && (
-              <button
-                onClick={() => handleArchiveToggle(course.id, course.archived)}
-                disabled={actionLoading === course.id}
-                className="px-3 py-1.5 rounded-lg  font-medium transition-colors duration-150  cursor-pointer"
-                style={{
-                  backgroundColor: "var(--card)",
-                  color: "var(--secondary)",
-                  border: "1px solid var(--secondary-15)",
-                }}
-              >
-                {actionLoading === course.id ? (
-                  <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-                ) : (
-                  "Restore"
-                )}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
+    return actions;
+  };
 
   // Prevent hydration mismatch - show loading until mounted
   if (!mounted || authLoading) {
@@ -1008,7 +840,15 @@ export default function AdminDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredCourses.map((course) => (
-                <CourseCard key={course.id} course={course} />
+                <CourseCard
+                  key={course.id}
+                  course={convertToCardData(course)}
+                  actions={generateCourseActions(course)}
+                  showImage={true}
+                  showStatus={true}
+                  showStats={true}
+                  size="md"
+                />
               ))}
             </div>
           )}

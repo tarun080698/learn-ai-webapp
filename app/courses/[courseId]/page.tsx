@@ -187,37 +187,24 @@ export default function CourseDetailsPage() {
   return (
     <PublicLayout showPromoBanner={false}>
       {/* Breadcrumb Navigation */}
-      <section
-        className="py-4"
-        style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
-      >
+      <section className="bg-muted/30 py-4">
         <div className="container mx-auto px-4">
           <nav className="flex items-center space-x-2 text-sm">
             <Link
               href="/"
-              className="transition-colors hover:opacity-80"
-              style={{ color: "var(--muted-foreground)" }}
+              className="text-muted-foreground hover:text-primary transition-colors"
             >
               Home
             </Link>
-            <i
-              className="fa-solid fa-chevron-right text-xs"
-              style={{ color: "var(--muted-foreground)" }}
-            ></i>
+            <i className="fa-solid fa-chevron-right text-muted-foreground text-xs"></i>
             <Link
               href="/catalog"
-              className="transition-colors hover:opacity-80"
-              style={{ color: "var(--muted-foreground)" }}
+              className="text-muted-foreground hover:text-primary transition-colors"
             >
               Courses
             </Link>
-            <i
-              className="fa-solid fa-chevron-right text-xs"
-              style={{ color: "var(--muted-foreground)" }}
-            ></i>
-            <span className="font-medium" style={{ color: "var(--secondary)" }}>
-              {course.title}
-            </span>
+            <i className="fa-solid fa-chevron-right text-muted-foreground text-xs"></i>
+            <span className="text-secondary font-medium">{course.title}</span>
           </nav>
         </div>
       </section>
@@ -474,18 +461,59 @@ export default function CourseDetailsPage() {
                     </div>
 
                     <div className="space-y-3 mb-6">
-                      <Link
-                        href="/login"
-                        className="w-full py-3 px-6 rounded-lg font-semibold text-lg text-center block transition-colors"
-                        style={{
-                          backgroundColor: "var(--primary)",
-                          color: "var(--primary-foreground)",
-                        }}
-                      >
-                        {course.enrollment?.status === "enrolled"
-                          ? "Continue Learning"
-                          : "Enroll Now"}
-                      </Link>
+                      {course.enrollment?.status === "enrolled" ? (
+                        <Link
+                          href={`/courses/${courseId}/learn`}
+                          className="w-full py-3 px-6 rounded-lg font-semibold text-lg text-center block transition-colors hover:opacity-90"
+                          style={{
+                            backgroundColor: "var(--primary)",
+                            color: "var(--primary-foreground)",
+                          }}
+                        >
+                          Continue Learning
+                        </Link>
+                      ) : firebaseUser ? (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const token = await firebaseUser.getIdToken();
+                              const response = await fetch("/api/enroll", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  Authorization: `Bearer ${token}`,
+                                },
+                                body: JSON.stringify({ courseId }),
+                              });
+
+                              if (response.ok) {
+                                // Refresh course data to show enrollment
+                                await fetchCourseDetails();
+                              }
+                            } catch (error) {
+                              console.error("Enrollment error:", error);
+                            }
+                          }}
+                          className="w-full py-3 px-6 rounded-lg font-semibold text-lg transition-colors hover:opacity-90"
+                          style={{
+                            backgroundColor: "var(--primary)",
+                            color: "var(--primary-foreground)",
+                          }}
+                        >
+                          Enroll Now
+                        </button>
+                      ) : (
+                        <Link
+                          href={`/login?redirect=/courses/${courseId}`}
+                          className="w-full py-3 px-6 rounded-lg font-semibold text-lg text-center block transition-colors hover:opacity-90"
+                          style={{
+                            backgroundColor: "var(--primary)",
+                            color: "var(--primary-foreground)",
+                          }}
+                        >
+                          Enroll Now
+                        </Link>
+                      )}
                       <button
                         className="w-full py-3 px-6 rounded-lg font-semibold text-center transition-colors"
                         style={{
@@ -645,7 +673,7 @@ export default function CourseDetailsPage() {
           style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
         >
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
               <div className="text-center mb-12">
                 <h2
                   className="text-3xl font-bold mb-4"
@@ -804,7 +832,7 @@ export default function CourseDetailsPage() {
       {/* Requirements & Who This Course Is For */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <div className="grid md:grid-cols-2 gap-8">
               <div
                 className="p-8 rounded-2xl"

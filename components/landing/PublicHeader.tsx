@@ -1,4 +1,6 @@
 "use client";
+import Logo from "@/public/learn-ai-logo.png";
+import Image from "next/image";
 
 import Link from "next/link";
 
@@ -24,17 +26,12 @@ export function PublicHeader() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2">
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{
-                  background:
-                    "linear-gradient(135deg, var(--primary), var(--secondary))",
-                }}
-              >
-                <i
-                  className="fa-solid fa-graduation-cap text-lg"
-                  style={{ color: "var(--primary-foreground)" }}
-                ></i>
+              <div className="max-w-12 bg-primary rounded-2xl flex items-center justify-center">
+                <Image
+                  src={Logo}
+                  alt="Logo"
+                  className="p-1 bg-primary-foreground text-xl w-auto aspect-square"
+                />
               </div>
               <span
                 className="text-xl font-bold"

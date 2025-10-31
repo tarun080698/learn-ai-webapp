@@ -81,14 +81,14 @@ export function ValuePropositions() {
               className="text-xl font-semibold mb-4"
               style={{ color: "var(--secondary)" }}
             >
-              Hands-On Projects
+              Hands-On Assessments
             </h3>
             <p
               className="leading-relaxed"
               style={{ color: "var(--muted-foreground)" }}
             >
-              Build real-world projects and create a portfolio that showcases
-              your AI development skills
+              Pre & Post assessment to gauge your current knowledge. This helps
+              us personalize your learning experience.
             </p>
           </div>
 

@@ -3,13 +3,14 @@
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { RouteGuard } from "@/app/components/RouteGuard";
 import { Navigation } from "@/app/components/Navigation";
-import {
-  useAuthenticatedApi,
-  useAuthenticatedMutation,
-} from "@/hooks/useAuthenticatedFetch";
+import { useAuthenticatedMutation } from "@/hooks/useAuthenticatedFetch";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { formatDate } from "@/utils/dateUtils";
+import {
+  CourseCard,
+  CourseCardData,
+  CourseCardAction,
+} from "@/components/ui/CourseCard";
 
 interface Enrollment {
   id: string;
@@ -107,19 +108,6 @@ export default function DashboardPage() {
   };
 
   // Using centralized date utilities now
-
-  const getLevelColor = (level: string) => {
-    switch (level.toLowerCase()) {
-      case "beginner":
-        return "bg-green-100 text-green-800";
-      case "intermediate":
-        return "bg-yellow-100 text-yellow-800";
-      case "advanced":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   // Show loading spinner while checking authentication
   if (loading) {
@@ -227,74 +215,58 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {enrollments.map((enrollment) => (
-                  <div
-                    key={enrollment.id}
-                    className="border rounded-lg p-6 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">
-                          {enrollment.course.title}
-                        </h3>
-                        <p className="text-muted-foreground mb-2">
-                          {enrollment.course.description}
-                        </p>
-                        <div className="flex items-center gap-4 ">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(
-                              enrollment.course.level
-                            )}`}
-                          >
-                            {enrollment.course.level}
-                          </span>
-                          <span className="text-muted-foreground">
-                            {enrollment.course.moduleCount} modules
-                          </span>
-                          <span className="text-muted-foreground">
-                            {enrollment.course.durationMinutes}min
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary mb-1">
-                          {Math.round(enrollment.progressPct)}%
-                        </div>
-                        <div className=" text-muted-foreground">
-                          {enrollment.completedCount} of{" "}
-                          {enrollment.course.moduleCount} modules
-                        </div>
-                      </div>
-                    </div>
+                {enrollments.map((enrollment) => {
+                  // Convert enrollment to CourseCardData
+                  const courseData: CourseCardData = {
+                    id: enrollment.course.id,
+                    title: enrollment.course.title,
+                    description: enrollment.course.description,
+                    level: enrollment.course.level as
+                      | "beginner"
+                      | "intermediate"
+                      | "advanced",
+                    durationMinutes: enrollment.course.durationMinutes,
+                    moduleCount: enrollment.course.moduleCount,
+                    enrolled: true,
+                    enrollmentId: enrollment.id,
+                    progressPct: enrollment.progressPct,
+                    completed: enrollment.completed,
+                  };
 
-                    <div className="w-full bg-muted rounded-full h-2 mb-4">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${enrollment.progressPct}%` }}
-                      ></div>
-                    </div>
+                  // Generate actions based on completion status
+                  const actions: CourseCardAction[] = enrollment.completed
+                    ? [
+                        {
+                          label: "View Certificate",
+                          href: `/courses/${enrollment.courseId}/certificate`,
+                          variant: "secondary",
+                        },
+                        {
+                          label: "Review Course",
+                          href: `/courses/${enrollment.courseId}`,
+                          variant: "outline",
+                        },
+                      ]
+                    : [
+                        {
+                          label: "Continue Learning",
+                          href: `/courses/${enrollment.courseId}`,
+                          variant: "primary",
+                        },
+                      ];
 
-                    <div className="flex justify-between items-center ">
-                      <span className="text-muted-foreground">
-                        Enrolled on {formatDate(enrollment.enrolledAt)}
-                      </span>
-                      <div className="flex gap-2">
-                        {enrollment.completed ? (
-                          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
-                            Completed ✅
-                          </span>
-                        ) : (
-                          <Link
-                            href={`/courses/${enrollment.courseId}`}
-                            className="px-3 py-1 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                          >
-                            Continue Learning
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  return (
+                    <CourseCard
+                      key={enrollment.id}
+                      course={courseData}
+                      actions={actions}
+                      showImage={false}
+                      showProgress={true}
+                      showStats={true}
+                      size="md"
+                    />
+                  );
+                })}
               </div>
             )}
           </div>
