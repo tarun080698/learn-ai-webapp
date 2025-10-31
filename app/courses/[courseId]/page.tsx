@@ -261,7 +261,7 @@ export default function CourseDetailsPage() {
                   {course.description}
                 </p>
 
-                <div className="flex items-center space-x-6 mb-6">
+                <div className="hidden items-center space-x-6 mb-6">
                   <div className="flex items-center">
                     <div
                       className="flex mr-2"
@@ -282,7 +282,7 @@ export default function CourseDetailsPage() {
                     </span>
                   </div>
                   <div
-                    className="flex items-center"
+                    className="hidden items-center"
                     style={{ color: "var(--muted-foreground)" }}
                   >
                     <i className="fa-solid fa-users mr-2"></i>

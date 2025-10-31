@@ -31,6 +31,19 @@ import {
   faPhone,
   faBookOpen,
   faPlay,
+  // Additional icons used throughout the app
+  faUser,
+  faRobot,
+  faComments,
+  faCertificate,
+  faChevronRight,
+  faChevronDown,
+  faTimes,
+  faXmark,
+  faFire,
+  faSearch,
+  faProjectDiagram,
+  faRocket,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Add icons to the library
@@ -65,5 +78,18 @@ library.add(
   faHeadset,
   faPhone,
   faBookOpen,
-  faPlay
+  faPlay,
+  // Additional icons
+  faUser,
+  faRobot,
+  faComments,
+  faCertificate,
+  faChevronRight,
+  faChevronDown,
+  faTimes,
+  faXmark,
+  faFire,
+  faSearch,
+  faProjectDiagram,
+  faRocket
 );
