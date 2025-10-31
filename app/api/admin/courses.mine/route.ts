@@ -40,14 +40,14 @@ export async function GET(req: NextRequest) {
 
     // Build query - if admin wants to see all courses, don't filter by owner
     let query = adminDb.collection(COL.courses);
-    
+
     if (!showAllCourses) {
       query = query.where("ownerUid", "==", user.uid);
     }
-    
-    console.log({ 
-      showAllCourses, 
-      userUid: user.uid 
+
+    console.log({
+      showAllCourses,
+      userUid: user.uid,
     });
 
     // Add archived filter (include non-archived and documents without archived field)
@@ -85,8 +85,8 @@ export async function GET(req: NextRequest) {
     );
 
     // For admin dashboard, show ALL courses including archived ones when showAllCourses is true
-    const filteredCourses = showAllCourses 
-      ? allCourses  // Show all courses including archived
+    const filteredCourses = showAllCourses
+      ? allCourses // Show all courses including archived
       : allCourses.filter((course) => course.archived !== true); // Original behavior for personal courses
 
     // Sort courses in memory by updatedAt
