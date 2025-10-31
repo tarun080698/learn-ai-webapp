@@ -545,10 +545,7 @@ export default function CourseDetailsPage() {
 
       {/* Course Content/Curriculum */}
       {sections.length > 0 && (
-        <section
-          className="py-16"
-          style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
-        >
+        <section className="py-16" style={{ backgroundColor: "var(--muted)" }}>
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
               <div className="text-center mb-12">

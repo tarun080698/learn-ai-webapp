@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 
@@ -172,7 +174,7 @@ export function CourseCard({
       },
       outline: {
         boxShadow:
-            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+          "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
         color: "var(--secondary)",
         backgroundColor: "transparent",
       },
@@ -218,8 +220,6 @@ export function CourseCard({
     return (
       <div
         className={`${sizes.container} transition-all duration-300 group overflow-hidden flex ${className}`}
-
-
         style={{
           backgroundColor: "var(--card)",
           boxShadow:

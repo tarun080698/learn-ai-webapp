@@ -30,7 +30,7 @@ async function fetchPublishedCourses(): Promise<Course[]> {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-      }/api/catalog-temp`,
+      }/api/catalog`,
       {
         cache: "no-store", // Always fetch fresh data
       }
