@@ -4,7 +4,7 @@ import { AuthProvider } from "./(auth)/AuthProvider";
 import { Inter, Poppins } from "next/font/google";
 import "@/lib/fontawesome";
 import { Analytics } from "@vercel/analytics/next";
-
+import { SpeedInsights } from "@vercel/speed-insights/next";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -46,6 +46,7 @@ export default function RootLayout({
         <AuthProvider>{children}</AuthProvider>
       </body>
       <Analytics />
+      <SpeedInsights />
     </html>
   );
 }
