@@ -23,7 +23,7 @@ export function ValuePropositions() {
             career
           </p>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div
             className="p-8 rounded-2xl transition-all duration-300 text-center group"
             style={{
@@ -127,7 +127,7 @@ export function ValuePropositions() {
           </div>
 
           <div
-            className="p-8 rounded-2xl transition-all duration-300 text-center group"
+            className="hidden p-8 rounded-2xl transition-all duration-300 text-center group"
             style={{
               backgroundColor: "var(--card)",
               boxShadow:

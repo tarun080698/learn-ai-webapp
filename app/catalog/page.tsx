@@ -90,13 +90,7 @@ export default async function CatalogPage() {
                   ></i>
                   <span>Expert Instructors</span>
                 </div>
-                <div className="flex items-center">
-                  <i
-                    className="fa-solid fa-certificate mr-2"
-                    style={{ color: "var(--primary)" }}
-                  ></i>
-                  <span>Certificates Included</span>
-                </div>
+
               </div>
             </div>
           </div>

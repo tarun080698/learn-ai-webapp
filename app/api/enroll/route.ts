@@ -113,16 +113,18 @@ export async function POST(req: NextRequest) {
 
           // Use transaction to atomically create enrollment and increment counter
           await adminDb!.runTransaction(async (transaction) => {
-            // Create enrollment
-            transaction.set(enrollRef, enrollmentData);
-
-            // Increment course enrollment counter
+            // FIRST: Do all reads
             const courseRef = adminDb!
               .collection(COL.courses)
               .doc(parsed.courseId);
             const courseDoc = await transaction.get(courseRef);
             const currentCount = courseDoc.data()?.enrollmentCount || 0;
 
+            // THEN: Do all writes
+            // Create enrollment
+            transaction.set(enrollRef, enrollmentData);
+
+            // Increment course enrollment counter
             transaction.update(courseRef, {
               enrollmentCount: currentCount + 1,
               updatedAt: now,

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { PublicLayout } from "@/components/PublicLayout";
 import Link from "next/link";
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { generateIdempotencyKey } from "@/utils/uuid";
 
 interface Module {
   id: string;
@@ -240,7 +241,6 @@ export default function CourseDetailsPage() {
                     style={{
                       backgroundColor: "var(--primary)",
                       color: "var(--primary-foreground)",
-                      opacity: 0.2,
                     }}
                   >
                     {course.level} Friendly
@@ -306,83 +306,7 @@ export default function CourseDetailsPage() {
                     <i className="fa-solid fa-robot mr-2"></i>
                     <span>AI projects</span>
                   </div>
-                  <div className="flex items-center">
-                    <i className="fa-solid fa-certificate mr-2"></i>
-                    <span>Certificate of completion</span>
-                  </div>
-                </div>
 
-                {/* What you'll learn */}
-                <div
-                  className="p-6 rounded-xl"
-                  style={{
-                    backgroundColor: "var(--card)",
-                    boxShadow:
-                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
-                  }}
-                >
-                  <h3
-                    className="text-lg font-semibold mb-3"
-                    style={{ color: "var(--secondary)" }}
-                  >
-                    What you&apos;ll learn:
-                  </h3>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    <div className="flex items-start">
-                      <i
-                        className="fa-solid fa-check mr-3 mt-1"
-                        style={{ color: "var(--primary)" }}
-                      ></i>
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        Fundamentals of AI and machine learning
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <i
-                        className="fa-solid fa-check mr-3 mt-1"
-                        style={{ color: "var(--primary)" }}
-                      ></i>
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        Hands-on projects with real datasets
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <i
-                        className="fa-solid fa-check mr-3 mt-1"
-                        style={{ color: "var(--primary)" }}
-                      ></i>
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        Python programming for AI applications
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <i
-                        className="fa-solid fa-check mr-3 mt-1"
-                        style={{ color: "var(--primary)" }}
-                      ></i>
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        Popular AI frameworks and libraries
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <i
-                        className="fa-solid fa-check mr-3 mt-1"
-                        style={{ color: "var(--primary)" }}
-                      ></i>
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        Neural networks and deep learning
-                      </span>
-                    </div>
-                    <div className="flex items-start">
-                      <i
-                        className="fa-solid fa-check mr-3 mt-1"
-                        style={{ color: "var(--primary)" }}
-                      ></i>
-                      <span style={{ color: "var(--muted-foreground)" }}>
-                        Model deployment and optimization
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -402,7 +326,6 @@ export default function CourseDetailsPage() {
                     backgroundColor: "var(--card)",
                     boxShadow:
                       "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
-                    boxShadow: "var(--shadow-lg)",
                   }}
                 >
                   <div className="relative">
@@ -479,11 +402,14 @@ export default function CourseDetailsPage() {
                           onClick={async () => {
                             try {
                               const token = await firebaseUser.getIdToken();
+                              const idempotencyKey = generateIdempotencyKey();
+
                               const response = await fetch("/api/enroll", {
                                 method: "POST",
                                 headers: {
                                   "Content-Type": "application/json",
                                   Authorization: `Bearer ${token}`,
+                                  "x-idempotency-key": idempotencyKey,
                                 },
                                 body: JSON.stringify({ courseId }),
                               });
@@ -491,6 +417,9 @@ export default function CourseDetailsPage() {
                               if (response.ok) {
                                 // Refresh course data to show enrollment
                                 await fetchCourseDetails();
+                              } else {
+                                const errorData = await response.json();
+                                console.error("Enrollment failed:", errorData);
                               }
                             } catch (error) {
                               console.error("Enrollment error:", error);
@@ -517,7 +446,7 @@ export default function CourseDetailsPage() {
                         </Link>
                       )}
                       <button
-                        className="w-full py-3 px-6 rounded-lg font-semibold text-center transition-colors"
+                        className="hidden w-full py-3 px-6 rounded-lg font-semibold text-center transition-colors"
                         style={{
                           boxShadow:
                             "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",

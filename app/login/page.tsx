@@ -161,7 +161,7 @@ function LoginContent() {
                     className="p-6 rounded-2xl backdrop-blur-sm"
                     style={{
                       backgroundColor: "var(--card)",
-                      opacity: 0.5,
+
                       boxShadow:
                         "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                     }}
@@ -239,7 +239,6 @@ function LoginContent() {
                       backgroundColor: "var(--card)",
                       boxShadow:
                         "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
-                      
                     }}
                   >
                     <div className="text-center mb-8">

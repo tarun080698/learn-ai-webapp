@@ -236,11 +236,11 @@ export default function DashboardPage() {
                   // Generate actions based on completion status
                   const actions: CourseCardAction[] = enrollment.completed
                     ? [
-                        {
-                          label: "View Certificate",
-                          href: `/courses/${enrollment.courseId}/certificate`,
-                          variant: "secondary",
-                        },
+                        // {
+                        //   label: "View Certificate",
+                        //   href: `/courses/${enrollment.courseId}/certificate`,
+                        //   variant: "secondary",
+                        // },
                         {
                           label: "Review Course",
                           href: `/courses/${enrollment.courseId}`,

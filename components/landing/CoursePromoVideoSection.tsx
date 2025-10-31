@@ -164,7 +164,7 @@ export default function CoursePromoVideoSection({
   youtubeUrl = "https://youtu.be/z6nIE9WAPYw",
   eyebrow = "See it in action",
   heading = "Build, learn, and level up with Learn.ai",
-  subheading = "Watch a quick walkthrough of how learners enroll, progress through modules, and finish with certificates.",
+  subheading = "Watch a quick walkthrough of how learners enroll, progress through modules.",
   bullets = [
     "Enroll instantly and resume anytime",
     "Clean, fast UI with helpful module previews",
