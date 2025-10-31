@@ -217,10 +217,24 @@ export function CourseCard({
     return (
       <div
         className={`${sizes.container} transition-all duration-300 group overflow-hidden flex ${className}`}
+        // style={{
+        //   backgroundColor: "var(--card)",
+        //   border: "1px solid var(--border)",
+        //   boxShadow: "var(--shadow-lg)",
+        //     }}
+
         style={{
           backgroundColor: "var(--card)",
-          border: "1px solid var(--border)",
-          boxShadow: "var(--shadow-lg)",
+          boxShadow:
+            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow =
+            "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow =
+            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
         }}
       >
         {showImage && (
@@ -361,8 +375,16 @@ export function CourseCard({
       className={`${sizes.container} transition-all duration-300 group overflow-hidden ${className}`}
       style={{
         backgroundColor: "var(--card)",
-        border: "1px solid var(--border)",
-        boxShadow: "var(--shadow-lg)",
+        boxShadow:
+          "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow =
+          "0 1px 2px rgba(38,70,83,0.06), 0 8px 32px rgba(38,70,83,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow =
+          "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)";
       }}
     >
       {showImage && (
