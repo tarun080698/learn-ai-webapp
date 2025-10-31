@@ -666,7 +666,7 @@ export default function CourseDetailsPage() {
                                     style={{
                                       backgroundColor: "var(--primary)",
                                       color: "var(--primary-foreground)",
-                                      opacity: 0.1,
+                                      // opacity: 0.1,
                                     }}
                                   >
                                     Preview
