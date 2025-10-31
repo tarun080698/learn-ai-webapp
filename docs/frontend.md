@@ -1,34 +1,34 @@
-# Frontend Implementation Status
+# Frontend Architecture & Implementation
 
-## Overview
+Learn.ai 4all frontend is a comprehensive **Next.js 16** and **React 19** learning management system with advanced course creation tools, seamless admin interface, and modern user experience.
 
-The Learn.ai 4all frontend is a comprehensive **Next.js 16** and **React 19** learning management system with a full-featured course creation wizard, advanced admin interface, and seamless user experience. Built with modern App Router architecture and production-ready components.
-
-### Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 16.0.0 with App Router
 - **React**: 19.2.0 with Concurrent Features and RSC
-- **Styling**: TailwindCSS v4.1.16 with custom design system
-- **Authentication**: Firebase Auth with dual provider support
-- **HTTP Client**: Native `fetch()` with authenticated mutation hooks
-- **Validation**: Zod schemas with React Hook Form integration
-- **State Management**: React Context + TanStack Query for server state
-- **File Uploads**: Custom FileUpload component with drag-and-drop
-- **UI Components**: Custom Toast system, Modal dialogs, Form controls
-- **Drag & Drop**: @dnd-kit for module and asset reordering
+- **TypeScript**: 5.x with strict type checking
+- **Styling**: TailwindCSS v4.1.16 + CSS Custom Properties
+- **Authentication**: Firebase Auth (Google OAuth + Email/Password)
+- **HTTP Client**: Native `fetch()` with authenticated hooks
+- **State Management**: React Context + TanStack Query v5.90.5
+- **Form Handling**: React Hook Form v7.65.0 + Zod validation
+- **File Uploads**: React Dropzone v14.3.8 with drag-and-drop
+- **Drag & Drop**: @dnd-kit v6.3.1 for module/asset reordering
+- **Icons**: Heroicons v2.2.0 + FontAwesome v7.1.0
+- **Markdown**: @uiw/react-md-editor v4.0.8
 
 ## App Router Structure
 
-### Core Layout
+### Root Layout & Navigation
 
 ```
 app/
-├── layout.tsx                  # Root layout with AuthProvider
+├── layout.tsx                  # Root layout with AuthProvider & fonts
 ├── page.tsx                    # Landing page with RouteGuard
-├── globals.css                 # TailwindCSS imports
+├── globals.css                 # TailwindCSS + CSS custom properties
 └── components/
-    ├── Navigation.tsx          # Header navigation with auth state
-    └── RouteGuard.tsx          # Route protection and redirects
+    ├── Navigation.tsx          # Header with auth state & role-based menu
+    └── RouteGuard.tsx          # Route protection & auto-redirects
 ```
 
 ### Authentication Routes
@@ -36,7 +36,7 @@ app/
 ```
 app/
 ├── (auth)/
-│   └── AuthProvider.tsx       # Firebase Auth context provider
+│   └── AuthProvider.tsx       # Firebase Auth context with session management
 ├── login/
 │   └── page.tsx              # User login (Google OAuth)
 └── admin/
@@ -44,630 +44,342 @@ app/
         └── page.tsx          # Admin login (email/password)
 ```
 
-### User Routes
+### Public & User Routes
 
 ```
 app/
 ├── catalog/
-│   └── page.tsx              # Browse published courses (public)
+│   └── page.tsx              # Browse published courses (Server Component)
+├── courses/
+│   └── [courseId]/
+│       └── page.tsx          # Course detail with enrollment flow
 ├── dashboard/
-│   └── page.tsx              # User enrollments and progress
+│   └── page.tsx              # User progress & enrollments
 └── questionnaires/
-    └── page.tsx              # Questionnaire completion flow
+    └── page.tsx              # Assessment completion interface
 ```
 
-### Admin Routes
+### Admin Management Interface
 
 ```
 app/admin/
-├── layout.tsx                # Admin layout with navigation
-├── page.tsx                  # Admin dashboard with analytics
+├── layout.tsx                # Admin layout with sidebar navigation
+├── page.tsx                  # Dashboard with analytics & platform stats
 ├── login/
-│   └── page.tsx              # Admin email/password login
+│   └── page.tsx              # Admin authentication
 ├── courses/
 │   ├── page.tsx              # Course management dashboard
 │   ├── new/
-│   │   └── page.tsx          # Advanced 4-step course creation wizard
+│   │   └── page.tsx          # 4-step course creation wizard
 │   └── [courseId]/
-│       ├── page.tsx          # Course details and management
+│       ├── page.tsx          # Course details & management
 │       └── modules/
 │           └── page.tsx      # Module management with reordering
 ├── questionnaires/
-│   └── page.tsx              # Questionnaire management
+│   ├── page.tsx              # Questionnaire template management
+│   ├── [questionnaireId]/
+│   │   ├── page.tsx          # Questionnaire detail view
+│   │   └── edit/
+│   │       └── page.tsx      # Questionnaire editor
 └── test/
-    └── page.tsx              # Admin testing and debugging tools
-```
-
-### API Routes
-
-```
-app/api/                      # Backend API endpoints
-├── auth/                     # Authentication endpoints
-├── admin/                    # Admin management APIs
-├── catalog/                  # Course catalog APIs
-├── enroll/                   # Enrollment APIs
-├── progress/                 # Progress tracking APIs
-└── questionnaires/           # Questionnaire APIs
+    └── page.tsx              # Admin testing & debugging tools
 ```
 
 ## Authentication System
 
 ### AuthProvider Context (`app/(auth)/AuthProvider.tsx`)
 
-**Purpose**: Centralized Firebase Auth state management
-
-**Features**:
-
-- Firebase Auth state monitoring (`onAuthStateChanged`)
-- Role-based authentication (`user` vs `admin`)
-- Login streak tracking
-- Automatic token refresh
-- Sign-in methods: Google OAuth, Email/Password
-
-**State Interface**:
-
-```typescript
-interface AuthState {
-  firebaseUser: FirebaseUser | null;
-  role: "user" | "admin" | null;
-  providerId?: string;
-  loading: boolean;
-  currentStreakDays?: number;
-  bestStreakDays?: number;
-}
-```
-
-**Key Methods**:
-
-- `signInWithGoogle()`: Google OAuth for users
-- `signInAdminWithEmailPassword()`: Email/password for admins
-- `signOutAll()`: Logout and cleanup
-- `getFreshIdToken()`: Token refresh for API calls
-
-### RouteGuard Component (`app/components/RouteGuard.tsx`)
-
-**Purpose**: Route protection and role-based redirects
-
-**Logic**:
-
-- **Authenticated Users**: Redirect to appropriate dashboard based on role
-- **Admin Role**: Force redirect to `/admin` (no access to user areas)
-- **User Role**: Force redirect to `/dashboard` (no access to admin areas)
-- **Unauthenticated**: Allow login pages, redirect protected routes to login
-- **Loading State**: Show spinner while determining auth state
-
-**Auto-redirects**:
-
-```typescript
-// Authenticated users on login/home pages
-if (role === "admin") router.replace("/admin");
-if (role === "user") router.replace("/dashboard");
-
-// Role-based area protection
-if (role === "user" && pathname.startsWith("/admin")) {
-  router.replace("/dashboard");
-}
-if (role === "admin" && !pathname.startsWith("/admin")) {
-  router.replace("/admin");
-}
-```
-
-### Navigation Component (`app/components/Navigation.tsx`)
-
-**Purpose**: Header navigation with role-based links
-
-**Features**:
-
-- **Logo**: Links to home page
-- **Public Links**: Catalog (always visible)
-- **Auth State**: Loading spinner, user info, sign out
-- **Role-based Links**:
-  - Admins see "Admin" link
-  - Users see "Dashboard" link
-- **Unauthenticated**: Login and Admin Login buttons
-
-## Current Page Implementations
-
-### Landing Page (`app/page.tsx`)
-
-**Status**: ✅ Complete
-**Features**:
-
-- Hero section with course platform overview
-- Feature highlights grid
-- Call-to-action buttons (Browse Courses, Get Started)
-- Responsive design with TailwindCSS
-- RouteGuard integration for authenticated user redirects
-
-### User Login (`app/login/page.tsx`)
-
-**Status**: ✅ Complete
-**Features**:
-
-- Google OAuth sign-in button
-- Loading states during authentication
-- Error handling for auth failures
-- Automatic redirect to dashboard on success
-- Clean, minimal design
-
-### Admin Login (`app/admin/login/page.tsx`)
-
-**Status**: ✅ Complete
-**Features**:
-
-- Email/password form
-- Form validation
-- Loading states
-- Error messaging
-- Automatic redirect to admin dashboard on success
-
-### Course Catalog (`app/catalog/page.tsx`)
-
-**Status**: ⚠️ Partial Implementation
-**Current Features**:
-
-- Fetches published courses from `/api/catalog`
-- Course card display with metadata
-- Enrollment status indication
-- Responsive grid layout
-
-**Missing Features**:
-
-- Course detail view
-- Module preview
-- Enrollment action buttons
-- Search and filtering
-- Level/duration filters
-
-### User Dashboard (`app/dashboard/page.tsx`)
-
-**Status**: ⚠️ Partial Implementation
-**Current Features**:
-
-- User profile display
-- Enrollment list with progress indicators
-- Course completion statistics
-- Continue learning links
-
-**Missing Features**:
-
-- Course module viewer
-- Progress visualization
-- Questionnaire notifications
-- Achievement badges
-- Learning streaks display
-
-### Admin Dashboard (`app/admin/page.tsx`)
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Analytics Overview**: Course statistics, enrollment metrics, completion rates
-- **Quick Actions**: Direct access to course creation and management
-- **Recent Activity**: Latest course updates and user activities
-- **Role Management**: User promotion/demotion interface
-- **System Health**: Database status and API monitoring
-
-### Course Creation Wizard (`app/admin/courses/new/page.tsx`)
-
-**Status**: ✅ Production Ready - Advanced Implementation
-**Features**:
-
-- **4-Step Guided Workflow**:
-
-  1. **Details**: Course metadata, hero image upload, difficulty level
-  2. **Modules**: Content creation with drag-and-drop reordering
-  3. **Gating**: Pre/post assessments assignment with questionnaire selector
-  4. **Review**: Final validation and course publishing
-
-- **Advanced State Management**:
-
-  - Auto-save functionality with debounced updates
-  - Form validation with Zod schemas
-  - Progress persistence across steps
-  - Error handling with rollback capability
-
-- **Real-time Features**:
-
-  - Live preview of course summary
-  - Module/asset counters
-  - Assessment configuration display
-  - Draft status indicators
-
-- **Content Management**:
-  - Hero image upload with drag-and-drop
-  - Module content editor (text, video, file support)
-  - Asset attachment system
-  - Content validation and requirements
-
-### Course Management (`app/admin/courses/[courseId]/page.tsx`)
-
-**Status**: ✅ Complete
-**Features**:
-
-- **Course Overview**: Metadata display and editing
-- **Module Management**: Full CRUD operations with reordering
-- **Assessment Assignment**: Questionnaire configuration
-- **Publishing Controls**: Draft/published status management
-- **Analytics**: Enrollment and completion statistics
-
-### Module Editor (`app/admin/courses/[courseId]/modules/page.tsx`)
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Drag-and-Drop Reordering**: Visual module sequencing
-- **Content Types**: Support for text, video, PDF, image, and link content
-- **Form Validation**: Real-time validation with error feedback
-- **Asset Management**: File upload and organization
-- **Assessment Integration**: Module-level questionnaire assignment
-
-### Questionnaires Page (`app/questionnaires/page.tsx`)
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Assignment Discovery**: Automatic course/module questionnaire detection
-- **Question Types**: Multiple choice, text, rating scale support
-- **Response Management**: Form validation and submission handling
-- **Progress Tracking**: Completion status and scoring
-- **Testing Interface**: Admin questionnaire testing and validation tools
-
-## Component Architecture
-
-### Core Components
-
-#### CreateCourseWizard (`components/admin/courses/CreateCourseWizard.tsx`)
-
-**Status**: ✅ Production Ready
-**Architecture**: Multi-step wizard with centralized state management
+- **Firebase Auth Integration**: Real-time auth state with role management
+- **Custom Claims**: Admin/user role differentiation
+- **Session Persistence**: Automatic token refresh & logout handling
+- **Provider Enforcement**: Google OAuth for users, email/password for admins
 
 **Key Features**:
 
-- **State Management**: Centralized WizardState with `updateWizardState` callback
-- **Step Navigation**: Progress bar with step validation and navigation controls
-- **Auto-save**: Debounced draft saving with error handling
-- **Course Summary**: Real-time sidebar with statistics and status
+- Authentication state synchronization
+- Role-based route protection
+- Automatic token refresh
+- Logout with cleanup
+
+### Route Protection (`components/RouteGuard.tsx`)
+
+- **Role-based Access**: Admin/user route segregation
+- **Authentication Gates**: Redirect unauthenticated users
+- **Loading States**: Smooth transitions during auth checks
+
+## Component Architecture
+
+### Core Admin Components
+
+#### Enhanced Course Creation Wizard
+
+**Location**: `components/admin/courses/CreateCourseWizard.tsx`
+**Status**: ✅ Production Ready
+
+**4-Step Workflow**:
+
+1. **StepDetails**: Course metadata, description, hero image upload
+2. **StepModules**: Module creation with rich content & asset management
+3. **StepGating**: Pre/post questionnaire assignment system
+4. **StepReview**: Validation, creation, and publishing
+
+**Key Features**:
+
+- Centralized `WizardState` management
+- Auto-save with debounced persistence
+- Real-time validation with Zod schemas
+- Progress sidebar with statistics
+- Toast notification system
+- Drag-and-drop asset reordering
+
+#### Module Management System
+
+**Location**: `components/admin/courses/ModuleEditor.tsx`
+**Content Types**: Video, Text, PDF, Image, Link
+
+**Features**:
+
+- Rich content editing with markdown support
+- Multiple asset attachments per module
+- Drag-and-drop reordering with @dnd-kit
+- Duration estimation and validation
+- Preview functionality
+
+#### Questionnaire Management
+
+**Location**: `components/admin/QuestionnaireBuilder.tsx`
+**Question Types**: Single/Multi choice, Scale, Text
+
+**Features**:
+
+- Dynamic question builder interface
+- Question validation and preview
+- Assignment workflow integration
+- Template reuse system
+
+### User Interface Components
+
+#### Course Catalog (`app/catalog/page.tsx`)
+
+- **Server Component**: Optimized for SEO and performance
+- **Course Cards**: Rich preview with enrollment status
+- **Filtering**: Level-based course filtering
+- **Responsive Design**: Mobile-optimized grid layout
+
+#### Course Detail Pages (`app/courses/[courseId]/page.tsx`)
+
+- **Progressive Enhancement**: Works without JavaScript
+- **Enrollment Flow**: Integrated course enrollment
+- **Progress Tracking**: Module-level completion status
+- **Assessment Integration**: Pre/post questionnaire gating
+
+#### User Dashboard (`app/dashboard/page.tsx`)
+
+- **Enrollment Management**: Active and completed courses
+- **Progress Visualization**: Completion percentages and streak tracking
+- **Quick Actions**: Resume course, start assessments
+
+## UI Design System
+
+### CSS Architecture
+
+**Base**: TailwindCSS v4.1.16 with CSS Custom Properties
+**CSS Variables**:
+
+```css
+:root {
+  --primary: #2a9d8f; /* Primary brand color */
+  --secondary: #264653; /* Secondary/text color */
+  --accent: #f4a261; /* Accent highlights */
+  --destructive: #e76f51; /* Error/warning states */
+  --card: #ffffff; /* Card backgrounds */
+  --background: #f8fafc; /* Page backgrounds */
+  --primary-10: rgba(42, 157, 143, 0.1); /* Alpha variants */
+  /* ... additional variants */
+}
+```
+
+### Design Patterns
+
+- **Card Components**: Consistent shadow system and border radius
+- **Interactive Elements**: Hover effects with smooth transitions
+- **Form Controls**: Unified input styling with validation states
+- **Loading States**: Skeleton screens and progress indicators
 - **Toast Notifications**: Success/error feedback system
-
-**Step Components**:
-
-1. **StepDetails**: Course metadata and hero image upload
-2. **StepModules**: Module creation with content editing
-3. **StepGating**: Assessment assignment with questionnaire selection
-4. **StepReview**: Final validation and course creation
-
-#### FileUpload (`components/FileUpload.tsx`)
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Drag-and-Drop**: Visual file drop zone with hover states
-- **File Validation**: Size limits, type checking, error handling
-- **Upload Progress**: Real-time progress indicators
-- **Firebase Storage**: Direct integration with organized file paths
-- **Responsive Design**: Mobile-friendly interface
-
-#### AdminLayout (`components/admin/AdminLayout.tsx`)
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Navigation Sidebar**: Course, module, questionnaire management
-- **Breadcrumb System**: Contextual navigation trails
-- **Role Verification**: Admin-only access protection
-- **Responsive Design**: Mobile-optimized admin interface
-
-## Integration Points
-
-### API Communication & Custom Hooks
-
-#### useAuthenticatedFetch (`hooks/useAuthenticatedFetch.ts`)
-
-**Status**: ✅ Production Ready
-**Purpose**: Centralized API communication with authentication
-
-**Features**:
-
-- **Automatic Token Management**: Firebase ID token refresh and injection
-- **Error Handling**: Consistent error processing and user feedback
-- **Loading States**: Built-in loading indicators
-- **Request Configuration**: Headers, methods, body serialization
-
-```typescript
-const authenticatedFetch = useAuthenticatedFetch();
-const data = await authenticatedFetch("/api/courses", {
-  method: "POST",
-  body: JSON.stringify(courseData),
-});
-```
-
-#### useAuthenticatedMutation (`hooks/useAuthenticatedFetch.ts`)
-
-**Status**: ✅ Production Ready
-**Purpose**: Mutation hook for data-changing operations
-
-**Features**:
-
-- **Mutation State**: Loading, error, success states
-- **Optimistic Updates**: UI updates before server confirmation
-- **Error Recovery**: Automatic retry and rollback mechanisms
-- **Toast Integration**: Success/error notifications
-
-```typescript
-const { mutate, loading, error } = useAuthenticatedMutation();
-await mutate("/api/admin/course.upsert", courseData);
-```
-
-#### useFileUpload (`hooks/useFileUpload.ts`)
-
-**Status**: ✅ Production Ready
-**Purpose**: File upload management with Firebase Storage
-
-**Features**:
-
-- **Upload Progress**: Real-time progress tracking
-- **File Validation**: Size, type, and format validation
-- **Error Handling**: Upload failure recovery
-- **Path Organization**: Structured Firebase Storage paths
-
-### State Management Architecture
-
-#### Wizard State Management
-
-**Pattern**: Centralized state with callback updates
-**Implementation**: `WizardState` interface with `updateWizardState` function
-
-```typescript
-interface WizardState {
-  currentStep: number;
-  courseId?: string;
-  courseData: Partial<CourseFormData>;
-  modules: ModuleFormData[];
-  assignments: AssignmentConfiguration;
-}
-```
-
-#### Form State Management
-
-**Library**: React Hook Form with Zod validation
-**Pattern**: Schema-driven validation with real-time feedback
-
-```typescript
-const {
-  control,
-  handleSubmit,
-  formState: { errors },
-} = useForm({
-  resolver: zodResolver(courseSchema),
-  defaultValues: initialData,
-});
-```
-
-#### Server State Management
-
-**Library**: TanStack Query for caching and synchronization
-**Pattern**: Query keys with automatic invalidation
-
-```typescript
-const { data, isLoading } = useQuery({
-  queryKey: ["questionnaires"],
-  queryFn: getQuestionnaires,
-});
-```
-
-## UI/UX Design System
-
-### Custom Components
-
-#### Toast System (`components/ui/Toast.tsx`)
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Multiple Types**: Success, error, info, warning notifications
-- **Auto-dismiss**: Configurable timeout with manual dismiss
-- **Queue Management**: Multiple toast stacking and management
-- **Animation**: Smooth slide-in/out transitions
-
-#### Modal System
-
-**Status**: ✅ Production Ready
-**Features**:
-
-- **Overlay Management**: Click-outside to close, ESC key support
-- **Focus Management**: Keyboard navigation and focus trap
-- **Responsive**: Mobile-optimized modal layouts
-- **Customizable**: Header, body, footer composition
-
-### Form Validation & Error Handling
-
-#### Validation Strategy
-
-**Library**: Zod schemas with React Hook Form integration
-**Pattern**: Schema-first validation with TypeScript inference
-
-```typescript
-const moduleSchema = z.object({
-  title: z.string().min(1, "Module title is required"),
-  summary: z.string().min(1, "Summary is required"),
-  estMinutes: z.number().int().min(1, "Duration must be at least 1 minute"),
-  contentType: z.enum(["video", "text", "pdf", "image", "link"]),
-});
-```
-
-#### Error Display
-
-**Pattern**: Field-level errors with visual indicators
-**Implementation**: Consistent error styling and messaging
-
-```typescript
-{
-  errors.title && <p className="mt-1  text-red-600">{errors.title.message}</p>;
-}
-```
 
 ### Responsive Design
 
-#### Breakpoint Strategy
+- **Mobile-First**: Progressive enhancement from mobile to desktop
+- **Breakpoints**: Tailwind's responsive utility classes
+- **Touch-Friendly**: Appropriate hit targets and gesture support
 
-**Framework**: TailwindCSS responsive utilities
-**Breakpoints**: Mobile-first responsive design
+## State Management
 
-- **Mobile**: `base` (default)
-- **Tablet**: `md:` (768px+)
-- **Desktop**: `lg:` (1024px+)
-- **Large**: `xl:` (1280px+)
+### Client State
 
-#### Layout Patterns
+- **React Context**: Authentication state and user session
+- **Component State**: Form data, UI state, local interactions
+- **Custom Hooks**: Reusable stateful logic
 
-**Admin Interface**: Sidebar navigation with collapsible mobile menu
-**Wizard Interface**: Single-column with progress indicator
-**Dashboard**: Card-based responsive grid layout
+### Server State
+
+- **TanStack Query**: API data fetching and caching
+- **Optimistic Updates**: Immediate UI feedback with rollback
+- **Background Sync**: Automatic data refresh and synchronization
+
+### Custom Hooks
+
+#### `useAuthenticatedFetch`
+
+```typescript
+// Location: hooks/useAuthenticatedFetch.ts
+// Purpose: Automatic token attachment and error handling
+// Features: Retry logic, error boundaries, loading states
+```
+
+#### `useFileUpload`
+
+```typescript
+// Location: hooks/useFileUpload.ts
+// Purpose: Firebase Storage integration with progress tracking
+// Features: Drag-and-drop, validation, metadata extraction
+```
+
+#### `useQuestionnaires`
+
+```typescript
+// Location: hooks/useQuestionnaires.ts
+// Purpose: Questionnaire data management and caching
+// Features: CRUD operations, template management, assignment workflow
+```
 
 ## Performance Optimizations
 
 ### Code Splitting
 
-**Strategy**: Route-based code splitting with Next.js App Router
-**Implementation**: Automatic chunking with dynamic imports
+- **Route-based**: Automatic code splitting via App Router
+- **Component-level**: Dynamic imports for heavy components
+- **Vendor Splitting**: Separate chunks for third-party libraries
 
 ### Image Optimization
 
-**Library**: Next.js Image component with automatic optimization
-**Features**: WebP conversion, responsive sizing, lazy loading
+- **Next.js Image**: Automatic WebP conversion and lazy loading
+- **Responsive Images**: Multiple breakpoint variants
+- **Firebase Storage**: CDN delivery with compression
 
-### Bundle Analysis
+### Caching Strategy
 
-**Tools**: Built-in Next.js bundle analyzer
-**Monitoring**: Core Web Vitals tracking and optimization
-
-## Development Workflow
-
-### Component Development
-
-**Pattern**: Composition over inheritance
-**Testing**: Manual testing with comprehensive test scenarios
-**Documentation**: Inline documentation with usage examples
-
-### State Updates
-
-**Pattern**: Immutable updates with functional setState
-**Validation**: Runtime validation with Zod schemas
-**Error Boundaries**: Graceful error handling and recovery
-
-## Future Enhancements
-
-### Content Management
-
-- **Rich Text Editor**: WYSIWYG content creation
-- **Media Library**: Asset browser and management
-- **Content Templates**: Reusable content blocks
-
-### User Experience
-
-- **Keyboard Navigation**: Full keyboard accessibility
-- **Dark Mode**: Theme switching capability
-- **Offline Support**: Progressive Web App features
-
-### Analytics Integration
-
-- **User Behavior**: Click tracking and heatmaps
-- **Performance Monitoring**: Real-time performance metrics
-- **A/B Testing**: Feature flag system for experiments
-- System health monitoring
-
-## UI Framework & Patterns
-
-### TailwindCSS v4 Usage
-
-**Design System**:
-
-- Color palette: `primary`, `secondary`, `muted`, `accent`
-- Typography: Consistent heading and body text scales
-- Spacing: Standardized margin/padding using Tailwind scale
-- Responsive: Mobile-first responsive design patterns
-
-**Common Patterns**:
-
-```css
-/* Card component */
-"bg-background border border-border rounded-lg p-6 shadow-sm"
-
-/* Button primary */
-"px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
-
-/* Loading spinner */
-"animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"
-```
-
-### Component Architecture
-
-**Functional Components**: All components use React function syntax
-**Hooks Usage**: useState, useEffect, useContext, useRouter
-**TypeScript**: Full TypeScript implementation with proper interfaces
-**Error Boundaries**: Basic error handling (can be enhanced)
-
-## Performance Considerations
-
-### Code Splitting
-
-- **App Router**: Automatic route-based code splitting
-- **Dynamic Imports**: Not currently implemented (future enhancement)
-
-### Data Fetching
-
-- **Client-side**: All current data fetching is client-side
-- **Server Components**: Minimal usage (future optimization opportunity)
-- **Caching**: No client-side caching (consider React Query)
-
-### Image Optimization
-
-- **Next.js Image**: Not currently used (optimization opportunity)
-- **Hero Images**: External URLs (potential loading performance impact)
+- **Browser Caching**: Static assets with long expiration
+- **API Caching**: TanStack Query with stale-while-revalidate
+- **Build Optimization**: Tree shaking and minification
 
 ## Development Workflow
 
-### Local Development
+### Development Setup
 
 ```bash
-npm run dev                 # Start development server
-npm run build              # Production build
-npm run lint               # ESLint checking
+npm install              # Install dependencies
+npm run dev             # Start development server
+npm run validate-env    # Validate environment variables
+npm run indexes         # Create Firestore indexes
 ```
 
-### Environment Variables
+### Code Quality
 
-```bash
-NEXT_PUBLIC_FIREBASE_CONFIG  # Firebase client configuration
-FB_SERVICE_ACCOUNT_KEY_JSON  # Firebase Admin SDK key
+- **ESLint**: Next.js configuration with React best practices
+- **TypeScript**: Strict type checking with proper interfaces
+- **Prettier**: Consistent code formatting
+- **Husky**: Pre-commit hooks for quality gates
+
+### Testing Strategy
+
+- **Manual Testing**: Comprehensive admin workflow testing
+- **API Testing**: Endpoint validation via admin interface
+- **Browser Testing**: Cross-browser compatibility verification
+- **Performance Testing**: Core Web Vitals monitoring
+
+## Integration Points
+
+### Firebase Integration
+
+- **Authentication**: Real-time auth state synchronization
+- **Firestore**: Type-safe document operations
+- **Storage**: File upload with progress tracking and metadata
+- **Admin SDK**: Server-side operations for admin features
+
+### API Communication
+
+- **REST Endpoints**: 55+ endpoints with consistent error handling
+- **Request/Response**: Zod schema validation throughout
+- **Error Handling**: Structured error responses with user feedback
+- **Loading States**: Unified loading indication across components
+
+## Security Implementation
+
+### Client-Side Security
+
+- **Input Validation**: Zod schemas for all form inputs
+- **XSS Prevention**: React's built-in XSS protection
+- **CSRF Protection**: Firebase Auth token validation
+- **Role Enforcement**: Client-side route protection with server validation
+
+### Authentication Flow
+
+- **Token Management**: Automatic refresh and storage
+- **Role Verification**: Server-side role validation
+- **Session Security**: Secure token handling and cleanup
+
+## Current Implementation Status
+
+### ✅ Production Ready Features
+
+- **Authentication System**: Complete dual-provider authentication
+- **Course Creation Wizard**: 4-step guided course creation with validation
+- **Module Management**: Rich content editing with asset management
+- **Questionnaire System**: Template creation and assignment workflow
+- **User Enrollment**: Complete enrollment and progress tracking
+- **Admin Dashboard**: Comprehensive management interface
+- **Course Catalog**: Public course browsing with enrollment
+- **File Upload System**: Firebase Storage integration with progress tracking
+- **Responsive Design**: Mobile-optimized across all interfaces
+
+### 🚧 Enhancement Opportunities
+
+- **Advanced Analytics**: Course completion statistics and user behavior
+- **Content Search**: Full-text search across courses and modules
+- **Social Features**: User comments and course ratings
+- **Accessibility**: Enhanced ARIA support and keyboard navigation
+- **Progressive Web App**: Service worker and offline functionality
+
+## File Structure
+
+### Components Organization
+
+```
+components/
+├── admin/                      # Admin-specific components
+│   ├── courses/               # Course management components
+│   │   ├── CreateCourseWizard.tsx    # Main course creation wizard
+│   │   ├── ModuleEditor.tsx          # Module content editing
+│   │   ├── QuestionnaireSelector.tsx # Assessment assignment
+│   │   └── steps/                    # Wizard step components
+│   ├── AdminLayout.tsx        # Admin interface layout
+│   ├── AdminLoginForm.tsx     # Admin authentication form
+│   ├── FeaturesOverview.tsx   # Platform features showcase
+│   ├── PlatformStats.tsx      # Dashboard statistics
+│   └── QuestionnaireBuilder.tsx      # Questionnaire creation
+├── ui/                        # Reusable UI components
+│   └── Toast.tsx             # Notification system
+└── FileUpload.tsx            # File upload with drag-and-drop
 ```
 
-### Deployment
+### Hooks Organization
 
-- **Target**: Vercel (Next.js optimized)
-- **Build**: Automatic deployments from Git
-- **Environment**: Production variables configured in Vercel dashboard
+```
+hooks/
+├── useAuthenticatedFetch.ts   # Authenticated API requests
+├── useFileUpload.ts           # File upload with Firebase Storage
+└── useQuestionnaires.ts       # Questionnaire data management
+```
 
-## Future Enhancements
-
-### Short Term
-
-1. **Module Viewer**: Complete course content rendering
-2. **Enhanced Forms**: Better validation and UX
-3. **Error Handling**: Comprehensive error boundaries
-4. **Loading States**: Consistent loading indicators
-
-### Medium Term
-
-1. **State Management**: Consider Zustand or React Query
-2. **Offline Support**: Service worker implementation
-3. **PWA Features**: Install prompts, push notifications
-4. **Accessibility**: ARIA labels, keyboard navigation
-
-### Long Term
-
-1. **Server Components**: Optimize data fetching
-2. **Real-time Features**: WebSocket integration
-3. **Mobile App**: React Native implementation
-4. **Advanced Analytics**: User behavior tracking
+This frontend architecture provides a robust, scalable, and maintainable foundation for the Learn.ai 4all learning management system, with production-ready features and clear paths for future enhancements.

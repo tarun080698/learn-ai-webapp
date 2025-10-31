@@ -1,146 +1,131 @@
 # Learn.ai 4all - Interactive Learning Platform
 
-A comprehensive learning management system built with Next.js 16 and Firebase, featuring course enrollment, progress tracking, questionnaire-based assessments, and complete course detail functionality.
+A comprehensive **Next.js 16** and **React 19** learning management system with advanced course creation tools, seamless admin interface, and modern user experience. Built with Firebase backend and production-ready architecture.
 
 ## Overview
 
-Learn.ai 4all is a modern web application that provides:
+Learn.ai 4all is a modern learning management system that provides:
 
-- **Course Management**: Create and publish interactive courses with modules
-- **Course Catalog**: Public browsing of available courses with enrollment capability
-- **Course Details**: Comprehensive course pages with module listings and enrollment flow
-- **User Enrollment**: Track progress through courses with completion metrics
-- **Assessment System**: Pre/post questionnaires with quiz scoring and gating
-- **Admin Dashboard**: Complete course and user management interface
-- **Role-based Access**: Separate user and admin experiences
-- **Progress Tracking**: Module-level completion tracking with streak calculation
+- **Advanced Course Creation**: 4-step wizard with rich content editing and asset management
+- **Course Catalog**: Public browsing with enrollment capabilities and progress tracking
+- **Assessment System**: Pre/post questionnaires with automated scoring and gating logic
+- **Admin Dashboard**: Comprehensive platform management with audit trails
+- **User Progress Tracking**: Module-level completion with streak calculation
+- **Role-based Access Control**: Secure separation between users and administrators
+- **File Management**: Firebase Storage integration with drag-and-drop uploads
+- **Real-time Updates**: Live progress tracking and enrollment status
 
-## Current Features Status
+## Production Status
 
-### ✅ Fully Implemented
+### ✅ Production Ready Features
 
-- **Authentication System**: Google OAuth for users, email/password for admins
-- **Course Management**: Full CRUD operations for courses and modules
-- **Course Catalog**: Public course browsing with enrollment status
-- **Course Detail Pages**: Comprehensive course information with enrollment flow
-- **Module Management**: Content creation with multiple content types (video, text, PDF, link)
-- **Questionnaire System**: Template creation, assignment, and response collection
-- **Enrollment System**: Idempotent enrollment with gating requirements
-- **Progress Tracking**: Module completion with automatic progress calculation
-- **Admin Dashboard**: Course, module, and questionnaire management interfaces
-- **API System**: Complete REST API with 25+ endpoints
-
-### 🚧 Partially Implemented
-
-- **Public Landing Page**: Placeholder implementation (catalog page serves this purpose)
-- **User Dashboard**: Basic functionality implemented
-- **Assignment Management**: Backend complete, some UI components pending
-
-### ❌ Not Yet Implemented
-
-- **Course Deletion**: API endpoint missing (UI placeholder exists)
-- **User Role Management**: Promotion of users to admin role
-- **Advanced Analytics**: Course completion statistics and reporting
+- **Authentication System**: Dual-provider auth (Google OAuth + Email/Password)
+- **Course Creation Wizard**: 4-step guided workflow with auto-save and validation
+- **Module Management**: Rich content editing with multiple asset types
+- **Assessment Workflow**: Complete questionnaire lifecycle with assignment logic
+- **User Enrollment**: Idempotent enrollment with progress tracking
+- **Admin Interface**: Comprehensive management dashboard with audit logging
+- **API System**: 55+ REST endpoints with comprehensive validation
+- **File Upload System**: Firebase Storage with progress tracking and validation
+- **Security Hardening**: Input validation, access control, and audit trails
+- **Performance Optimization**: Composite indexes and denormalized counters
 
 ## Tech Stack
 
-### Frontend
+- **Framework**: Next.js 16.0.0 with App Router and Server Components
+- **Frontend**: React 19.2.0 with TypeScript 5.x and TailwindCSS v4.1.16
+- **Backend**: Firebase Firestore + Admin SDK v13.5.0 with 55+ API endpoints
+- **Authentication**: Firebase Auth (Google OAuth + Email/Password)
+- **File Storage**: Firebase Storage with organized paths and CDN delivery
+- **Validation**: Zod v4.1.12 schemas for all API requests and responses
+- **State Management**: React Context + TanStack Query v5.90.5
+- **UI Components**: Custom components with CSS custom properties
+- **Development**: TypeScript strict mode, ESLint 9, automated testing
 
-- **Next.js 16.0.0**: React framework with App Router and Server Components
-- **React 19.2.0**: Modern React with concurrent features
-- **TypeScript 5.x**: Full type safety throughout the application
-- **TailwindCSS v4.1**: Utility-first styling with modern CSS features
+## Quick Start
 
-### Backend
+### Prerequisites
 
-- **Firebase Auth**: Authentication with Google OAuth and email/password
-- **Firebase Firestore**: NoSQL document database with composite indexes
-- **Firebase Admin SDK 13.5**: Server-side operations and security rules
-- **Zod 4.1**: Runtime schema validation for API requests/responses
+- Node.js 20+
+- Firebase project with Firestore enabled
+- Environment variables configured (see `.env.example`)
 
-### Development & Deployment
+### Development Setup
 
-- **Vercel**: Deployment and hosting platform with automatic deployments
-- **Firebase Console**: Database and authentication management
-- **Node.js 20+**: Runtime environment with modern JavaScript features
-- **ESLint 9**: Code linting with Next.js configuration
+```bash
+# Install dependencies
+npm install
 
-## Directory Structure
+# Validate environment configuration
+npm run validate-env
+
+# Create required Firestore indexes
+npm run indexes
+
+# Start development server
+npm run dev
+```
+
+### Project Structure
 
 ```
 learn-ai/
 ├── app/                        # Next.js App Router
-│   ├── (auth)/                 # Authentication providers and context
-│   ├── (public)/               # Public routes (placeholder)
-│   ├── admin/                  # Admin dashboard and management
-│   │   ├── courses/            # Course management with module editing
-│   │   ├── new/                # Course creation interface
-│   │   ├── questionnaires/     # Questionnaire template management
-│   │   └── layout.tsx         # Admin-specific layout
-│   ├── api/                    # Backend API routes (25+ endpoints)
-│   │   ├── admin/              # Admin-only operations (14 endpoints)
-│   │   ├── auth/               # Authentication management
-│   │   ├── courses/            # Course detail API (new)
-│   │   ├── questionnaires/     # Assessment workflow (7 endpoints)
-│   │   └── [various]/          # Enrollment, progress, catalog APIs
-│   ├── catalog/                # Public course catalog
-│   ├── components/             # Shared React components
-│   ├── courses/                # Course detail pages (new)
-│   │   └── [courseId]/         # Dynamic course pages with enrollment
-│   ├── dashboard/              # User dashboard and progress
-│   ├── login/                  # User authentication pages
-│   ├── questionnaires/         # Assessment interface
-│   ├── layout.tsx              # Root layout with AuthProvider
-│   └── page.tsx               # Landing page
-├── docs/                       # Comprehensive documentation
-│   ├── backend.md              # Complete API reference
-│   ├── database.md             # Firestore schema documentation
-│   └── frontend.md             # UI implementation status
-├── lib/                        # Shared utilities and configurations
-│   ├── auth.ts                 # Authentication helpers and middleware
-│   ├── firebaseAdmin.ts        # Firebase server configuration
-│   ├── firebaseClient.ts       # Firebase client configuration
-│   ├── firestore.ts            # Database utilities and constants
-│   └── schemas.ts              # Zod validation schemas
-├── types/                      # TypeScript definitions
-│   └── models.ts               # Database model interfaces
-├── public/                     # Static assets
-├── styles/                     # Global CSS with TailwindCSS
-├── scripts/                    # Build and utility scripts
-└── hooks/                      # Custom React hooks
+│   ├── admin/                  # Admin dashboard (courses, questionnaires, users)
+│   ├── api/                    # Backend API routes (55+ endpoints)
+│   ├── catalog/                # Public course browsing
+│   ├── courses/[courseId]/     # Course detail pages with enrollment
+│   └── dashboard/              # User progress and enrollments
+├── components/                 # React components and UI elements
+├── lib/                        # Utilities (auth, database, validation)
+├── types/                      # TypeScript definitions and interfaces
+└── hooks/                      # Custom React hooks for data fetching
 ```
+
+## Key Features
+
+### Course Creation & Management
+
+- **4-Step Creation Wizard**: Guided course creation with validation and auto-save
+- **Rich Module Editor**: Support for video, text, PDF, image, and link content
+- **Asset Management**: Drag-and-drop file uploads with Firebase Storage
+- **Publishing Workflow**: Draft → Review → Publish with visibility controls
+
+### Assessment System
+
+- **Questionnaire Builder**: Create surveys, quizzes, and assessments
+- **Flexible Assignment**: Pre/post course and module-level questionnaires
+- **Automated Scoring**: Quiz scoring with percentage-based results
+- **Gating Logic**: Progress blocking until assessments are completed
+
+### User Experience
+
+- **Course Catalog**: Public browsing with enrollment capabilities
+- **Progress Tracking**: Module-level completion with visual indicators
+- **Streak Tracking**: Daily login streaks for user engagement
+- **Responsive Design**: Mobile-optimized interface throughout
+
+### Admin Dashboard
+
+- **Platform Analytics**: Course completion rates and user engagement
+- **Audit Logging**: Comprehensive tracking of all administrative actions
+- **User Management**: Role assignments and account oversight
+- **Content Moderation**: Archive/unarchive courses and questionnaires
 
 ## Authentication System
 
-### User Authentication
+### Dual-Provider Authentication
 
-- **Method**: Google OAuth
-- **Role**: `user`
-- **Access**: Course catalog, enrollments, progress tracking
+- **Users**: Google OAuth with automatic registration
+- **Admins**: Email/password with secure bootstrap system
+- **Role-Based Access**: Server-side validation with custom claims
+- **Session Management**: Firebase Auth with token refresh and validation
 
-### Admin Authentication
+## Environment Setup
 
-- **Method**: Email and password
-- **Role**: `admin`
-- **Access**: Course management, user administration, analytics
+### Required Environment Variables
 
-### Session Management
-
-- **Tokens**: Firebase ID tokens with custom claims
-- **Role Enforcement**: Server-side validation on all API requests
-- **Route Protection**: Client-side guards with automatic redirects
-
-## Development Setup
-
-### Prerequisites
-
-- Node.js 18+ and npm
-- Firebase project with Firestore and Authentication enabled
-- Firebase service account key
-
-### Environment Variables
-
-Create `.env.local`:
+Create `.env.local` with the following configuration:
 
 ```bash
 # Firebase Client Configuration (public)
@@ -152,70 +137,75 @@ FIREBASE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"...","priva
 # Application Configuration
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Optional: Admin bootstrap key for creating first admin
+# Admin Bootstrap (optional but recommended)
 ADMIN_BOOTSTRAP_KEY=your-secure-bootstrap-key
 
 # Storage Configuration
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
 ```
 
-### Installation & Running
+### Database Initialization
+
+The system requires specific Firestore indexes for optimal performance:
 
 ```bash
-# Install dependencies
-npm install
+# Create required composite indexes
+npm run indexes
 
-# Start development server
-npm run dev
+# Validate environment configuration
+npm run validate-env
 
-# Open browser
-open http://localhost:3000
+# Check API health status
+npm run status
 ```
 
-### Database Setup
+### Creating First Admin User
 
-1. **Create Firestore Indexes**:
+Bootstrap your first admin account using the secure endpoint:
 
-   ```bash
-   npm run indexes
-   ```
+```bash
+curl -X POST http://localhost:3000/api/dev/bootstrap-admin \
+  -H "Content-Type: application/json" \
+  -H "x-bootstrap-key: your-secure-bootstrap-key" \
+  -d '{"email":"admin@example.com","password":"securepassword","name":"Admin User"}'
+```
 
-2. **Deploy Firestore Rules**:
+### Quick Start Commands
 
-   ```bash
-   firebase deploy --only firestore:rules
-   ```
+```bash
+# Install dependencies and start development
+npm install && npm run dev
 
-3. **Bootstrap Admin Account** (optional):
-   ```bash
-   curl -X POST http://localhost:3000/api/admin/admins.create \
-     -H "x-bootstrap-key: your-secure-bootstrap-key" \
-     -H "Content-Type: application/json" \
-     -d '{"email":"admin@example.com","password":"secure-password"}'
-   ```
+# Initialize database indexes
+npm run indexes
 
-### Migration Scripts
+# Validate configuration
+npm run validate-env
 
-When upgrading from older versions, you may need to run migration scripts:
+# Check system health
+npm run status
+```
 
-1. **Questionnaire Options Migration** (v1.0 → v2.0):
+## Migration & Deployment
 
-   This migrates questionnaires from old string array options to new `{id, label}` format:
+### Data Migration Scripts
 
-   ```bash
-   # Compile TypeScript
-   npx tsc --build
+When upgrading, you may need to run migration scripts:
 
-   # Run migration
-   node scripts/migrate-questionnaire-options.js
-   ```
+```bash
+# Questionnaire Options Migration (v1.0 → v2.0)
+npx tsc --build && node scripts/migrate-questionnaire-options.js
 
-   The migration script will:
+# Complete system migration test
+./scripts/complete-phase2-test.ps1
+```
 
-   - Convert option arrays like `["Excellent", "Good", "Fair"]` to structured objects
-   - Generate stable option IDs for existing responses compatibility
-   - Preserve correct answer mappings for quiz questions
-   - Update questionnaire versions automatically
+### Production Deployment
+
+1. Configure production Firebase project
+2. Deploy Firestore security rules: `firebase deploy --only firestore:rules`
+3. Set production environment variables
+4. Deploy to your hosting platform (Vercel, Netlify, etc.)
 
 ## Key Features
 

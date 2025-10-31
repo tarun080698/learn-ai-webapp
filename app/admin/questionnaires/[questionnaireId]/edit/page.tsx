@@ -112,17 +112,27 @@ export default function AdminQuestionnaireEditPage() {
   if (!firebaseUser) {
     return (
       <div className="p-6">
-        <div className="text-center text-black">Please log in to continue.</div>
+        <div className="text-center" style={{ color: "var(--foreground)" }}>
+          Please log in to continue.
+        </div>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading questionnaire...</p>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderBottomColor: "var(--primary)" }}
+          ></div>
+          <p style={{ color: "var(--secondary-70)" }}>
+            Loading questionnaire...
+          </p>
         </div>
       </div>
     );
@@ -130,12 +140,24 @@ export default function AdminQuestionnaireEditPage() {
 
   if (error && !questionnaire) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="text-center">
-          <div className="text-red-600 mb-4">Error: {error}</div>
+          <div className="mb-4" style={{ color: "var(--destructive)" }}>
+            Error: {error}
+          </div>
           <Link
             href="/admin/questionnaires"
-            className="text-blue-600 hover:text-blue-800"
+            className="transition-colors"
+            style={{ color: "var(--primary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--primary-80)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--primary)";
+            }}
           >
             ← Back to Questionnaires
           </Link>
@@ -146,12 +168,24 @@ export default function AdminQuestionnaireEditPage() {
 
   if (!questionnaire) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="text-center">
-          <div className="text-gray-600 mb-4">Questionnaire not found</div>
+          <div className="mb-4" style={{ color: "var(--secondary-70)" }}>
+            Questionnaire not found
+          </div>
           <Link
             href="/admin/questionnaires"
-            className="text-blue-600 hover:text-blue-800"
+            className="transition-colors"
+            style={{ color: "var(--primary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--primary-80)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--primary)";
+            }}
           >
             ← Back to Questionnaires
           </Link>
@@ -161,20 +195,44 @@ export default function AdminQuestionnaireEditPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "var(--background)" }}
+    >
       <div className="max-w-7xl mx-auto p-6">
         {/* Header with Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6 p-6">
+        <div
+          className="rounded-2xl mb-6 p-6"
+          style={{
+            backgroundColor: "var(--card)",
+            boxShadow:
+              "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+            border: "1px solid var(--secondary-15)",
+          }}
+        >
           <div className="flex items-center gap-4">
             <Link
               href={`/admin/questionnaires/${questionnaireId}`}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="flex items-center gap-2 transition-colors"
+              style={{ color: "var(--secondary-70)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--accent)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--secondary-70)";
+              }}
             >
               <ArrowLeftIcon className="w-4 h-4" />
               Back to Questionnaire
             </Link>
-            <div className="w-px h-6 bg-gray-300"></div>
-            <h1 className="text-2xl font-bold text-gray-900">
+            <div
+              className="w-px h-6"
+              style={{ backgroundColor: "var(--secondary-20)" }}
+            ></div>
+            <h1
+              className="text-2xl font-bold"
+              style={{ color: "var(--secondary)" }}
+            >
               Edit: {questionnaire.title}
             </h1>
           </div>
@@ -182,14 +240,30 @@ export default function AdminQuestionnaireEditPage() {
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="text-red-800 font-medium">Error</div>
-            <div className="text-red-700 text-sm mt-1">{error}</div>
+          <div
+            className="rounded-xl p-4 mb-6"
+            style={{
+              backgroundColor: "var(--destructive-10)",
+              border: "1px solid var(--destructive-20)",
+            }}
+          >
+            <div
+              className="font-medium"
+              style={{ color: "var(--destructive)" }}
+            >
+              Error
+            </div>
+            <div
+              className="text-sm mt-1"
+              style={{ color: "var(--destructive-80)" }}
+            >
+              {error}
+            </div>
           </div>
         )}
 
         {/* QuestionnaireBuilder Component */}
-        <div className="bg-gray-50">
+        <div style={{ backgroundColor: "var(--background)" }}>
           <QuestionnaireBuilder
             questionnaire={questionnaire}
             onSave={handleSave}

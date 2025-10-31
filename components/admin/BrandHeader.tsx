@@ -14,7 +14,7 @@ export function BrandHeader() {
                 <Image
                   src={Logo}
                   alt="Logo"
-                  className="p-2 text-primary-foreground text-xl w-auto aspect-square"
+                  className="p-1 bg-primary-foreground text-xl w-auto aspect-square"
                 />
               </div>
               <div className="absolute -inset-1 bg-primary! rounded-2xl opacity-20 pulse-ring"></div>

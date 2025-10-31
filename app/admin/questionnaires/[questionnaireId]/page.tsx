@@ -20,13 +20,10 @@ import {
   DocumentTextIcon,
   ClipboardDocumentListIcon,
   PencilIcon,
-  ClockIcon,
-  UserGroupIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ArrowLeftIcon,
   CheckCircleIcon,
-  XCircleIcon,
   StarIcon,
   ListBulletIcon,
   ScaleIcon,
@@ -81,7 +78,7 @@ export default function AdminQuestionnaireViewPage() {
 
         // Find the specific questionnaire
         const questionnaire = questionnairesData.questionnaires?.find(
-          (q: any) => q.id === questionnaireId
+          (q: QuestionnaireDoc & { id: string }) => q.id === questionnaireId
         );
 
         if (!questionnaire) {
@@ -97,14 +94,17 @@ export default function AdminQuestionnaireViewPage() {
         // Filter assignments for this questionnaire
         const assignments =
           assignmentsData.assignments?.filter(
-            (a: any) => a.questionnaireId === questionnaireId
+            (a: QuestionnaireAssignmentDoc & { id: string }) =>
+              a.questionnaireId === questionnaireId
           ) || [];
 
         // Calculate stats
         const stats = {
           assignmentCount: assignments.length,
           questionCount: questionnaire.questions?.length || 0,
-          activeAssignments: assignments.filter((a: any) => a.active).length,
+          activeAssignments: assignments.filter(
+            (a: QuestionnaireAssignmentDoc & { id: string }) => a.active
+          ).length,
         };
 
         setQuestionnaireData({
@@ -138,15 +138,40 @@ export default function AdminQuestionnaireViewPage() {
   const getQuestionTypeIcon = (type: string) => {
     switch (type) {
       case "single":
-        return <CheckCircleIcon className="w-5 h-5 text-blue-600" />;
+        return (
+          <CheckCircleIcon
+            className="w-5 h-5"
+            style={{ color: "var(--primary)" }}
+          />
+        );
       case "multi":
-        return <ListBulletIcon className="w-5 h-5 text-green-600" />;
+        return (
+          <ListBulletIcon
+            className="w-5 h-5"
+            style={{ color: "var(--accent)" }}
+          />
+        );
       case "scale":
-        return <ScaleIcon className="w-5 h-5 text-purple-600" />;
+        return (
+          <ScaleIcon
+            className="w-5 h-5"
+            style={{ color: "var(--destructive)" }}
+          />
+        );
       case "text":
-        return <ChatBubbleLeftRightIcon className="w-5 h-5 text-orange-600" />;
+        return (
+          <ChatBubbleLeftRightIcon
+            className="w-5 h-5"
+            style={{ color: "var(--secondary)" }}
+          />
+        );
       default:
-        return <DocumentTextIcon className="w-5 h-5 text-gray-600" />;
+        return (
+          <DocumentTextIcon
+            className="w-5 h-5"
+            style={{ color: "var(--secondary-60)" }}
+          />
+        );
     }
   };
 
@@ -161,20 +186,6 @@ export default function AdminQuestionnaireViewPage() {
     return labels[type] || type;
   };
 
-  // Purpose badge color helper
-  const getPurposeBadgeColor = (purpose: string) => {
-    switch (purpose) {
-      case "survey":
-        return "bg-blue-100 text-blue-800";
-      case "quiz":
-        return "bg-green-100 text-green-800";
-      case "assessment":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   // Question display component
   const QuestionDisplay = ({
     question,
@@ -183,55 +194,98 @@ export default function AdminQuestionnaireViewPage() {
     question: QuestionnaireQuestion;
     index: number;
   }) => (
-    <div className="border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors">
+    <div
+      className="rounded-xl p-4 transition-colors"
+      style={{
+        border: "1px solid var(--secondary-15)",
+        backgroundColor: "var(--card)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = "var(--secondary-5)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = "var(--card)";
+      }}
+    >
       <div className="flex items-start gap-3">
         <div className="shrink-0 mt-1">
           {getQuestionTypeIcon(question.type)}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <span className="bg-gray-100 text-gray-800 text-sm font-medium px-2.5 py-1 rounded-full">
+            <span
+              className="text-sm font-medium px-2.5 py-1 rounded-full"
+              style={{
+                backgroundColor: "var(--secondary-10)",
+                color: "var(--secondary)",
+                border: "1px solid var(--secondary-15)",
+              }}
+            >
               Q{index + 1}
             </span>
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+            <span
+              className="text-xs px-2 py-1 rounded-full"
+              style={{
+                backgroundColor: "var(--primary-10)",
+                color: "var(--primary)",
+                border: "1px solid var(--primary-10)",
+              }}
+            >
               {getQuestionTypeLabel(question.type)}
             </span>
             {question.required && (
-              <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+              <span
+                className="text-xs px-2 py-1 rounded-full"
+                style={{
+                  backgroundColor: "var(--destructive-10)",
+                  color: "var(--destructive)",
+                  border: "1px solid var(--destructive-10)",
+                }}
+              >
                 Required
               </span>
             )}
           </div>
-          <h4 className="font-medium text-gray-900 mb-2">{question.prompt}</h4>
+          <h4
+            className="font-medium mb-2"
+            style={{ color: "var(--secondary)" }}
+          >
+            {question.prompt}
+          </h4>
 
           {/* Question options for choice types */}
           {(question.type === "single" || question.type === "multi") &&
             question.options && (
               <div className="space-y-1 ml-4">
-                {question.options.map((option: any, optIndex: number) => (
-                  <div
-                    key={optIndex}
-                    className="flex items-center gap-2 text-sm text-gray-600"
-                  >
+                {question.options.map(
+                  (
+                    option: string | { label: string; correct?: boolean },
+                    optIndex: number
+                  ) => (
                     <div
-                      className={`w-3 h-3 rounded-${
-                        question.type === "single" ? "full" : "sm"
-                      } border-2 border-gray-300`}
-                    ></div>
-                    <span>
-                      {typeof option === "string" ? option : option.label}
-                    </span>
-                    {typeof option === "object" && option.correct && (
-                      <CheckCircleIcon className="w-4 h-4 text-green-600" />
-                    )}
-                  </div>
-                ))}
+                      key={optIndex}
+                      className="flex items-center gap-2 text-sm text-secondary/70"
+                    >
+                      <div
+                        className={`w-3 h-3 rounded-${
+                          question.type === "single" ? "full" : "sm"
+                        } border-2 border-secondary/30`}
+                      ></div>
+                      <span>
+                        {typeof option === "string" ? option : option.label}
+                      </span>
+                      {typeof option === "object" && option.correct && (
+                        <CheckCircleIcon className="w-4 h-4 text-primary" />
+                      )}
+                    </div>
+                  )
+                )}
               </div>
             )}
 
           {/* Scale range for scale type */}
           {question.type === "scale" && (
-            <div className="ml-4 text-sm text-gray-600">
+            <div className="ml-4 text-sm text-secondary/70">
               <span>
                 Scale: {question.scale?.min || 1} to {question.scale?.max || 5}
               </span>
@@ -252,10 +306,18 @@ export default function AdminQuestionnaireViewPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading questionnaire...</p>
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4"
+            style={{ borderBottomColor: "var(--primary)" }}
+          ></div>
+          <p style={{ color: "var(--secondary-70)" }}>
+            Loading questionnaire...
+          </p>
         </div>
       </div>
     );
@@ -263,12 +325,24 @@ export default function AdminQuestionnaireViewPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="text-center">
-          <div className="text-red-600 mb-4">Error: {error}</div>
+          <div className="mb-4" style={{ color: "var(--destructive)" }}>
+            Error: {error}
+          </div>
           <Link
             href="/admin/questionnaires"
-            className="text-blue-600 hover:text-blue-800"
+            className="transition-colors"
+            style={{ color: "var(--primary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--primary-80)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--primary)";
+            }}
           >
             ← Back to Questionnaires
           </Link>
@@ -279,12 +353,24 @@ export default function AdminQuestionnaireViewPage() {
 
   if (!questionnaireData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: "var(--background)" }}
+      >
         <div className="text-center">
-          <div className="text-gray-600 mb-4">Questionnaire not found</div>
+          <div className="mb-4" style={{ color: "var(--secondary-70)" }}>
+            Questionnaire not found
+          </div>
           <Link
             href="/admin/questionnaires"
-            className="text-blue-600 hover:text-blue-800"
+            className="transition-colors"
+            style={{ color: "var(--primary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--primary-80)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--primary)";
+            }}
           >
             ← Back to Questionnaires
           </Link>
@@ -296,44 +382,106 @@ export default function AdminQuestionnaireViewPage() {
   const { questionnaire, assignments, stats } = questionnaireData;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "var(--background)" }}
+    >
       <div className="max-w-7xl mx-auto p-6">
         {/* Header with Navigation */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6 p-6">
+        <div
+          className="rounded-2xl mb-6 p-6"
+          style={{
+            backgroundColor: "var(--card)",
+            boxShadow:
+              "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+            border: "1px solid var(--secondary-15)",
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <Link
                 href="/admin/questionnaires"
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+                className="flex items-center gap-2 transition-colors"
+                style={{ color: "var(--secondary-70)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--secondary-70)";
+                }}
               >
                 <ArrowLeftIcon className="w-4 h-4" />
                 Back to Questionnaires
               </Link>
-              <div className="w-px h-6 bg-gray-300"></div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <div
+                className="w-px h-6"
+                style={{ backgroundColor: "var(--secondary-20)" }}
+              ></div>
+              <h1
+                className="text-2xl font-bold"
+                style={{ color: "var(--secondary)" }}
+              >
                 {questionnaire.title}
               </h1>
             </div>
             <div className="flex items-center gap-3">
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  questionnaire.archived
-                    ? "bg-gray-100 text-gray-800"
-                    : "bg-green-100 text-green-800"
-                }`}
+                className="px-3 py-1 rounded-full text-sm font-medium"
+                style={{
+                  backgroundColor: questionnaire.archived
+                    ? "var(--secondary-10)"
+                    : "var(--primary-10)",
+                  color: questionnaire.archived
+                    ? "var(--secondary)"
+                    : "var(--primary)",
+                  border: `1px solid ${
+                    questionnaire.archived
+                      ? "var(--secondary-15)"
+                      : "var(--primary-10)"
+                  }`,
+                }}
               >
                 {questionnaire.archived ? "Archived" : "Active"}
               </span>
               <span
-                className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getPurposeBadgeColor(
-                  questionnaire.purpose
-                )}`}
+                className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+                style={{
+                  backgroundColor:
+                    questionnaire.purpose === "quiz"
+                      ? "var(--primary-10)"
+                      : questionnaire.purpose === "assessment"
+                      ? "var(--accent-10)"
+                      : "var(--secondary-10)",
+                  color:
+                    questionnaire.purpose === "quiz"
+                      ? "var(--primary)"
+                      : questionnaire.purpose === "assessment"
+                      ? "var(--accent)"
+                      : "var(--secondary)",
+                  border: `1px solid ${
+                    questionnaire.purpose === "quiz"
+                      ? "var(--primary-10)"
+                      : questionnaire.purpose === "assessment"
+                      ? "var(--accent-10)"
+                      : "var(--secondary-15)"
+                  }`,
+                }}
               >
                 {questionnaire.purpose}
               </span>
               <Link
                 href={`/admin/questionnaires/${questionnaireId}/edit`}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  color: "var(--primary-foreground)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--primary-90)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--primary)";
+                }}
               >
                 <PencilIcon className="w-4 h-4" />
                 Edit Questionnaire
@@ -343,79 +491,182 @@ export default function AdminQuestionnaireViewPage() {
         </div>
 
         {/* Questionnaire Overview */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6">
-          <div className="p-6 border-b border-gray-200">
+        <div
+          style={{
+            backgroundColor: "var(--card)",
+            borderRadius: "16px",
+            boxShadow:
+              "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+            border: "1px solid var(--secondary-15)",
+            marginBottom: "24px",
+          }}
+        >
+          <div
+            style={{
+              padding: "24px",
+              borderBottom: "1px solid var(--secondary-15)",
+            }}
+          >
             <button
               onClick={() => toggleSection("overview")}
               className="flex items-center justify-between w-full text-left"
             >
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2
+                className="text-xl font-semibold"
+                style={{ color: "var(--secondary)" }}
+              >
                 Questionnaire Overview
               </h2>
               {expandedSections.overview ? (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                <ChevronDownIcon
+                  className="w-5 h-5"
+                  style={{ color: "var(--secondary-50)" }}
+                />
               ) : (
-                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                <ChevronRightIcon
+                  className="w-5 h-5"
+                  style={{ color: "var(--secondary-50)" }}
+                />
               )}
             </button>
           </div>
 
           {expandedSections.overview && (
-            <div className="p-6">
+            <div style={{ padding: "24px" }}>
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Stats Cards */}
-                <div className="bg-blue-50 rounded-lg p-4">
+                <div
+                  style={{
+                    backgroundColor: "var(--primary-10)",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    border: "1px solid var(--primary-20)",
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <DocumentTextIcon className="w-8 h-8 text-blue-600" />
+                    <DocumentTextIcon
+                      className="w-8 h-8"
+                      style={{ color: "var(--primary)" }}
+                    />
                     <div>
-                      <div className="text-2xl font-bold text-blue-900">
+                      <div
+                        className="text-2xl font-bold"
+                        style={{ color: "var(--secondary)" }}
+                      >
                         {stats.questionCount}
                       </div>
-                      <div className="text-sm text-blue-600">Questions</div>
+                      <div
+                        className="text-sm"
+                        style={{ color: "var(--primary)" }}
+                      >
+                        Questions
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-green-50 rounded-lg p-4">
+                <div
+                  style={{
+                    backgroundColor: "var(--accent-10)",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    border: "1px solid var(--accent-20)",
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <ClipboardDocumentListIcon className="w-8 h-8 text-green-600" />
+                    <ClipboardDocumentListIcon
+                      className="w-8 h-8"
+                      style={{ color: "var(--accent)" }}
+                    />
                     <div>
-                      <div className="text-2xl font-bold text-green-900">
+                      <div
+                        className="text-2xl font-bold"
+                        style={{ color: "var(--secondary)" }}
+                      >
                         {stats.assignmentCount}
                       </div>
-                      <div className="text-sm text-green-600">Assignments</div>
+                      <div
+                        className="text-sm"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        Assignments
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-purple-50 rounded-lg p-4">
+                <div
+                  style={{
+                    backgroundColor: "var(--destructive-10)",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    border: "1px solid var(--destructive-20)",
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <UserGroupIcon className="w-8 h-8 text-purple-600" />
+                    <CheckCircleIcon
+                      className="w-8 h-8"
+                      style={{ color: "var(--destructive)" }}
+                    />
                     <div>
-                      <div className="text-2xl font-bold text-purple-900">
+                      <div
+                        className="text-2xl font-bold"
+                        style={{ color: "var(--secondary)" }}
+                      >
                         {stats.activeAssignments}
                       </div>
-                      <div className="text-sm text-purple-600">Active</div>
+                      <div
+                        className="text-sm"
+                        style={{ color: "var(--destructive)" }}
+                      >
+                        Active
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-orange-50 rounded-lg p-4">
+                <div
+                  style={{
+                    backgroundColor: "var(--secondary-10)",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    border: "1px solid var(--secondary-20)",
+                  }}
+                >
                   <div className="flex items-center gap-3">
-                    <StarIcon className="w-8 h-8 text-orange-600" />
+                    <StarIcon
+                      className="w-8 h-8"
+                      style={{ color: "var(--secondary)" }}
+                    />
                     <div>
-                      <div className="text-2xl font-bold text-orange-900 capitalize">
+                      <div
+                        className="text-2xl font-bold capitalize"
+                        style={{ color: "var(--secondary)" }}
+                      >
                         {questionnaire.purpose}
                       </div>
-                      <div className="text-sm text-orange-600">Type</div>
+                      <div
+                        className="text-sm"
+                        style={{ color: "var(--secondary-70)" }}
+                      >
+                        Type
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-4 text-sm text-gray-600">
+              <div
+                className="mt-6 grid grid-cols-2 gap-4 text-sm"
+                style={{ color: "var(--secondary-70)" }}
+              >
                 <div>
-                  <span className="font-medium">Created:</span>{" "}
+                  <span
+                    className="font-medium"
+                    style={{ color: "var(--secondary)" }}
+                  >
+                    Created:
+                  </span>{" "}
                   {formatDate(
                     (
                       questionnaire.createdAt?.toDate?.() ||
@@ -424,7 +675,12 @@ export default function AdminQuestionnaireViewPage() {
                   )}
                 </div>
                 <div>
-                  <span className="font-medium">Last Updated:</span>{" "}
+                  <span
+                    className="font-medium"
+                    style={{ color: "var(--secondary)" }}
+                  >
+                    Last Updated:
+                  </span>{" "}
                   {formatDate(
                     (
                       questionnaire.updatedAt?.toDate?.() ||
@@ -434,7 +690,9 @@ export default function AdminQuestionnaireViewPage() {
                 </div>
                 {questionnaire.archivedAt && (
                   <div>
-                    <span className="font-medium">Archived:</span>{" "}
+                    <span className="font-medium text-secondary">
+                      Archived:
+                    </span>{" "}
                     {formatDate(
                       (
                         questionnaire.archivedAt?.toDate?.() ||
@@ -449,28 +707,54 @@ export default function AdminQuestionnaireViewPage() {
         </div>
 
         {/* Questions Section */}
-        <div className="bg-white rounded-lg shadow-sm border mb-6">
-          <div className="p-6 border-b border-gray-200">
+        <div
+          style={{
+            backgroundColor: "var(--card)",
+            borderRadius: "16px",
+            boxShadow:
+              "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+            border: "1px solid var(--secondary-15)",
+            marginBottom: "24px",
+          }}
+        >
+          <div
+            style={{
+              padding: "24px",
+              borderBottom: "1px solid var(--secondary-15)",
+            }}
+          >
             <button
               onClick={() => toggleSection("questions")}
               className="flex items-center justify-between w-full text-left"
             >
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2
+                className="text-xl font-semibold"
+                style={{ color: "var(--secondary)" }}
+              >
                 Questions ({questionnaire.questions?.length || 0})
               </h2>
               {expandedSections.questions ? (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                <ChevronDownIcon
+                  className="w-5 h-5"
+                  style={{ color: "var(--secondary-50)" }}
+                />
               ) : (
-                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                <ChevronRightIcon
+                  className="w-5 h-5"
+                  style={{ color: "var(--secondary-50)" }}
+                />
               )}
             </button>
           </div>
 
           {expandedSections.questions && (
-            <div className="p-6">
+            <div style={{ padding: "24px" }}>
               {!questionnaire.questions ||
               questionnaire.questions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div
+                  className="text-center py-8"
+                  style={{ color: "var(--secondary-60)" }}
+                >
                   No questions created yet.
                 </div>
               ) : (
@@ -489,45 +773,86 @@ export default function AdminQuestionnaireViewPage() {
         </div>
 
         {/* Assignments Section */}
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-6 border-b border-gray-200">
+        <div
+          style={{
+            backgroundColor: "var(--card)",
+            borderRadius: "16px",
+            boxShadow:
+              "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+            border: "1px solid var(--secondary-15)",
+          }}
+        >
+          <div
+            style={{
+              padding: "24px",
+              borderBottom: "1px solid var(--secondary-15)",
+            }}
+          >
             <button
               onClick={() => toggleSection("assignments")}
               className="flex items-center justify-between w-full text-left"
             >
-              <h2 className="text-xl font-semibold text-gray-900">
+              <h2
+                className="text-xl font-semibold"
+                style={{ color: "var(--secondary)" }}
+              >
                 Course Assignments ({assignments.length})
               </h2>
               {expandedSections.assignments ? (
-                <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                <ChevronDownIcon
+                  className="w-5 h-5"
+                  style={{ color: "var(--secondary-50)" }}
+                />
               ) : (
-                <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                <ChevronRightIcon
+                  className="w-5 h-5"
+                  style={{ color: "var(--secondary-50)" }}
+                />
               )}
             </button>
           </div>
 
           {expandedSections.assignments && (
-            <div className="p-6">
+            <div style={{ padding: "24px" }}>
               {assignments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div
+                  className="text-center py-8"
+                  style={{ color: "var(--secondary-60)" }}
+                >
                   No assignments created yet.
                 </div>
               ) : (
                 <div className="space-y-4">
                   {assignments.map((assignment) => (
-                    <div key={assignment.id} className="border rounded-lg p-4">
+                    <div
+                      key={assignment.id}
+                      style={{
+                        border: "1px solid var(--secondary-15)",
+                        borderRadius: "12px",
+                        padding: "16px",
+                      }}
+                    >
                       <div className="flex items-start justify-between">
                         <div>
-                          <h3 className="font-medium text-gray-900">
+                          <h3
+                            className="font-medium"
+                            style={{ color: "var(--secondary)" }}
+                          >
                             {assignment.scope.type === "course"
                               ? "Course Assignment"
                               : "Module Assignment"}
                           </h3>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p
+                            className="text-sm mt-1"
+                            style={{ color: "var(--secondary-70)" }}
+                          >
                             {assignment.timing === "pre" ? "Pre-" : "Post-"}
                             {assignment.scope.type} questionnaire
                           </p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                          <div
+                            className="flex items-center gap-4 mt-2 text-sm"
+                            style={{ color: "var(--secondary-60)" }}
+                          >
                             <span>Course ID: {assignment.scope.courseId}</span>
                             {assignment.scope.moduleId && (
                               <span>
@@ -535,11 +860,20 @@ export default function AdminQuestionnaireViewPage() {
                               </span>
                             )}
                             <span
-                              className={`px-2 py-1 rounded-full text-xs ${
-                                assignment.active
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}
+                              className="px-2 py-1 rounded-full text-xs"
+                              style={{
+                                backgroundColor: assignment.active
+                                  ? "var(--primary-10)"
+                                  : "var(--secondary-10)",
+                                color: assignment.active
+                                  ? "var(--primary)"
+                                  : "var(--secondary)",
+                                border: `1px solid ${
+                                  assignment.active
+                                    ? "var(--primary-20)"
+                                    : "var(--secondary-20)"
+                                }`,
+                              }}
                             >
                               {assignment.active ? "Active" : "Inactive"}
                             </span>

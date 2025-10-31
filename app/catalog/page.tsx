@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Navigation } from "@/app/components/Navigation";
+import { PublicLayout } from "@/components/PublicLayout";
 
 // Force dynamic rendering for fresh course data
 export const dynamic = "force-dynamic";
@@ -12,7 +12,14 @@ interface Course {
   level: "beginner" | "intermediate" | "advanced";
   moduleCount: number;
   published: boolean;
+  archived: boolean;
   createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  enrolled?: boolean;
+  enrollmentId?: string | null;
+  progressPct?: number;
+  completed?: boolean;
 }
 
 // Phase 2: Catalog page - Server Component
@@ -21,7 +28,7 @@ async function fetchPublishedCourses(): Promise<Course[]> {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-      }/api/catalog`,
+      }/api/catalog-temp`,
       {
         cache: "no-store", // Always fetch fresh data
       }
@@ -44,11 +51,8 @@ export default async function CatalogPage() {
   const courses = await fetchPublishedCourses();
 
   return (
-    <div className="min-h-screen">
-      <Navigation />
-
-      {/* Content */}
-      <main className="max-w-4xl mx-auto py-8 px-4">
+    <PublicLayout showPromoBanner={false}>
+      <div className="max-w-4xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Course Catalog</h1>
 
         {/* Course Listing */}
@@ -82,7 +86,12 @@ export default async function CatalogPage() {
               {courses.map((course) => (
                 <div
                   key={course.id}
-                  className="border rounded-lg p-6 hover:shadow-md transition-shadow"
+                  className="border rounded-lg p-6 transition-all duration-200"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    borderColor: "var(--border)",
+                    boxShadow: "var(--shadow-sm)",
+                  }}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div>
@@ -125,7 +134,7 @@ export default async function CatalogPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </PublicLayout>
   );
 }

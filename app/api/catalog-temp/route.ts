@@ -5,15 +5,12 @@ import { COL, enrollmentId } from "@/lib/firestore";
 import { formatDateISO } from "@/utils/dateUtils";
 
 /**
- * GET /api/catalog
- *
- * Returns published and non-archived courses for public catalog display.
- * If Authorization header is present and valid, decorates with enrollment info.
- * Public endpoint - authentication optional.
+ * GET /api/catalog-temp
+ * Temporary catalog endpoint without orderBy to work while index builds
  */
 export async function GET(req: NextRequest) {
   try {
-    console.log("📚 Fetching published courses for catalog");
+    console.log("📚 Fetching published courses for catalog (temp version)");
 
     if (!adminDb) {
       throw new Error("Firebase Admin not initialized");
@@ -27,29 +24,35 @@ export async function GET(req: NextRequest) {
       // Ignore auth errors - this is a public endpoint
     }
 
-    // Query published courses, excluding explicitly archived ones
+    // Query published courses without orderBy (while index is building)
     const coursesRef = adminDb.collection(COL.courses);
     const publishedCoursesSnapshot = await coursesRef
       .where("published", "==", true)
-      .orderBy("publishedAt", "desc")
       .get();
 
-    // Filter out archived courses (archived === true)
-    const nonArchivedDocs = publishedCoursesSnapshot.docs.filter((doc) => {
-      const data = doc.data();
-      return data.archived !== true; // Include if archived is false, undefined, or null
-    });
+    // Filter out archived courses and sort in memory
+    const filteredCourses = publishedCoursesSnapshot.docs
+      .filter((doc) => {
+        const data = doc.data();
+        return data.archived !== true; // Include if archived is false, undefined, or null
+      })
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        // Convert Firestore timestamps for JSON serialization
+        createdAt:
+          formatDateISO(doc.data().createdAt) || new Date().toISOString(),
+        updatedAt: formatDateISO(doc.data().updatedAt),
+        publishedAt: formatDateISO(doc.data().publishedAt),
+      }))
+      .sort((a, b) => {
+        // Sort by publishedAt descending (newest first)
+        const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+        const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+        return bTime - aTime;
+      });
 
-    // Map courses with proper timestamp conversion
-    let courses = nonArchivedDocs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      // Convert Firestore timestamps for JSON serialization
-      createdAt:
-        formatDateISO(doc.data().createdAt) || new Date().toISOString(),
-      updatedAt: formatDateISO(doc.data().updatedAt),
-      publishedAt: formatDateISO(doc.data().publishedAt),
-    }));
+    let courses = filteredCourses;
 
     // If user is authenticated, decorate with enrollment information
     if (user) {

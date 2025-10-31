@@ -27,6 +27,14 @@
         { "fieldPath": "publishedAt", "order": "DESCENDING" }
       ]
     },
+    {
+      "collectionGroup": "courses",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "published", "order": "ASCENDING" },
+        { "fieldPath": "publishedAt", "order": "DESCENDING" }
+      ]
+    },
 
     {
       "collectionGroup": "enrollments",

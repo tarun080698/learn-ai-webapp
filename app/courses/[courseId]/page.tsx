@@ -1,17 +1,10 @@
-/**
- * Course Detail Page
- * Shows comprehensive course information including modules, questionnaires, and enrollment status
- */
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { PublicLayout } from "@/components/PublicLayout";
 import Link from "next/link";
-import Image from "next/image";
-import { formatDate } from "@/utils/dateUtils";
-import { Navigation } from "@/app/components/Navigation";
 import { useAuth } from "@/app/(auth)/AuthProvider";
-import { useAuthenticatedMutation } from "@/hooks/useAuthenticatedFetch";
 
 interface Module {
   id: string;
@@ -25,392 +18,963 @@ interface Module {
   published: boolean;
 }
 
-interface Questionnaire {
-  id: string;
-  questionnaireId: string;
-  timing: "pre" | "post";
-  active: boolean;
-  questionnaire?: {
-    id: string;
-    title: string;
-    purpose: string;
-    questions: unknown[];
-  };
-}
-
 interface Course {
   id: string;
   title: string;
   description: string;
-  durationMinutes: number;
   level: "beginner" | "intermediate" | "advanced";
+  durationMinutes: number;
+  moduleCount?: number;
+  modules: Module[];
   heroImageUrl?: string;
   published: boolean;
-  modules: Module[];
-  questionnaires: Questionnaire[];
-  enrollment: {
+  createdAt: string;
+  rating?: number;
+  reviewCount?: number;
+  studentCount?: number;
+  instructor?: {
+    name: string;
+    title: string;
+    bio: string;
+    avatar: string;
+    rating: number;
+    studentCount: number;
+    courseCount: number;
+  };
+  enrollment?: {
     status: "enrolled" | null;
     enrolledAt?: string;
   };
 }
 
-interface CourseDetailPageProps {
-  previewMode?: boolean;
-}
-
-export default function CourseDetailPage({
-  previewMode = false,
-}: CourseDetailPageProps) {
+export default function CourseDetailsPage() {
   const params = useParams();
-  const router = useRouter();
-  const courseId = params.courseId as string;
-  const { firebaseUser, loading: authLoading } = useAuth();
-  const enrollApi = useAuthenticatedMutation();
+  const courseId = params?.courseId as string;
+  const { firebaseUser } = useAuth();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [expandedSections, setExpandedSections] = useState<string[]>([
+    "section-1",
+  ]);
 
-  // Load course data
   useEffect(() => {
-    const loadCourse = async () => {
-      if (!courseId) return;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/courses/${courseId}`, {
-          headers: firebaseUser
-            ? {
-                Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
-              }
-            : {},
-        });
-
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Course not found");
-          }
-          throw new Error("Failed to load course");
-        }
-
-        const data = await response.json();
-        setCourse(data.course);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load course");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCourse();
-  }, [courseId, firebaseUser]);
-
-  // Handle enrollment
-  const handleEnroll = async () => {
-    if (!firebaseUser) {
-      // Store the current URL to redirect back after login
-      const returnUrl = `/courses/${courseId}`;
-      router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
-      return;
+    if (courseId) {
+      fetchCourseDetails();
     }
+  }, [courseId]);
 
-    if (!course) return;
-
+  const fetchCourseDetails = async () => {
     try {
-      const idempotencyKey = `enroll-${firebaseUser.uid}-${
-        course.id
-      }-${Date.now()}`;
+      setLoading(true);
+      const headers: Record<string, string> = {};
 
-      await enrollApi.mutate(
-        "/api/enroll",
-        {
-          courseId: course.id,
-        },
-        {
-          headers: {
-            "x-idempotency-key": idempotencyKey,
-          },
-        }
-      );
-
-      // Reload course data to get updated enrollment status
-      const response = await fetch(`/api/courses/${courseId}`, {
-        headers: {
-          Authorization: `Bearer ${await firebaseUser.getIdToken()}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setCourse(data.course);
-        setSuccessMessage("🎉 Successfully enrolled in the course!");
-        setError(null);
-
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccessMessage(null), 5000);
+      if (firebaseUser) {
+        headers.Authorization = `Bearer ${await firebaseUser.getIdToken()}`;
       }
+
+      const response = await fetch(`/api/courses/${courseId}`, { headers });
+
+      if (!response.ok) {
+        throw new Error("Course not found");
+      }
+
+      const data = await response.json();
+      setCourse(data.course);
     } catch (err) {
-      console.error("Enrollment failed:", err);
-      setError("Failed to enroll in course. Please try again.");
-      setSuccessMessage(null);
+      setError(err instanceof Error ? err.message : "Failed to load course");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading || authLoading) {
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
+  };
+
+  // Group modules into sections (every 5 modules)
+  const groupModulesIntoSections = (modules: Module[]) => {
+    const sections = [];
+    const moduleGroups = [];
+
+    for (let i = 0; i < modules.length; i += 5) {
+      moduleGroups.push(modules.slice(i, i + 5));
+    }
+
+    moduleGroups.forEach((group, index) => {
+      const totalDuration = group.reduce(
+        (sum, module) => sum + module.estMinutes,
+        0
+      );
+      sections.push({
+        id: `section-${index + 1}`,
+        title: `Section ${index + 1}: ${group[0]?.title || "Course Content"}`,
+        modules: group,
+        totalDuration,
+      });
+    });
+
+    return sections;
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen">
-        <Navigation />
-        <div className="max-w-4xl mx-auto py-8 px-4">
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-8 h-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto mb-4"></div>
-              <div className="text-muted-foreground">Loading course...</div>
-            </div>
-          </div>
+      <PublicLayout showPromoBanner={false}>
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div
+            className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
+            style={{ borderColor: "var(--primary)" }}
+          ></div>
+          <p className="mt-4" style={{ color: "var(--muted-foreground)" }}>
+            Loading course details...
+          </p>
         </div>
-      </div>
+      </PublicLayout>
     );
   }
 
   if (error || !course) {
     return (
-      <div className="min-h-screen">
-        <Navigation />
-        <div className="max-w-4xl mx-auto py-8 px-4">
-          <div className="text-center py-12">
-            <div className="text-red-600 mb-4">
-              {error || "Course not found"}
-            </div>
-            <Link
-              href="/catalog"
-              className="text-primary hover:text-primary/80"
-            >
-              ← Back to Catalog
-            </Link>
+      <PublicLayout showPromoBanner={false}>
+        <div className="container mx-auto px-4 py-20 text-center">
+          <div
+            className="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: "var(--muted)" }}
+          >
+            <span className="text-3xl">❌</span>
           </div>
+          <h3
+            className="text-lg font-semibold mb-2"
+            style={{ color: "var(--secondary)" }}
+          >
+            Course Not Found
+          </h3>
+          <p className="mb-4" style={{ color: "var(--muted-foreground)" }}>
+            {error ||
+              "The course you're looking for doesn't exist or has been removed."}
+          </p>
+          <Link
+            href="/catalog"
+            className="inline-block px-6 py-3 rounded-lg font-medium transition-colors"
+            style={{
+              backgroundColor: "var(--primary)",
+              color: "var(--primary-foreground)",
+            }}
+          >
+            Browse All Courses
+          </Link>
         </div>
-      </div>
+      </PublicLayout>
     );
   }
 
-  const isEnrolled = course.enrollment.status === "enrolled";
-  const preQuestionnaires = course.questionnaires.filter(
-    (q) => q.timing === "pre"
-  );
-  const postQuestionnaires = course.questionnaires.filter(
-    (q) => q.timing === "post"
-  );
+  const sections = groupModulesIntoSections(course.modules || []);
 
   return (
-    <div className="min-h-screen">
-      <Navigation />
-
-      <main className="max-w-4xl mx-auto py-8 px-4">
-        {/* Back Navigation */}
-        <div className="mb-6">
-          <Link href="/catalog" className="text-primary hover:text-primary/80 ">
-            ← Back to Catalog
-          </Link>
+    <PublicLayout showPromoBanner={false}>
+      {/* Breadcrumb Navigation */}
+      <section
+        className="py-4"
+        style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
+      >
+        <div className="container mx-auto px-4">
+          <nav className="flex items-center space-x-2 text-sm">
+            <Link
+              href="/"
+              className="transition-colors hover:opacity-80"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              Home
+            </Link>
+            <i
+              className="fa-solid fa-chevron-right text-xs"
+              style={{ color: "var(--muted-foreground)" }}
+            ></i>
+            <Link
+              href="/catalog"
+              className="transition-colors hover:opacity-80"
+              style={{ color: "var(--muted-foreground)" }}
+            >
+              Courses
+            </Link>
+            <i
+              className="fa-solid fa-chevron-right text-xs"
+              style={{ color: "var(--muted-foreground)" }}
+            ></i>
+            <span className="font-medium" style={{ color: "var(--secondary)" }}>
+              {course.title}
+            </span>
+          </nav>
         </div>
+      </section>
 
-        {/* Course Header */}
-        <div className="mb-8">
-          {course.heroImageUrl && (
-            <div className="mb-6">
-              <Image
-                src={course.heroImageUrl}
-                alt={course.title}
-                width={800}
-                height={256}
-                className="w-full h-64 object-cover rounded-lg"
-              />
-            </div>
-          )}
-
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">{course.title}</h1>
-              <div className="flex items-center gap-4  text-muted-foreground">
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded capitalize">
-                  {course.level}
-                </span>
-                <span>📚 {course.modules.length} modules</span>
-                <span>⏱️ {course.durationMinutes} min</span>
-              </div>
-            </div>
-
-            {/* Enrollment Status/Action */}
-            <div className="flex flex-col items-end gap-2">
-              {isEnrolled ? (
-                <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg">
-                  ✅ Enrolled
-                  {course.enrollment.enrolledAt && (
-                    <div className="text-xs mt-1">
-                      {formatDate(course.enrollment.enrolledAt)}
-                    </div>
-                  )}
+      {/* Course Hero Section */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-2">
+              <div className="mb-6">
+                <div className="flex items-center space-x-3 mb-4">
+                  <span
+                    className="px-3 py-1 rounded-full text-sm font-medium"
+                    style={{
+                      backgroundColor: "var(--accent)",
+                      color: "var(--accent-foreground)",
+                    }}
+                  >
+                    AI Course
+                  </span>
+                  <span
+                    className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                      opacity: 0.2,
+                    }}
+                  >
+                    {course.level} Friendly
+                  </span>
+                  <span
+                    className="px-3 py-1 rounded-full text-sm font-medium"
+                    style={{
+                      backgroundColor: "var(--secondary)",
+                      color: "var(--secondary-foreground)",
+                      opacity: 0.2,
+                    }}
+                  >
+                    Certificate Available
+                  </span>
                 </div>
-              ) : (
-                <button
-                  onClick={handleEnroll}
-                  disabled={enrollApi.loading}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+
+                <h1
+                  className="text-4xl lg:text-5xl font-bold mb-4 leading-tight"
+                  style={{ color: "var(--secondary)" }}
                 >
-                  {enrollApi.loading ? "Enrolling..." : "Enroll Now"}
-                </button>
-              )}
+                  {course.title}
+                </h1>
 
-              {previewMode && !isEnrolled && (
-                <div className="text-xs text-muted-foreground text-center">
-                  Preview Mode
+                <p
+                  className="text-xl leading-relaxed mb-6"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  {course.description}
+                </p>
+
+                <div className="flex items-center space-x-6 mb-6">
+                  <div className="flex items-center">
+                    <div
+                      className="flex mr-2"
+                      style={{ color: "var(--accent)" }}
+                    >
+                      {[...Array(5)].map((_, i) => (
+                        <i key={i} className="fa-solid fa-star"></i>
+                      ))}
+                    </div>
+                    <span
+                      className="font-semibold mr-2"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      {course.rating || 4.8}
+                    </span>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      ({course.reviewCount || 247} reviews)
+                    </span>
+                  </div>
+                  <div
+                    className="flex items-center"
+                    style={{ color: "var(--muted-foreground)" }}
+                  >
+                    <i className="fa-solid fa-users mr-2"></i>
+                    <span>{course.studentCount || 589} students enrolled</span>
+                  </div>
                 </div>
-              )}
+
+                <div
+                  className="flex items-center space-x-8 text-sm mb-8"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  <div className="flex items-center">
+                    <i className="fa-regular fa-clock mr-2"></i>
+                    <span>{formatDuration(course.durationMinutes)} total</span>
+                  </div>
+                  <div className="flex items-center">
+                    <i className="fa-solid fa-play mr-2"></i>
+                    <span>{course.modules?.length || 0} lessons</span>
+                  </div>
+                  <div className="flex items-center">
+                    <i className="fa-solid fa-robot mr-2"></i>
+                    <span>AI projects</span>
+                  </div>
+                  <div className="flex items-center">
+                    <i className="fa-solid fa-certificate mr-2"></i>
+                    <span>Certificate of completion</span>
+                  </div>
+                </div>
+
+                {/* What you'll learn */}
+                <div
+                  className="p-6 rounded-xl"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <h3
+                    className="text-lg font-semibold mb-3"
+                    style={{ color: "var(--secondary)" }}
+                  >
+                    What you&apos;ll learn:
+                  </h3>
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div className="flex items-start">
+                      <i
+                        className="fa-solid fa-check mr-3 mt-1"
+                        style={{ color: "var(--primary)" }}
+                      ></i>
+                      <span style={{ color: "var(--muted-foreground)" }}>
+                        Fundamentals of AI and machine learning
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <i
+                        className="fa-solid fa-check mr-3 mt-1"
+                        style={{ color: "var(--primary)" }}
+                      ></i>
+                      <span style={{ color: "var(--muted-foreground)" }}>
+                        Hands-on projects with real datasets
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <i
+                        className="fa-solid fa-check mr-3 mt-1"
+                        style={{ color: "var(--primary)" }}
+                      ></i>
+                      <span style={{ color: "var(--muted-foreground)" }}>
+                        Python programming for AI applications
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <i
+                        className="fa-solid fa-check mr-3 mt-1"
+                        style={{ color: "var(--primary)" }}
+                      ></i>
+                      <span style={{ color: "var(--muted-foreground)" }}>
+                        Popular AI frameworks and libraries
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <i
+                        className="fa-solid fa-check mr-3 mt-1"
+                        style={{ color: "var(--primary)" }}
+                      ></i>
+                      <span style={{ color: "var(--muted-foreground)" }}>
+                        Neural networks and deep learning
+                      </span>
+                    </div>
+                    <div className="flex items-start">
+                      <i
+                        className="fa-solid fa-check mr-3 mt-1"
+                        style={{ color: "var(--primary)" }}
+                      ></i>
+                      <span style={{ color: "var(--muted-foreground)" }}>
+                        Model deployment and optimization
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <p className="text-muted-foreground leading-relaxed">
-            {course.description}
-          </p>
-        </div>
-
-        {/* Success Message */}
-        {successMessage && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-            {successMessage}
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="ml-2 text-green-600 hover:text-green-800"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
-            {error}
-            <button
-              onClick={() => setError(null)}
-              className="ml-2 text-red-600 hover:text-red-800"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Course Content */}
-        <div className="space-y-8">
-          {/* Pre-Course Questionnaires */}
-          {preQuestionnaires.length > 0 && (
-            <div className="border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Pre-Course Assessment
-              </h2>
-              <div className="space-y-3">
-                {preQuestionnaires.map((q) => (
-                  <div key={q.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">
-                          {q.questionnaire?.title || "Questionnaire"}
-                        </h3>
-                        <p className=" text-muted-foreground">
-                          {q.questionnaire?.purpose} •{" "}
-                          {q.questionnaire?.questions?.length || 0} questions
-                        </p>
+            {/* Enrollment Sidebar */}
+            <div className="lg:col-span-1">
+              <div
+                style={{
+                  position: "sticky",
+                  top: "120px",
+                  height: "fit-content",
+                }}
+              >
+                <div
+                  className="rounded-2xl overflow-hidden"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    border: "1px solid var(--border)",
+                    boxShadow: "var(--shadow-lg)",
+                  }}
+                >
+                  <div className="relative">
+                    <div
+                      className="w-full object-cover flex items-center justify-center"
+                      style={{
+                        aspectRatio: "16/9",
+                        backgroundColor: "var(--muted)",
+                        backgroundImage: course.heroImageUrl
+                          ? `url(${course.heroImageUrl})`
+                          : undefined,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    >
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ backgroundColor: "rgba(0, 0, 0, 0.4)" }}
+                      >
+                        <button
+                          className="w-16 h-16 rounded-full flex items-center justify-center transition-colors"
+                          style={{ backgroundColor: "var(--primary)" }}
+                        >
+                          <i
+                            className="fa-solid fa-play text-xl ml-1"
+                            style={{ color: "var(--primary-foreground)" }}
+                          ></i>
+                        </button>
                       </div>
-                      <div className=" text-muted-foreground">
-                        Required before starting
+                      <div
+                        className="absolute top-4 right-4 px-3 py-1 rounded text-sm"
+                        style={{
+                          backgroundColor: "rgba(0, 0, 0, 0.7)",
+                          color: "white",
+                        }}
+                      >
+                        Preview Course
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Course Modules */}
-          <div className="border rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Course Modules</h2>
-            <div className="space-y-4">
-              {course.modules.map((module, index) => (
-                <div key={module.id} className="border rounded-lg p-4">
-                  <div className="flex items-start gap-4">
-                    <div className="shrink-0 w-8 h-8 bg-primary/10 text-primary rounded-full flex items-center justify-center  font-medium">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium mb-1">{module.title}</h3>
-                      <p className=" text-muted-foreground mb-2">
-                        {module.summary}
+                  <div className="p-6">
+                    <div className="mb-6">
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className="text-3xl font-bold"
+                          style={{ color: "var(--secondary)" }}
+                        >
+                          Free
+                        </span>
+                      </div>
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
+                        This course is available for free to all users
                       </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span className="capitalize">{module.contentType}</span>
-                        <span>⏱️ {module.estMinutes} min</span>
-                      </div>
                     </div>
-                    <div className=" text-muted-foreground">
-                      {isEnrolled ? "Available" : "Preview"}
+
+                    <div className="space-y-3 mb-6">
+                      <Link
+                        href="/login"
+                        className="w-full py-3 px-6 rounded-lg font-semibold text-lg text-center block transition-colors"
+                        style={{
+                          backgroundColor: "var(--primary)",
+                          color: "var(--primary-foreground)",
+                        }}
+                      >
+                        {course.enrollment?.status === "enrolled"
+                          ? "Continue Learning"
+                          : "Enroll Now"}
+                      </Link>
+                      <button
+                        className="w-full py-3 px-6 rounded-lg font-semibold text-center transition-colors"
+                        style={{
+                          border: "1px solid var(--border)",
+                          color: "var(--secondary)",
+                          backgroundColor: "var(--card)",
+                        }}
+                      >
+                        Add to Wishlist
+                      </button>
+                    </div>
+
+                    <div
+                      className="text-center text-sm mb-6"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Full lifetime access
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4
+                        className="font-semibold"
+                        style={{ color: "var(--secondary)" }}
+                      >
+                        This course includes:
+                      </h4>
+                      <div className="space-y-3 text-sm">
+                        <div className="flex items-center">
+                          <i
+                            className="fa-solid fa-video mr-3"
+                            style={{ color: "var(--primary)" }}
+                          ></i>
+                          <span>
+                            {formatDuration(course.durationMinutes)} on-demand
+                            content
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <i
+                            className="fa-solid fa-file-text mr-3"
+                            style={{ color: "var(--primary)" }}
+                          ></i>
+                          <span>{course.modules?.length || 0} lessons</span>
+                        </div>
+                        <div className="flex items-center">
+                          <i
+                            className="fa-solid fa-robot mr-3"
+                            style={{ color: "var(--primary)" }}
+                          ></i>
+                          <span>AI coding exercises</span>
+                        </div>
+                        <div className="flex items-center">
+                          <i
+                            className="fa-solid fa-infinity mr-3"
+                            style={{ color: "var(--primary)" }}
+                          ></i>
+                          <span>Full lifetime access</span>
+                        </div>
+                        <div className="flex items-center">
+                          <i
+                            className="fa-solid fa-mobile-alt mr-3"
+                            style={{ color: "var(--primary)" }}
+                          ></i>
+                          <span>Access on mobile and desktop</span>
+                        </div>
+                        <div className="flex items-center">
+                          <i
+                            className="fa-solid fa-certificate mr-3"
+                            style={{ color: "var(--primary)" }}
+                          ></i>
+                          <span>Certificate of completion</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Post-Course Questionnaires */}
-          {postQuestionnaires.length > 0 && (
-            <div className="border rounded-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">
-                Post-Course Assessment
-              </h2>
-              <div className="space-y-3">
-                {postQuestionnaires.map((q) => (
-                  <div key={q.id} className="border rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">
-                          {q.questionnaire?.title || "Questionnaire"}
-                        </h3>
-                        <p className=" text-muted-foreground">
-                          {q.questionnaire?.purpose} •{" "}
-                          {q.questionnaire?.questions?.length || 0} questions
-                        </p>
+                {/* Instructor Info */}
+                <div
+                  className="rounded-2xl p-6 mt-6"
+                  style={{
+                    backgroundColor: "var(--card)",
+                    border: "1px solid var(--border)",
+                    boxShadow: "var(--shadow-lg)",
+                  }}
+                >
+                  <h4
+                    className="font-semibold mb-4"
+                    style={{ color: "var(--secondary)" }}
+                  >
+                    Instructor
+                  </h4>
+                  <div className="flex items-start space-x-4">
+                    <div
+                      className="w-16 h-16 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: "var(--muted)" }}
+                    >
+                      <i
+                        className="fa-solid fa-user text-2xl"
+                        style={{ color: "var(--muted-foreground)" }}
+                      ></i>
+                    </div>
+                    <div>
+                      <h5
+                        className="font-semibold mb-1"
+                        style={{ color: "var(--secondary)" }}
+                      >
+                        {course.instructor?.name || "AI Expert"}
+                      </h5>
+                      <p
+                        className="text-sm mb-2"
+                        style={{ color: "var(--primary)" }}
+                      >
+                        {course.instructor?.title || "Senior AI Developer"}
+                      </p>
+                      <div
+                        className="flex items-center text-sm mb-2"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
+                        <i
+                          className="fa-solid fa-star mr-1"
+                          style={{ color: "var(--accent)" }}
+                        ></i>
+                        <span>
+                          {course.instructor?.rating || 4.9} instructor rating
+                        </span>
                       </div>
-                      <div className=" text-muted-foreground">
-                        Available after completion
+                      <div
+                        className="text-sm"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
+                        <div>
+                          {course.instructor?.studentCount || 1000}+ students
+                        </div>
+                        <div>{course.instructor?.courseCount || 3} courses</div>
                       </div>
                     </div>
                   </div>
-                ))}
+                  <p
+                    className="text-sm mt-4"
+                    style={{ color: "var(--muted-foreground)" }}
+                  >
+                    {course.instructor?.bio ||
+                      "Experienced AI developer with expertise in machine learning and neural networks."}
+                  </p>
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
+      </section>
 
-        {/* Bottom CTA */}
-        {!isEnrolled && (
-          <div className="mt-8 text-center border-t pt-8">
-            <h3 className="text-lg font-semibold mb-2">
-              Ready to start learning?
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Join thousands of learners mastering AI skills
-            </p>
-            <button
-              onClick={handleEnroll}
-              disabled={enrollApi.loading}
-              className="px-8 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      {/* Course Content/Curriculum */}
+      {sections.length > 0 && (
+        <section
+          className="py-16"
+          style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
+        >
+          <div className="container mx-auto px-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2
+                  className="text-3xl font-bold mb-4"
+                  style={{ color: "var(--secondary)" }}
+                >
+                  Course Content
+                </h2>
+                <p
+                  className="text-xl"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  {course.modules?.length || 0} lessons •{" "}
+                  {formatDuration(course.durationMinutes)} total length
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {sections.map((section) => (
+                  <div
+                    key={section.id}
+                    className="rounded-xl overflow-hidden"
+                    style={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div
+                      className="p-6 border-b"
+                      style={{ borderColor: "var(--border)" }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <button
+                            onClick={() => toggleSection(section.id)}
+                            className="transition-colors"
+                            style={{ color: "var(--primary)" }}
+                          >
+                            <i
+                              className={`fa-solid ${
+                                expandedSections.includes(section.id)
+                                  ? "fa-chevron-down"
+                                  : "fa-chevron-right"
+                              }`}
+                            ></i>
+                          </button>
+                          <h3
+                            className="text-lg font-semibold"
+                            style={{ color: "var(--secondary)" }}
+                          >
+                            {section.title}
+                          </h3>
+                        </div>
+                        <div
+                          className="text-sm"
+                          style={{ color: "var(--muted-foreground)" }}
+                        >
+                          {section.modules.length} lessons •{" "}
+                          {formatDuration(section.totalDuration)}
+                        </div>
+                      </div>
+                    </div>
+                    {expandedSections.includes(section.id) && (
+                      <div
+                        className="divide-y"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        {section.modules.map((module, index) => (
+                          <div
+                            key={module.id}
+                            className="p-4 transition-colors cursor-pointer hover:opacity-80"
+                            style={{ backgroundColor: "var(--card)" }}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <i
+                                  className={`fa-solid ${
+                                    index === 0 ? "fa-play-circle" : "fa-lock"
+                                  }`}
+                                  style={{
+                                    color:
+                                      index === 0
+                                        ? "var(--primary)"
+                                        : "var(--muted-foreground)",
+                                  }}
+                                ></i>
+                                <div>
+                                  <h4
+                                    className="font-medium"
+                                    style={{ color: "var(--secondary)" }}
+                                  >
+                                    {index + 1}. {module.title}
+                                  </h4>
+                                  {module.summary && (
+                                    <p
+                                      className="text-sm"
+                                      style={{
+                                        color: "var(--muted-foreground)",
+                                      }}
+                                    >
+                                      {module.summary}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <span
+                                  className="text-sm"
+                                  style={{ color: "var(--muted-foreground)" }}
+                                >
+                                  {formatDuration(module.estMinutes)}
+                                </span>
+                                {index === 0 && (
+                                  <span
+                                    className="px-2 py-1 rounded text-xs"
+                                    style={{
+                                      backgroundColor: "var(--primary)",
+                                      color: "var(--primary-foreground)",
+                                      opacity: 0.1,
+                                    }}
+                                  >
+                                    Preview
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="text-center mt-8">
+                <button
+                  className="font-semibold"
+                  style={{ color: "var(--primary)" }}
+                  onClick={() => {
+                    const allSectionIds = sections.map((s) => s.id);
+                    setExpandedSections((prev) =>
+                      prev.length === allSectionIds.length ? [] : allSectionIds
+                    );
+                  }}
+                >
+                  {expandedSections.length === sections.length
+                    ? "Collapse all sections"
+                    : "Expand all sections"}
+                  <i className="fa-solid fa-chevron-down ml-2"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Requirements & Who This Course Is For */}
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid md:grid-cols-2 gap-8">
+              <div
+                className="p-8 rounded-2xl"
+                style={{
+                  backgroundColor: "var(--card)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-lg)",
+                }}
+              >
+                <h3 className="text-xl font-semibold mb-6 flex items-center">
+                  <i
+                    className="fa-solid fa-list-check mr-3"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
+                  Requirements
+                </h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-check mr-3 mt-1"
+                      style={{ color: "var(--primary)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      A computer with internet connection
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-check mr-3 mt-1"
+                      style={{ color: "var(--primary)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      No prior AI experience required
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-check mr-3 mt-1"
+                      style={{ color: "var(--primary)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      Basic understanding of programming (helpful but not
+                      required)
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-check mr-3 mt-1"
+                      style={{ color: "var(--primary)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      Willingness to learn and practice
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div
+                className="p-8 rounded-2xl"
+                style={{
+                  backgroundColor: "var(--card)",
+                  border: "1px solid var(--border)",
+                  boxShadow: "var(--shadow-lg)",
+                }}
+              >
+                <h3 className="text-xl font-semibold mb-6 flex items-center">
+                  <i
+                    className="fa-solid fa-target mr-3"
+                    style={{ color: "var(--accent)" }}
+                  ></i>
+                  Who this course is for
+                </h3>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-user mr-3 mt-1"
+                      style={{ color: "var(--accent)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      Complete beginners to artificial intelligence
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-user mr-3 mt-1"
+                      style={{ color: "var(--accent)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      Students seeking to understand AI fundamentals
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-user mr-3 mt-1"
+                      style={{ color: "var(--accent)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      Professionals looking to upskill in AI
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <i
+                      className="fa-solid fa-user mr-3 mt-1"
+                      style={{ color: "var(--accent)" }}
+                    ></i>
+                    <span style={{ color: "var(--muted-foreground)" }}>
+                      Anyone curious about machine learning and AI
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section
+        className="py-20"
+        style={{
+          background:
+            "linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%)",
+        }}
+      >
+        <div className="container mx-auto px-4 text-center">
+          <h2
+            className="text-4xl lg:text-5xl font-bold mb-6"
+            style={{ color: "var(--primary-foreground)" }}
+          >
+            Ready to start your AI learning journey?
+          </h2>
+          <p
+            className="text-xl mb-8 max-w-2xl mx-auto"
+            style={{ color: "var(--primary-foreground)", opacity: 0.8 }}
+          >
+            Join thousands of students who are already mastering AI. Enroll now
+            and start learning today!
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/login"
+              className="px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
+              style={{
+                backgroundColor: "var(--card)",
+                color: "var(--secondary)",
+              }}
             >
-              {enrollApi.loading ? "Enrolling..." : "Enroll Now"}
+              Enroll Now - Free
+            </Link>
+            <button
+              className="px-8 py-4 rounded-lg font-semibold text-lg border-2 transition-colors"
+              style={{
+                borderColor: "var(--primary-foreground)",
+                color: "var(--primary-foreground)",
+              }}
+            >
+              Try Free Preview
             </button>
           </div>
-        )}
-      </main>
-    </div>
+          <div
+            className="mt-8"
+            style={{ color: "var(--primary-foreground)", opacity: 0.6 }}
+          >
+            <p>
+              ✓ Full lifetime access ✓ Certificate included ✓ Mobile and desktop
+              access
+            </p>
+          </div>
+        </div>
+      </section>
+    </PublicLayout>
   );
 }
