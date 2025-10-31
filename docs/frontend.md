@@ -4,7 +4,7 @@ Learn.ai 4all frontend is a comprehensive **Next.js 16** and **React 19** learni
 
 ## Tech Stack
 
-- **Framework**: Next.js 16.0.0 with App Router
+- **Framework**: Next.js 16.0.0 (Turbopack) with App Router
 - **React**: 19.2.0 with Concurrent Features and RSC
 - **TypeScript**: 5.x with strict type checking
 - **Styling**: TailwindCSS v4.1.16 + CSS Custom Properties
@@ -14,7 +14,7 @@ Learn.ai 4all frontend is a comprehensive **Next.js 16** and **React 19** learni
 - **Form Handling**: React Hook Form v7.65.0 + Zod validation
 - **File Uploads**: React Dropzone v14.3.8 with drag-and-drop
 - **Drag & Drop**: @dnd-kit v6.3.1 for module/asset reordering
-- **Icons**: Heroicons v2.2.0 + FontAwesome v7.1.0
+- **Icons**: Heroicons v2.2.0 + FontAwesome Free v6.6.0 (CSS import)
 - **Markdown**: @uiw/react-md-editor v4.0.8
 
 ## App Router Structure
@@ -183,7 +183,9 @@ app/admin/
 
 ### CSS Architecture
 
-**Base**: TailwindCSS v4.1.16 with CSS Custom Properties
+**Base**: TailwindCSS v4.1.16 with CSS Custom Properties + FontAwesome CSS
+**FontAwesome Integration**: Global CSS import via `@import "@fortawesome/fontawesome-free/css/all.css"`
+
 **CSS Variables**:
 
 ```css
@@ -195,7 +197,7 @@ app/admin/
   --card: #ffffff; /* Card backgrounds */
   --background: #f8fafc; /* Page backgrounds */
   --primary-10: rgba(42, 157, 143, 0.1); /* Alpha variants */
-  /* ... additional variants */
+  /* ... extensive color and shadow variants */
 }
 ```
 
@@ -309,7 +311,7 @@ npm run indexes         # Create Firestore indexes
 
 ### API Communication
 
-- **REST Endpoints**: 55+ endpoints with consistent error handling
+- **REST Endpoints**: 65+ endpoints with consistent error handling
 - **Request/Response**: Zod schema validation throughout
 - **Error Handling**: Structured error responses with user feedback
 - **Loading States**: Unified loading indication across components

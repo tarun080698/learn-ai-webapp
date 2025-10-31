@@ -4,19 +4,20 @@ Learn.ai 4all backend is a **production-ready Next.js 16 App Router** API implem
 
 ## Tech Stack & Architecture
 
-- **Runtime**: Next.js 16.0.0 App Router with serverless API routes
+- **Runtime**: Next.js 16.0.0 (Turbopack) App Router with serverless API routes
 - **Database**: Firebase Firestore NoSQL with ownership model and soft delete
-- **Authentication**: Firebase Auth with dual provider support (Google OAuth + Email/Password)
+- **Authentication**: Firebase Auth with Google OAuth + Email/Password
 - **Authorization**: Multi-tier role-based access control with resource ownership
-- **Admin SDK**: Firebase Admin SDK v13.5.0 with custom initialization
-- **Validation**: Comprehensive Zod v4.1.12 schema validation
-- **Security**: Bearer token authentication with CORS and input sanitization
+- **Admin SDK**: Firebase Admin SDK with custom initialization
+- **Validation**: Comprehensive input validation and sanitization
+- **Security**: Bearer token authentication with CORS and request validation
 - **File Storage**: Firebase Storage with organized paths and access controls
 - **Performance**: Composite indexes, denormalized counters, optimized queries
 - **Data Integrity**: Idempotency system, transactional updates, audit trails
 - **Error Handling**: Structured responses with detailed logging
+- **AI Integration**: Support for AI-powered course content and assessments
 
-## API Endpoints Overview (55+ endpoints)
+## API Endpoints Overview (65+ endpoints)
 
 ### Authentication & User Management
 
@@ -48,17 +49,18 @@ GET  /api/modules/access           # Access module content with gating
 ```
 GET  /api/questionnaires           # Available questionnaires for user
 POST /api/questionnaires/assign   # Assign questionnaire to user
-POST /api/questionnaires/start    # Begin questionnaire session
+POST /api/questionnaires/start    # Start a questionnaire session
 POST /api/questionnaires/submit   # Submit questionnaire responses
 GET  /api/questionnaires/progress # Get questionnaire completion status
-POST /api/questionnaires/gate     # Check gating requirements
+POST /api/questionnaires/gate     # Check prerequisite gating
+GET  /api/questionnaires/context  # Retrieve questionnaire context
 POST /api/questionnaires/remove   # Remove questionnaire assignment
 ```
 
 ### Admin Course Management
 
 ```
-GET  /api/admin/courses.mine       # Admin's owned courses
+GET  /api/admin/courses.mine       # Admin's owned courses (supports ?all=true for all courses)
 POST /api/admin/course.upsert      # Create or update course
 POST /api/admin/course.publish     # Publish/unpublish course
 POST /api/admin/course.archive     # Archive/unarchive course
@@ -83,13 +85,38 @@ POST /api/admin/asset.reorder      # Reorder assets within module
 POST /api/admin/upload             # Upload files to Firebase Storage
 ```
 
-### Admin Questionnaire Management
+### Admin Questionnaire & Assignment Management
 
 ```
 GET  /api/admin/questionnaires     # All questionnaire templates
 GET  /api/admin/questionnaires.mine # Admin's owned questionnaires
 POST /api/admin/questionnaire.upsert # Create or update questionnaire
 POST /api/admin/questionnaire.create-and-assign # Create questionnaire and assign
+GET  /api/admin/assignments        # All assignments in system
+GET  /api/admin/assignments.mine   # Admin's owned assignments
+POST /api/admin/assignment.upsert  # Create or update assignment
+POST /api/admin/assignment.update  # Update assignment details
+POST /api/admin/assignment.delete  # Delete assignment
+POST /api/admin/assignment.archive # Archive/unarchive assignment
+```
+
+### Admin User & Role Management
+
+```
+POST /api/admin/admins.create      # Create new admin user
+GET  /api/admin/users/roles        # List users with role information
+POST /api/admin/users/roles        # Update user roles
+GET  /api/admin/audit.mine         # Admin audit trail
+```
+
+### Development & Debug Endpoints
+
+```
+POST /api/admin/seed.dev           # Seed development data
+GET  /api/debug/courses            # Debug course information
+POST /api/dev/migrate              # Run database migrations
+GET  /api/health                   # System health check
+GET  /api/catalog-temp             # Temporary catalog endpoint
 ```
 
 ### Admin Assignment Management
