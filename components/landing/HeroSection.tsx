@@ -63,10 +63,10 @@ export function HeroSection() {
                 href="/login"
                 className="px-8 py-4 rounded-lg transition-all duration-200 font-semibold text-center"
                 style={{
-                  border: "1px solid var(--border)",
+                  boxShadow:
+                    "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                   backgroundColor: "var(--card)",
                   color: "var(--secondary)",
-                  boxShadow: "var(--shadow-sm)",
                 }}
               >
                 <i className="fa-solid fa-user mr-2"></i>
@@ -124,8 +124,8 @@ export function HeroSection() {
                     className="p-6 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
                     style={{
                       backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "var(--shadow-lg)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                     }}
                   >
                     <div
@@ -166,8 +166,9 @@ export function HeroSection() {
                     className="p-5 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
                     style={{
                       backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "var(--shadow-sm)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+
                       animationDelay: "1s",
                     }}
                   >
@@ -211,8 +212,9 @@ export function HeroSection() {
                     className="p-5 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
                     style={{
                       backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
-                      boxShadow: "var(--shadow-sm)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+
                       animationDelay: "0.5s",
                     }}
                   >
@@ -254,7 +256,8 @@ export function HeroSection() {
                     className="p-6 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
                     style={{
                       backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                       boxShadow: "var(--shadow-lg)",
                       animationDelay: "1.5s",
                     }}

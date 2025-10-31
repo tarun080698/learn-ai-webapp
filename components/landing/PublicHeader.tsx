@@ -19,7 +19,6 @@ export function PublicHeader() {
       style={{
         borderBottom: "1px solid var(--border)",
         backgroundColor: "var(--card)",
-        boxShadow: "var(--shadow-sm)",
       }}
     >
       <nav className="container mx-auto px-4 py-4">

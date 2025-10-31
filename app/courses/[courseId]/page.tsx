@@ -317,7 +317,8 @@ export default function CourseDetailsPage() {
                   className="p-6 rounded-xl"
                   style={{
                     backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
+                    boxShadow:
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                   }}
                 >
                   <h3
@@ -399,7 +400,8 @@ export default function CourseDetailsPage() {
                   className="rounded-2xl overflow-hidden"
                   style={{
                     backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
+                    boxShadow:
+                      "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                     boxShadow: "var(--shadow-lg)",
                   }}
                 >
@@ -517,7 +519,8 @@ export default function CourseDetailsPage() {
                       <button
                         className="w-full py-3 px-6 rounded-lg font-semibold text-center transition-colors"
                         style={{
-                          border: "1px solid var(--border)",
+                          boxShadow:
+                            "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                           color: "var(--secondary)",
                           backgroundColor: "var(--card)",
                         }}
@@ -571,7 +574,8 @@ export default function CourseDetailsPage() {
                     className="rounded-xl overflow-hidden"
                     style={{
                       backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                     }}
                   >
                     <div
@@ -712,7 +716,8 @@ export default function CourseDetailsPage() {
                 className="p-8 rounded-2xl"
                 style={{
                   backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
+                  boxShadow:
+                    "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                   boxShadow: "var(--shadow-lg)",
                 }}
               >
@@ -768,7 +773,8 @@ export default function CourseDetailsPage() {
                 className="p-8 rounded-2xl"
                 style={{
                   backgroundColor: "var(--card)",
-                  border: "1px solid var(--border)",
+                  boxShadow:
+                    "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                   boxShadow: "var(--shadow-lg)",
                 }}
               >

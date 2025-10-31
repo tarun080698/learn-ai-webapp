@@ -162,7 +162,8 @@ function LoginContent() {
                     style={{
                       backgroundColor: "var(--card)",
                       opacity: 0.5,
-                      border: "1px solid var(--border)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                     }}
                   >
                     <h3
@@ -236,7 +237,8 @@ function LoginContent() {
                     className="p-8 lg:p-12 rounded-3xl relative z-10 backdrop-blur-md"
                     style={{
                       backgroundColor: "var(--card)",
-                      border: "1px solid var(--border)",
+                      boxShadow:
+                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
                       boxShadow: "var(--shadow-lg)",
                     }}
                   >

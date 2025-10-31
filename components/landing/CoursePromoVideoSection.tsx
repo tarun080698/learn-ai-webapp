@@ -265,7 +265,6 @@ export default function CoursePromoVideoSection({
                 style={{
                   backgroundColor: "var(--primary)",
                   color: "var(--primary-foreground)",
-                  boxShadow: "var(--shadow-sm)",
                 }}
               >
                 <svg
