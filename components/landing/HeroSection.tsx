@@ -127,43 +127,174 @@ export function HeroSection() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-4">
                   <div
-                    className="p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 animate-float"
+                    className="p-6 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
                     style={{
                       backgroundColor: "var(--card)",
                       border: "1px solid var(--border)",
+                      boxShadow: "var(--shadow-lg)",
                     }}
                   >
                     <div
                       className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
                       style={{
-                        backgroundColor: "var(--primary)",
-                        opacity: 0.1,
+                        backgroundColor: "var(--primary-10)",
                       }}
                     >
                       <i
-                        className="fa-solid fa-code text-xl"
-                        style={{ color: "var(--primary-foreground)" }}
+                        className="fa-solid fa-robot text-xl"
+                        style={{ color: "var(--primary)" }}
                       ></i>
                     </div>
                     <h3
                       className="font-semibold mb-2"
                       style={{ color: "var(--secondary)" }}
                     >
-                      AI Development
+                      Machine Learning
                     </h3>
                     <p
                       className="text-sm"
                       style={{ color: "var(--muted-foreground)" }}
                     >
-                      Build intelligent systems
+                      Build predictive models
                     </p>
                     <div
                       className="mt-4 rounded-full h-2"
                       style={{ backgroundColor: "var(--muted)" }}
                     >
                       <div
-                        className="h-2 rounded-full w-3/4"
+                        className="h-2 rounded-full w-4/5"
                         style={{ backgroundColor: "var(--primary)" }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="p-5 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
+                    style={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      boxShadow: "var(--shadow-sm)",
+                      animationDelay: "1s",
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
+                      style={{
+                        backgroundColor: "var(--accent-10)",
+                      }}
+                    >
+                      <i
+                        className="fa-solid fa-brain text-lg"
+                        style={{ color: "var(--accent)" }}
+                      ></i>
+                    </div>
+                    <h3
+                      className="font-semibold mb-1 text-sm"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      Neural Networks
+                    </h3>
+                    <p
+                      className="text-xs"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Deep learning fundamentals
+                    </p>
+                    <div
+                      className="mt-3 rounded-full h-1.5"
+                      style={{ backgroundColor: "var(--muted)" }}
+                    >
+                      <div
+                        className="h-1.5 rounded-full w-3/5"
+                        style={{ backgroundColor: "var(--accent)" }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 mt-8">
+                  <div
+                    className="p-5 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
+                    style={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      boxShadow: "var(--shadow-sm)",
+                      animationDelay: "0.5s",
+                    }}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center mb-3"
+                      style={{
+                        backgroundColor: "var(--secondary-10)",
+                      }}
+                    >
+                      <i
+                        className="fa-solid fa-chart-line text-lg"
+                        style={{ color: "var(--secondary)" }}
+                      ></i>
+                    </div>
+                    <h3
+                      className="font-semibold mb-1 text-sm"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      Data Science
+                    </h3>
+                    <p
+                      className="text-xs"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Analytics & insights
+                    </p>
+                    <div
+                      className="mt-3 rounded-full h-1.5"
+                      style={{ backgroundColor: "var(--muted)" }}
+                    >
+                      <div
+                        className="h-1.5 rounded-full w-2/3"
+                        style={{ backgroundColor: "var(--secondary)" }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="p-6 rounded-2xl hover:shadow-xl transition-all duration-300 animate-float"
+                    style={{
+                      backgroundColor: "var(--card)",
+                      border: "1px solid var(--border)",
+                      boxShadow: "var(--shadow-lg)",
+                      animationDelay: "1.5s",
+                    }}
+                  >
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                      style={{
+                        backgroundColor: "var(--destructive-10)",
+                      }}
+                    >
+                      <i
+                        className="fa-solid fa-eye text-xl"
+                        style={{ color: "var(--destructive)" }}
+                      ></i>
+                    </div>
+                    <h3
+                      className="font-semibold mb-2"
+                      style={{ color: "var(--secondary)" }}
+                    >
+                      Computer Vision
+                    </h3>
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Image recognition & analysis
+                    </p>
+                    <div
+                      className="mt-4 rounded-full h-2"
+                      style={{ backgroundColor: "var(--muted)" }}
+                    >
+                      <div
+                        className="h-2 rounded-full w-1/2"
+                        style={{ backgroundColor: "var(--destructive)" }}
                       ></div>
                     </div>
                   </div>
@@ -173,15 +304,13 @@ export function HeroSection() {
             <div
               className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl"
               style={{
-                backgroundColor: "var(--primary)",
-                opacity: 0.1,
+                backgroundColor: "var(--primary-10)",
               }}
             ></div>
             <div
               className="absolute -bottom-10 -left-10 w-32 h-32 rounded-full blur-2xl"
               style={{
-                backgroundColor: "var(--accent)",
-                opacity: 0.1,
+                backgroundColor: "var(--accent-10)",
               }}
             ></div>
           </div>

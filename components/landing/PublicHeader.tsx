@@ -26,11 +26,15 @@ export function PublicHeader() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="max-w-12 bg-primary rounded-2xl flex items-center justify-center">
+              <div
+                className="max-w-12 rounded-2xl flex items-center justify-center"
+                style={{ backgroundColor: "var(--primary)" }}
+              >
                 <Image
                   src={Logo}
                   alt="Logo"
-                  className="p-1 bg-primary-foreground text-xl w-auto aspect-square"
+                  className="p-1 text-xl w-auto aspect-square"
+                  style={{ backgroundColor: "var(--primary-foreground)" }}
                 />
               </div>
               <span

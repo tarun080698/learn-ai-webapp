@@ -54,29 +54,47 @@ export default async function CatalogPage() {
 
   return (
     <PublicLayout showPromoBanner={false}>
-      <div className="bg-background">
+      <div style={{ backgroundColor: "var(--background)" }}>
         {/* Hero Section */}
-        <section className="py-16 bg-muted/30">
+        <section className="py-16" style={{ backgroundColor: "var(--muted)" }}>
           <div className="container mx-auto px-4">
             <div className="text-center max-w-3xl mx-auto">
-              <h1 className="text-4xl lg:text-5xl font-bold text-secondary mb-6">
+              <h1
+                className="text-4xl lg:text-5xl font-bold mb-6"
+                style={{ color: "var(--secondary)" }}
+              >
                 Course Catalog
               </h1>
-              <p className="text-xl text-muted-foreground mb-8">
+              <p
+                className="text-xl mb-8"
+                style={{ color: "var(--muted-foreground)" }}
+              >
                 Explore our comprehensive collection of AI and machine learning
                 courses designed to advance your skills.
               </p>
-              <div className="flex items-center justify-center space-x-8 text-sm text-muted-foreground">
+              <div
+                className="flex items-center justify-center space-x-8 text-sm"
+                style={{ color: "var(--muted-foreground)" }}
+              >
                 <div className="flex items-center">
-                  <i className="fa-solid fa-graduation-cap text-primary mr-2"></i>
+                  <i
+                    className="fa-solid fa-graduation-cap mr-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   <span>{courses.length} Courses</span>
                 </div>
                 <div className="flex items-center">
-                  <i className="fa-solid fa-users text-primary mr-2"></i>
+                  <i
+                    className="fa-solid fa-users mr-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   <span>Expert Instructors</span>
                 </div>
                 <div className="flex items-center">
-                  <i className="fa-solid fa-certificate text-primary mr-2"></i>
+                  <i
+                    className="fa-solid fa-certificate mr-2"
+                    style={{ color: "var(--primary)" }}
+                  ></i>
                   <span>Certificates Included</span>
                 </div>
               </div>
@@ -95,16 +113,26 @@ export default async function CatalogPage() {
                 >
                   <span className="text-4xl">📚</span>
                 </div>
-                <h3 className="text-2xl font-semibold mb-4 text-secondary">
+                <h3
+                  className="text-2xl font-semibold mb-4"
+                  style={{ color: "var(--secondary)" }}
+                >
                   No Courses Available Yet
                 </h3>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                <p
+                  className="mb-8 max-w-md mx-auto"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
                   Our team is working hard to bring you amazing courses. Check
                   back soon for exciting new content!
                 </p>
                 <Link
                   href="/admin/login"
-                  className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                  className="inline-flex items-center px-6 py-3 rounded-lg hover:opacity-90 transition-all font-medium"
+                  style={{
+                    backgroundColor: "var(--primary)",
+                    color: "var(--primary-foreground)",
+                  }}
                 >
                   <i className="fa-solid fa-lock mr-2"></i>
                   Admin Login
@@ -113,10 +141,13 @@ export default async function CatalogPage() {
             ) : (
               <div>
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-2xl font-semibold text-secondary">
+                  <h2
+                    className="text-2xl font-semibold"
+                    style={{ color: "var(--secondary)" }}
+                  >
                     Available Courses
                   </h2>
-                  <span className="text-muted-foreground">
+                  <span style={{ color: "var(--muted-foreground)" }}>
                     {courses.length} course{courses.length !== 1 ? "s" : ""}{" "}
                     available
                   </span>

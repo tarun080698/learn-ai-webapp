@@ -8,11 +8,13 @@ import {
   HowItWorks,
   Statistics,
 } from "@/components/landing";
+import CoursePromoVideoSection from "@/components/landing/CoursePromoVideoSection";
 
 export default function Home() {
   return (
     <PublicLayout>
       <HeroSection />
+      <CoursePromoVideoSection />
       <ValuePropositions />
       <FeaturedCourses />
       <HowItWorks />

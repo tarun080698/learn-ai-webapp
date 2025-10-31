@@ -5,7 +5,7 @@ export function ValuePropositions() {
     <section
       id="value-props"
       className="py-20"
-      style={{ backgroundColor: "var(--muted)", opacity: 0.3 }}
+      style={{ backgroundColor: "var(--muted)" }}
     >
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
@@ -35,12 +35,12 @@ export function ValuePropositions() {
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform"
               style={{
-                backgroundColor: "var(--primary)",
+                backgroundColor: "var(--primary-10)",
               }}
             >
               <i
                 className="fa-solid fa-graduation-cap text-2xl"
-                style={{ color: "var(--primary-foreground)" }}
+                style={{ color: "var(--primary)" }}
               ></i>
             </div>
             <h3
@@ -69,12 +69,12 @@ export function ValuePropositions() {
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform"
               style={{
-                backgroundColor: "var(--accent)",
+                backgroundColor: "var(--accent-10)",
               }}
             >
               <i
                 className="fa-solid fa-project-diagram text-2xl"
-                style={{ color: "var(--accent-foreground)" }}
+                style={{ color: "var(--accent)" }}
               ></i>
             </div>
             <h3
@@ -103,12 +103,12 @@ export function ValuePropositions() {
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform"
               style={{
-                backgroundColor: "var(--secondary)",
+                backgroundColor: "var(--secondary-10)",
               }}
             >
               <i
                 className="fa-solid fa-chart-line text-2xl"
-                style={{ color: "var(--secondary-foreground)" }}
+                style={{ color: "var(--secondary)" }}
               ></i>
             </div>
             <h3
@@ -137,12 +137,12 @@ export function ValuePropositions() {
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform"
               style={{
-                backgroundColor: "var(--destructive)",
+                backgroundColor: "var(--destructive-10)",
               }}
             >
               <i
                 className="fa-solid fa-certificate text-2xl"
-                style={{ color: "var(--destructive-foreground)" }}
+                style={{ color: "var(--destructive)" }}
               ></i>
             </div>
             <h3

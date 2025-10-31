@@ -83,8 +83,7 @@ function LoginContent() {
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
                         style={{
-                          backgroundColor: "var(--primary)",
-                          opacity: 0.1,
+                          backgroundColor: "var(--primary-10)",
                         }}
                       >
                         <i
@@ -109,8 +108,7 @@ function LoginContent() {
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
                         style={{
-                          backgroundColor: "var(--accent)",
-                          opacity: 0.1,
+                          backgroundColor: "var(--accent-10)",
                         }}
                       >
                         <i
@@ -135,8 +133,7 @@ function LoginContent() {
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2"
                         style={{
-                          backgroundColor: "var(--secondary)",
-                          opacity: 0.1,
+                          backgroundColor: "var(--secondary-10)",
                         }}
                       >
                         <i
@@ -179,8 +176,7 @@ function LoginContent() {
                         <div
                           className="w-10 h-10 rounded-lg flex items-center justify-center"
                           style={{
-                            backgroundColor: "var(--primary)",
-                            opacity: 0.1,
+                            backgroundColor: "var(--primary-10)",
                           }}
                         >
                           <i
@@ -207,8 +203,7 @@ function LoginContent() {
                         <div
                           className="w-10 h-10 rounded-lg flex items-center justify-center"
                           style={{
-                            backgroundColor: "var(--accent)",
-                            opacity: 0.1,
+                            backgroundColor: "var(--accent-10)",
                           }}
                         >
                           <i
@@ -291,13 +286,12 @@ function LoginContent() {
                   {/* Floating Elements */}
                   <div
                     className="absolute -top-6 -right-6 w-24 h-24 rounded-full blur-2xl animate-pulse"
-                    style={{ backgroundColor: "var(--primary)", opacity: 0.1 }}
+                    style={{ backgroundColor: "var(--primary-10)" }}
                   ></div>
                   <div
                     className="absolute -bottom-6 -left-6 w-32 h-32 rounded-full blur-2xl animate-pulse"
                     style={{
-                      backgroundColor: "var(--accent)",
-                      opacity: 0.1,
+                      backgroundColor: "var(--accent-10)",
                       animationDelay: "1s",
                     }}
                   ></div>

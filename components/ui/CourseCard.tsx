@@ -60,24 +60,33 @@ const formatDuration = (minutes: number): string => {
 const getLevelColor = (level: string) => {
   switch (level) {
     case "beginner":
-      return "bg-green-100 text-green-800";
+      return { backgroundColor: "var(--primary-10)", color: "var(--primary)" };
     case "intermediate":
-      return "bg-yellow-100 text-yellow-800";
+      return { backgroundColor: "var(--accent-10)", color: "var(--accent)" };
     case "advanced":
-      return "bg-red-100 text-red-800";
+      return {
+        backgroundColor: "var(--destructive-10)",
+        color: "var(--destructive)",
+      };
     default:
-      return "bg-blue-100 text-blue-800";
+      return {
+        backgroundColor: "var(--secondary-10)",
+        color: "var(--secondary)",
+      };
   }
 };
 
 const getStatusColor = (course: CourseCardData) => {
   if (course.archived) {
-    return "bg-gray-100 text-gray-800";
+    return {
+      backgroundColor: "var(--muted)",
+      color: "var(--muted-foreground)",
+    };
   }
   if (course.published) {
-    return "bg-green-100 text-green-800";
+    return { backgroundColor: "var(--primary-10)", color: "var(--primary)" };
   }
-  return "bg-yellow-100 text-yellow-800";
+  return { backgroundColor: "var(--accent-10)", color: "var(--accent)" };
 };
 
 const getStatusText = (course: CourseCardData) => {
@@ -243,9 +252,8 @@ export function CourseCard({
             {/* Overlays */}
             <div className="absolute top-3 left-3">
               <span
-                className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${getLevelColor(
-                  course.level
-                )}`}
+                className="px-2 py-1 rounded-full text-xs font-medium capitalize"
+                style={getLevelColor(course.level)}
               >
                 {course.level}
               </span>
@@ -254,9 +262,8 @@ export function CourseCard({
             {showStatus && (
               <div className="absolute top-3 right-3">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    course
-                  )}`}
+                  className="px-2 py-1 rounded-full text-xs font-medium"
+                  style={getStatusColor(course)}
                 >
                   {getStatusText(course)}
                 </span>
@@ -401,9 +408,8 @@ export function CourseCard({
           {/* Level overlay */}
           <div className="absolute top-4 right-4">
             <span
-              className={`px-3 py-1 rounded-full text-sm font-medium capitalize ${getLevelColor(
-                course.level
-              )}`}
+              className="px-3 py-1 rounded-full text-sm font-medium capitalize"
+              style={getLevelColor(course.level)}
             >
               {course.level}
             </span>
@@ -413,9 +419,8 @@ export function CourseCard({
           {showStatus && (
             <div className="absolute bottom-4 right-4">
               <span
-                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                  course
-                )}`}
+                className="px-2 py-1 rounded-full text-xs font-medium"
+                style={getStatusColor(course)}
               >
                 {getStatusText(course)}
               </span>

@@ -187,24 +187,34 @@ export default function CourseDetailsPage() {
   return (
     <PublicLayout showPromoBanner={false}>
       {/* Breadcrumb Navigation */}
-      <section className="bg-muted/30 py-4">
+      <section className="py-4" style={{ backgroundColor: "var(--muted)" }}>
         <div className="container mx-auto px-4">
           <nav className="flex items-center space-x-2 text-sm">
             <Link
               href="/"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="transition-colors hover:opacity-80"
+              style={{ color: "var(--muted-foreground)" }}
             >
               Home
             </Link>
-            <i className="fa-solid fa-chevron-right text-muted-foreground text-xs"></i>
+            <i
+              className="fa-solid fa-chevron-right text-xs"
+              style={{ color: "var(--muted-foreground)" }}
+            ></i>
             <Link
               href="/catalog"
-              className="text-muted-foreground hover:text-primary transition-colors"
+              className="transition-colors hover:opacity-80"
+              style={{ color: "var(--muted-foreground)" }}
             >
               Courses
             </Link>
-            <i className="fa-solid fa-chevron-right text-muted-foreground text-xs"></i>
-            <span className="text-secondary font-medium">{course.title}</span>
+            <i
+              className="fa-solid fa-chevron-right text-xs"
+              style={{ color: "var(--muted-foreground)" }}
+            ></i>
+            <span className="font-medium" style={{ color: "var(--secondary)" }}>
+              {course.title}
+            </span>
           </nav>
         </div>
       </section>
@@ -234,16 +244,6 @@ export default function CourseDetailsPage() {
                     }}
                   >
                     {course.level} Friendly
-                  </span>
-                  <span
-                    className="px-3 py-1 rounded-full text-sm font-medium"
-                    style={{
-                      backgroundColor: "var(--secondary)",
-                      color: "var(--secondary-foreground)",
-                      opacity: 0.2,
-                    }}
-                  >
-                    Certificate Available
                   </span>
                 </div>
 
@@ -532,133 +532,7 @@ export default function CourseDetailsPage() {
                     >
                       Full lifetime access
                     </div>
-
-                    <div className="space-y-4">
-                      <h4
-                        className="font-semibold"
-                        style={{ color: "var(--secondary)" }}
-                      >
-                        This course includes:
-                      </h4>
-                      <div className="space-y-3 text-sm">
-                        <div className="flex items-center">
-                          <i
-                            className="fa-solid fa-video mr-3"
-                            style={{ color: "var(--primary)" }}
-                          ></i>
-                          <span>
-                            {formatDuration(course.durationMinutes)} on-demand
-                            content
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <i
-                            className="fa-solid fa-file-text mr-3"
-                            style={{ color: "var(--primary)" }}
-                          ></i>
-                          <span>{course.modules?.length || 0} lessons</span>
-                        </div>
-                        <div className="flex items-center">
-                          <i
-                            className="fa-solid fa-robot mr-3"
-                            style={{ color: "var(--primary)" }}
-                          ></i>
-                          <span>AI coding exercises</span>
-                        </div>
-                        <div className="flex items-center">
-                          <i
-                            className="fa-solid fa-infinity mr-3"
-                            style={{ color: "var(--primary)" }}
-                          ></i>
-                          <span>Full lifetime access</span>
-                        </div>
-                        <div className="flex items-center">
-                          <i
-                            className="fa-solid fa-mobile-alt mr-3"
-                            style={{ color: "var(--primary)" }}
-                          ></i>
-                          <span>Access on mobile and desktop</span>
-                        </div>
-                        <div className="flex items-center">
-                          <i
-                            className="fa-solid fa-certificate mr-3"
-                            style={{ color: "var(--primary)" }}
-                          ></i>
-                          <span>Certificate of completion</span>
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                </div>
-
-                {/* Instructor Info */}
-                <div
-                  className="rounded-2xl p-6 mt-6"
-                  style={{
-                    backgroundColor: "var(--card)",
-                    border: "1px solid var(--border)",
-                    boxShadow: "var(--shadow-lg)",
-                  }}
-                >
-                  <h4
-                    className="font-semibold mb-4"
-                    style={{ color: "var(--secondary)" }}
-                  >
-                    Instructor
-                  </h4>
-                  <div className="flex items-start space-x-4">
-                    <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: "var(--muted)" }}
-                    >
-                      <i
-                        className="fa-solid fa-user text-2xl"
-                        style={{ color: "var(--muted-foreground)" }}
-                      ></i>
-                    </div>
-                    <div>
-                      <h5
-                        className="font-semibold mb-1"
-                        style={{ color: "var(--secondary)" }}
-                      >
-                        {course.instructor?.name || "AI Expert"}
-                      </h5>
-                      <p
-                        className="text-sm mb-2"
-                        style={{ color: "var(--primary)" }}
-                      >
-                        {course.instructor?.title || "Senior AI Developer"}
-                      </p>
-                      <div
-                        className="flex items-center text-sm mb-2"
-                        style={{ color: "var(--muted-foreground)" }}
-                      >
-                        <i
-                          className="fa-solid fa-star mr-1"
-                          style={{ color: "var(--accent)" }}
-                        ></i>
-                        <span>
-                          {course.instructor?.rating || 4.9} instructor rating
-                        </span>
-                      </div>
-                      <div
-                        className="text-sm"
-                        style={{ color: "var(--muted-foreground)" }}
-                      >
-                        <div>
-                          {course.instructor?.studentCount || 1000}+ students
-                        </div>
-                        <div>{course.instructor?.courseCount || 3} courses</div>
-                      </div>
-                    </div>
-                  </div>
-                  <p
-                    className="text-sm mt-4"
-                    style={{ color: "var(--muted-foreground)" }}
-                  >
-                    {course.instructor?.bio ||
-                      "Experienced AI developer with expertise in machine learning and neural networks."}
-                  </p>
                 </div>
               </div>
             </div>
@@ -996,10 +870,7 @@ export default function CourseDetailsPage() {
             className="mt-8"
             style={{ color: "var(--primary-foreground)", opacity: 0.6 }}
           >
-            <p>
-              ✓ Full lifetime access ✓ Certificate included ✓ Mobile and desktop
-              access
-            </p>
+            <p>✓ Full lifetime access ✓ Mobile and desktop access</p>
           </div>
         </div>
       </section>
