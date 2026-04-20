@@ -121,15 +121,15 @@ export default async function CatalogPage() {
                   back soon for exciting new content!
                 </p>
                 <Link
-                  href="/admin/login"
+                  href="/"
                   className="inline-flex items-center px-6 py-3 rounded-lg hover:opacity-90 transition-all font-medium"
                   style={{
                     backgroundColor: "var(--primary)",
                     color: "var(--primary-foreground)",
                   }}
                 >
-                  <i className="fa-solid fa-lock mr-2"></i>
-                  Admin Login
+                  <i className="fa-solid fa-arrow-left mr-2"></i>
+                  Return Home
                 </Link>
               </div>
             ) : (

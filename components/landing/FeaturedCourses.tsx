@@ -68,9 +68,9 @@ export function FeaturedCourses() {
       durationMinutes: course.durationMinutes,
       moduleCount: course.moduleCount,
       heroImageUrl: course.heroImageUrl,
-      category: course.category || "Course",
-      rating: course.rating || 4.8,
-      reviewCount: course.reviewCount || Math.floor(Math.random() * 1000) + 100,
+      category: course.category,
+      rating: course.rating,
+      reviewCount: course.reviewCount,
     };
   };
 

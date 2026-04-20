@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   getUserFromRequest,
   assertUserProviderGoogle,
@@ -13,6 +13,43 @@ import {
   canCompleteModule,
 } from "@/lib/firestore";
 import { withIdempotency } from "@/lib/idempotency";
+
+/**
+ * GET /api/progress?courseId=...
+ * Returns the caller's completed modules for the given course.
+ */
+export async function GET(req: NextRequest) {
+  try {
+    const user = await getUserFromRequest(req);
+    if (!user) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    }
+    assertUserProviderGoogle(user);
+
+    const courseId = req.nextUrl.searchParams.get("courseId");
+    if (!courseId) {
+      return NextResponse.json({ error: "courseId required" }, { status: 400 });
+    }
+
+    if (!adminDb) throw new Error("Firebase Admin not initialized");
+
+    const snap = await adminDb
+      .collection(COL.progress)
+      .where("uid", "==", user.uid)
+      .where("courseId", "==", courseId)
+      .where("completed", "==", true)
+      .get();
+
+    const progress = snap.docs.map((d) => ({
+      moduleId: d.data().moduleId,
+      completed: true,
+    }));
+
+    return NextResponse.json({ progress });
+  } catch (error) {
+    return jsonError(error);
+  }
+}
 
 /*
 DEV TESTING:

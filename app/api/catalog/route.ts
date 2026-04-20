@@ -27,29 +27,29 @@ export async function GET(req: NextRequest) {
       // Ignore auth errors - this is a public endpoint
     }
 
-    // Query published courses, excluding explicitly archived ones
+    // Query published courses (no orderBy to avoid dropping docs missing publishedAt)
     const coursesRef = adminDb.collection(COL.courses);
     const publishedCoursesSnapshot = await coursesRef
       .where("published", "==", true)
-      .orderBy("publishedAt", "desc")
       .get();
 
-    // Filter out archived courses (archived === true)
-    const nonArchivedDocs = publishedCoursesSnapshot.docs.filter((doc) => {
-      const data = doc.data();
-      return data.archived !== true; // Include if archived is false, undefined, or null
-    });
-
-    // Map courses with proper timestamp conversion
-    let courses = nonArchivedDocs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-      // Convert Firestore timestamps for JSON serialization
-      createdAt:
-        formatDateISO(doc.data().createdAt) || new Date().toISOString(),
-      updatedAt: formatDateISO(doc.data().updatedAt),
-      publishedAt: formatDateISO(doc.data().publishedAt),
-    }));
+    // Filter out archived courses, normalize timestamps, then sort in memory.
+    // Sort uses publishedAt desc, falling back to createdAt for legacy docs.
+    let courses = publishedCoursesSnapshot.docs
+      .filter((doc) => doc.data().archived !== true)
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+        createdAt:
+          formatDateISO(doc.data().createdAt) || new Date().toISOString(),
+        updatedAt: formatDateISO(doc.data().updatedAt),
+        publishedAt: formatDateISO(doc.data().publishedAt),
+      }))
+      .sort((a, b) => {
+        const aTime = new Date(a.publishedAt || a.createdAt).getTime();
+        const bTime = new Date(b.publishedAt || b.createdAt).getTime();
+        return bTime - aTime;
+      });
 
     // If user is authenticated, decorate with enrollment information
     if (user) {

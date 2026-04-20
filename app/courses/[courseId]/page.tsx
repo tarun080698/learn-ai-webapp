@@ -30,18 +30,6 @@ interface Course {
   heroImageUrl?: string;
   published: boolean;
   createdAt: string;
-  rating?: number;
-  reviewCount?: number;
-  studentCount?: number;
-  instructor?: {
-    name: string;
-    title: string;
-    bio: string;
-    avatar: string;
-    rating: number;
-    studentCount: number;
-    courseCount: number;
-  };
   enrollment?: {
     status: "enrolled" | null;
     enrolledAt?: string;
@@ -260,35 +248,6 @@ export default function CourseDetailsPage() {
                 >
                   {course.description}
                 </p>
-
-                <div className="hidden items-center space-x-6 mb-6">
-                  <div className="flex items-center">
-                    <div
-                      className="flex mr-2"
-                      style={{ color: "var(--accent)" }}
-                    >
-                      {[...Array(5)].map((_, i) => (
-                        <i key={i} className="fa-solid fa-star"></i>
-                      ))}
-                    </div>
-                    <span
-                      className="font-semibold mr-2"
-                      style={{ color: "var(--secondary)" }}
-                    >
-                      {course.rating || 4.8}
-                    </span>
-                    <span style={{ color: "var(--muted-foreground)" }}>
-                      ({course.reviewCount || 247} reviews)
-                    </span>
-                  </div>
-                  <div
-                    className="hidden items-center"
-                    style={{ color: "var(--muted-foreground)" }}
-                  >
-                    <i className="fa-solid fa-users mr-2"></i>
-                    <span>{course.studentCount || 589} students enrolled</span>
-                  </div>
-                </div>
 
                 <div
                   className="flex items-center space-x-8  mb-8"

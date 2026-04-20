@@ -250,7 +250,7 @@ export default function DashboardPage() {
                     : [
                         {
                           label: "Continue Learning",
-                          href: `/courses/${enrollment.courseId}`,
+                          href: `/courses/${enrollment.courseId}/learn`,
                           variant: "primary",
                         },
                       ];

@@ -7,7 +7,6 @@ import {
   faUserPlus,
   faArchive,
   faUsers,
-  faStar,
   faBookOpen,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -32,7 +31,6 @@ export function RecentActivity() {
       subtitle: "Content revised and new quiz added • 5 hours ago",
       stats: [
         { icon: faUsers, label: "1,247 enrollments" },
-        { icon: faStar, label: "4.9 rating" },
       ],
     },
     {

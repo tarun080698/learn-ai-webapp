@@ -73,48 +73,6 @@ export function HeroSection() {
                 Get Started
               </Link>
             </div>
-            <div className="hidden items-center space-x-8 pt-4">
-              <div className="text-center">
-                <div
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  50K+
-                </div>
-                <div className="" style={{ color: "var(--muted-foreground)" }}>
-                  Students
-                </div>
-              </div>
-              <div className="text-center">
-                <div
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  200+
-                </div>
-                <div className="" style={{ color: "var(--muted-foreground)" }}>
-                  Courses
-                </div>
-              </div>
-              <div className="text-center">
-                <div
-                  className="text-2xl font-bold"
-                  style={{ color: "var(--secondary)" }}
-                >
-                  4.9
-                </div>
-                <div
-                  className=" flex items-center"
-                  style={{ color: "var(--muted-foreground)" }}
-                >
-                  <i
-                    className="fa-solid fa-star mr-1"
-                    style={{ color: "var(--accent)" }}
-                  ></i>
-                  Rating
-                </div>
-              </div>
-            </div>
           </div>
           <div className="relative">
             <div className="relative z-10">
