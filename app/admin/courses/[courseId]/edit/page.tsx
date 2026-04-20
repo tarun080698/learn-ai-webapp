@@ -11,6 +11,8 @@ import { formatDate } from "@/utils/dateUtils";
 
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { getCourseComplete } from "@/lib/api/admin";
+import { useAuthenticatedFetch } from "@/hooks/useAuthenticatedFetch";
+import { QuestionnaireAssignmentModal } from "@/components/admin/QuestionnaireAssignmentModal";
 import {
   CourseDoc,
   ModuleDoc,
@@ -51,9 +53,12 @@ export default function AdminCourseEditPage() {
   const courseId = params.courseId as string;
   const { firebaseUser } = useAuth();
 
+  const authenticatedFetch = useAuthenticatedFetch();
+
   const [courseData, setCourseData] = useState<CompleteCourseData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     title: "",
@@ -62,6 +67,16 @@ export default function AdminCourseEditPage() {
     level: "beginner" as "beginner" | "intermediate" | "advanced",
     published: false,
   });
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+
+  const reloadCourse = async () => {
+    try {
+      const response = await getCourseComplete(courseId);
+      setCourseData(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reload course");
+    }
+  };
 
   // Load complete course data
   useEffect(() => {
@@ -96,9 +111,78 @@ export default function AdminCourseEditPage() {
   }, [firebaseUser, courseId]);
 
   const handleSave = async () => {
-    // TODO: Implement save functionality
-    console.log("Saving course:", editForm);
-    setIsEditing(false);
+    setError(null);
+    setIsSaving(true);
+    try {
+      const res = await authenticatedFetch("/api/admin/course.upsert", {
+        method: "POST",
+        body: JSON.stringify({
+          courseId,
+          title: editForm.title,
+          description: editForm.description,
+          durationMinutes: editForm.durationMinutes,
+          level: editForm.level,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.message || "Failed to save course");
+      }
+
+      // Optional: only call publish endpoint when the published flag actually changed.
+      if (courseData && editForm.published !== courseData.course.published) {
+        const pubRes = await authenticatedFetch("/api/admin/course.publish", {
+          method: "POST",
+          body: JSON.stringify({
+            courseId,
+            published: editForm.published,
+          }),
+        });
+        if (!pubRes.ok) {
+          const data = await pubRes.json().catch(() => ({}));
+          throw new Error(data?.message || "Failed to update publish state");
+        }
+      }
+
+      await reloadCourse();
+      setIsEditing(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save course");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleArchiveModule = async (moduleId: string) => {
+    if (!window.confirm("Archive this module? Learners won't see it anymore.")) {
+      return;
+    }
+    try {
+      const res = await authenticatedFetch("/api/admin/module.archive", {
+        method: "POST",
+        body: JSON.stringify({ moduleId, archived: true }),
+      });
+      if (!res.ok) throw new Error("Archive failed");
+      await reloadCourse();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to archive module");
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    if (!window.confirm("Remove this assessment from the course?")) return;
+    try {
+      const res = await authenticatedFetch("/api/admin/assignment.delete", {
+        method: "POST",
+        body: JSON.stringify({ assignmentId }),
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      await reloadCourse();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete assessment"
+      );
+    }
   };
 
   const handleCancel = () => {
@@ -215,10 +299,11 @@ export default function AdminCourseEditPage() {
                   </button>
                   <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <CheckIcon className="w-4 h-4" />
-                    Save Changes
+                    {isSaving ? "Saving…" : "Save Changes"}
                   </button>
                 </div>
               )}
@@ -413,16 +498,13 @@ export default function AdminCourseEditPage() {
               <h2 className="text-xl font-semibold text-gray-900">
                 Course Modules ({modules.length})
               </h2>
-              <button
+              <Link
+                href={`/admin/courses/${courseId}/modules`}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={() => {
-                  // TODO: Implement add module functionality
-                  console.log("Add new module");
-                }}
               >
                 <PlusIcon className="w-4 h-4" />
                 Add Module
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -463,21 +545,17 @@ export default function AdminCourseEditPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
+                        <Link
+                          href={`/admin/courses/${courseId}/modules`}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          onClick={() => {
-                            // TODO: Implement edit module functionality
-                            console.log("Edit module", module.id);
-                          }}
+                          title="Edit module"
                         >
                           <PencilIcon className="w-4 h-4" />
-                        </button>
+                        </Link>
                         <button
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          onClick={() => {
-                            // TODO: Implement delete module functionality
-                            console.log("Delete module", module.id);
-                          }}
+                          onClick={() => handleArchiveModule(module.id)}
+                          title="Archive module"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -499,10 +577,7 @@ export default function AdminCourseEditPage() {
               </h2>
               <button
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                onClick={() => {
-                  // TODO: Implement add assignment functionality
-                  console.log("Add new assignment");
-                }}
+                onClick={() => setShowAssignmentModal(true)}
               >
                 <PlusIcon className="w-4 h-4" />
                 Add Assessment
@@ -543,21 +618,17 @@ export default function AdminCourseEditPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
+                        <Link
+                          href={`/admin/questionnaires/${assignment.questionnaireId}/edit`}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          onClick={() => {
-                            // TODO: Implement edit assignment functionality
-                            console.log("Edit assignment", assignment.id);
-                          }}
+                          title="Edit questionnaire"
                         >
                           <PencilIcon className="w-4 h-4" />
-                        </button>
+                        </Link>
                         <button
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          onClick={() => {
-                            // TODO: Implement delete assignment functionality
-                            console.log("Delete assignment", assignment.id);
-                          }}
+                          onClick={() => handleDeleteAssignment(assignment.id)}
+                          title="Remove assessment"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -570,6 +641,24 @@ export default function AdminCourseEditPage() {
           </div>
         </div>
       </div>
+
+      {showAssignmentModal && (
+        <QuestionnaireAssignmentModal
+          isOpen={showAssignmentModal}
+          onClose={() => setShowAssignmentModal(false)}
+          onSuccess={() => {
+            setShowAssignmentModal(false);
+            reloadCourse();
+          }}
+          courseId={courseId}
+          existingAssignments={assignments.map((a) => ({
+            id: a.id,
+            questionnaireId: a.questionnaireId,
+            timing: a.timing,
+            active: a.active,
+          }))}
+        />
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@
  */
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuestionnaires } from "@/hooks/useQuestionnaires";
 import { QuestionnaireBuilder } from "@/components/admin/QuestionnaireBuilder";
@@ -18,11 +18,18 @@ export default function AdminQuestionnairesPage() {
     error,
     isCreating,
     isUpdating,
+    fetchQuestionnaires,
     createQuestionnaire,
     updateQuestionnaire,
     getQuestionnaire,
     clearError,
   } = useQuestionnaires();
+
+  // Load questionnaires on mount (hook requires manual trigger).
+  useEffect(() => {
+    fetchQuestionnaires();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [view, setView] = useState<"list" | "create" | "edit">("list");
   const [editingId, setEditingId] = useState<string | null>(null);
