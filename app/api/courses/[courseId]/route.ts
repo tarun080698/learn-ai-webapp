@@ -37,17 +37,54 @@ export async function GET(
       );
     }
 
-    // Get modules for this course (published and non-archived only, metadata only)
+    // Resolve enrollment up-front so we can decide how much detail to include.
+    let enrollmentStatus: "enrolled" | null = null;
+    let enrollmentDate: string | null = null;
+    let enrollmentMeta: {
+      progressPct?: number;
+      lastModuleIndex?: number;
+      completed?: boolean;
+    } = {};
+    let viewer: { uid: string; role?: "user" | "admin" } | null = null;
+
+    try {
+      const user = await getUserFromRequest(req);
+      if (user) {
+        viewer = { uid: user.uid, role: user.role };
+        const enrollmentDoc = await adminDb
+          .collection(COL.enrollments)
+          .where("uid", "==", user.uid)
+          .where("courseId", "==", courseId)
+          .limit(1)
+          .get();
+
+        if (!enrollmentDoc.empty) {
+          const enrollment = enrollmentDoc.docs[0].data();
+          enrollmentStatus = "enrolled";
+          enrollmentDate = enrollment.enrolledAt?.toDate?.()?.toISOString() ?? null;
+          enrollmentMeta = {
+            progressPct: enrollment.progressPct ?? 0,
+            lastModuleIndex: enrollment.lastModuleIndex ?? 0,
+            completed: !!enrollment.completed,
+          };
+        }
+      }
+    } catch {
+      // Anonymous viewer; continue with preview-only data.
+    }
+
+    // Owners and admins always see full content (handy for previews).
+    const includeFullContent =
+      enrollmentStatus === "enrolled" ||
+      viewer?.role === "admin" ||
+      (viewer && courseData.ownerUid === viewer.uid);
+
+    // Get modules for this course
     const modulesSnapshot = await adminDb
       .collection(COL.modules)
       .where("courseId", "==", courseId)
       .get();
 
-    console.log(
-      `Found ${modulesSnapshot.docs.length} modules for course ${courseId}`
-    );
-
-    // Filter for published AND non-archived modules, return metadata only
     const allModules = modulesSnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
@@ -57,18 +94,31 @@ export async function GET(
       (module: Record<string, unknown>) =>
         module.published === true && !module.archived
     );
-    console.log(`Found ${availableModules.length} available modules`);
 
-    // Return only metadata (no body, no assets)
     const modules = availableModules
-      .map((module: Record<string, unknown>) => ({
-        id: module.id,
-        index: module.index,
-        title: module.title,
-        estMinutes: module.estMinutes,
-        summary: module.summary,
-        contentType: module.contentType,
-      }))
+      .map((module: Record<string, unknown>) => {
+        const base = {
+          id: module.id,
+          index: module.index,
+          title: module.title,
+          estMinutes: module.estMinutes,
+          summary: module.summary,
+          contentType: module.contentType,
+        };
+        if (!includeFullContent) return base;
+        const rawAssets = Array.isArray(module.assets)
+          ? (module.assets as Array<Record<string, unknown>>)
+          : [];
+        const assets = [...rawAssets].sort(
+          (a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)
+        );
+        return {
+          ...base,
+          contentUrl: module.contentUrl ?? null,
+          body: module.body ?? "",
+          assets,
+        };
+      })
       .sort((a, b) => Number(a.index || 0) - Number(b.index || 0));
 
     // Get course-level questionnaire assignments (active and non-archived)
@@ -109,31 +159,6 @@ export async function GET(
       );
     }
 
-    // Check if user is enrolled (if authenticated)
-    let enrollmentStatus = null;
-    let enrollmentDate = null;
-
-    try {
-      const user = await getUserFromRequest(req);
-      if (user) {
-        const enrollmentDoc = await adminDb
-          .collection(COL.enrollments)
-          .where("uid", "==", user.uid)
-          .where("courseId", "==", courseId)
-          .limit(1)
-          .get();
-
-        if (!enrollmentDoc.empty) {
-          const enrollment = enrollmentDoc.docs[0].data();
-          enrollmentStatus = "enrolled";
-          enrollmentDate = enrollment.enrolledAt?.toDate()?.toISOString();
-        }
-      }
-    } catch {
-      // User not authenticated, continue without enrollment status
-      console.log("User not authenticated, showing course as preview");
-    }
-
     // Build public course data (excluding sensitive fields)
     const course = {
       id: courseDoc.id,
@@ -159,6 +184,7 @@ export async function GET(
       enrollment: {
         status: enrollmentStatus,
         enrolledAt: enrollmentDate,
+        ...enrollmentMeta,
       },
       moduleCount: modules.length, // Provide actual available module count
     };

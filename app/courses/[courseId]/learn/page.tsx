@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { RouteGuard } from "@/app/components/RouteGuard";
 import { PublicLayout } from "@/components/PublicLayout";
@@ -14,32 +15,78 @@ const MarkdownPreview = dynamic(
   { ssr: false }
 );
 
-interface ModuleSummary {
+type LessonKind = "video" | "pdf" | "image" | "link" | "text";
+
+interface Lesson {
   id: string;
   title: string;
-  summary?: string;
-  contentType: "video" | "text" | "pdf" | "link";
-  estMinutes: number;
-  index: number;
+  kind: LessonKind;
+  url?: string | null;
+  body?: string;
+  isPrimary: boolean;
 }
 
-interface ModuleFull {
+interface ModuleAsset {
   id: string;
-  courseId: string;
+  kind: "pdf" | "video" | "image" | "link";
+  url: string;
+  title?: string;
+  body?: string;
+  order: number;
+}
+
+interface ModuleData {
+  id: string;
   index: number;
   title: string;
-  summary: string;
-  contentType: "video" | "text" | "pdf" | "link";
-  contentUrl: string | null;
-  body: string;
+  summary?: string;
+  contentType: "video" | "text" | "pdf" | "image" | "link";
+  contentUrl?: string | null;
+  body?: string;
   estMinutes: number;
+  assets?: ModuleAsset[];
 }
 
 interface CourseData {
   id: string;
   title: string;
-  modules: ModuleSummary[];
-  enrollment?: { status: "enrolled" | null };
+  modules: ModuleData[];
+  enrollment?: {
+    status: "enrolled" | null;
+    lastModuleIndex?: number;
+  };
+}
+
+function buildLessons(module: ModuleData): Lesson[] {
+  const lessons: Lesson[] = [];
+
+  const hasPrimary = !!(module.body && module.body.trim()) || !!module.contentUrl;
+  if (hasPrimary) {
+    lessons.push({
+      id: `${module.id}:main`,
+      title: module.title,
+      kind: module.contentType,
+      url: module.contentUrl,
+      body: module.body,
+      isPrimary: true,
+    });
+  }
+
+  const assets = [...(module.assets ?? [])].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
+  assets.forEach((asset, idx) => {
+    lessons.push({
+      id: asset.id,
+      title: asset.title || `Lesson ${idx + (hasPrimary ? 2 : 1)}`,
+      kind: asset.kind,
+      url: asset.url,
+      body: asset.body,
+      isPrimary: false,
+    });
+  });
+
+  return lessons;
 }
 
 function toEmbedUrl(url: string | null | undefined): string | null {
@@ -64,18 +111,117 @@ function toEmbedUrl(url: string | null | undefined): string | null {
   return url;
 }
 
+function LessonViewer({ lesson }: { lesson: Lesson }) {
+  if (lesson.kind === "video") {
+    const embed = toEmbedUrl(lesson.url ?? null);
+    if (!embed) {
+      return <p style={{ color: "var(--muted-foreground)" }}>Missing video URL.</p>;
+    }
+    const isHostedFile = /\.(mp4|webm|ogg)(\?.*)?$/i.test(embed);
+    return (
+      <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+        {isHostedFile ? (
+          <video
+            src={embed}
+            controls
+            className="absolute inset-0 w-full h-full rounded-lg bg-black"
+          />
+        ) : (
+          <iframe
+            src={embed}
+            title={lesson.title}
+            className="absolute inset-0 w-full h-full rounded-lg"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        )}
+      </div>
+    );
+  }
+
+  if (lesson.kind === "pdf") {
+    if (!lesson.url) {
+      return <p style={{ color: "var(--muted-foreground)" }}>Missing PDF URL.</p>;
+    }
+    return (
+      <iframe
+        src={lesson.url}
+        title={lesson.title}
+        className="w-full rounded-lg border"
+        style={{ height: "75vh" }}
+      />
+    );
+  }
+
+  if (lesson.kind === "image") {
+    if (!lesson.url) {
+      return <p style={{ color: "var(--muted-foreground)" }}>Missing image URL.</p>;
+    }
+    return (
+      <div className="w-full flex justify-center">
+        <Image
+          src={lesson.url}
+          alt={lesson.title}
+          width={1200}
+          height={800}
+          className="max-w-full h-auto rounded-lg"
+          unoptimized
+        />
+      </div>
+    );
+  }
+
+  if (lesson.kind === "link") {
+    if (!lesson.url) {
+      return <p style={{ color: "var(--muted-foreground)" }}>Missing link URL.</p>;
+    }
+    return (
+      <div>
+        <a
+          href={lesson.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center px-4 py-2 rounded-lg font-medium"
+          style={{
+            backgroundColor: "var(--primary)",
+            color: "var(--primary-foreground)",
+          }}
+        >
+          Open resource
+          <i className="fa-solid fa-arrow-up-right-from-square ml-2"></i>
+        </a>
+        <p
+          className="mt-3 text-sm break-all"
+          style={{ color: "var(--muted-foreground)" }}
+        >
+          {lesson.url}
+        </p>
+      </div>
+    );
+  }
+
+  // text
+  return (
+    <div data-color-mode="light" className="prose max-w-none">
+      <MarkdownPreview source={lesson.body || ""} />
+    </div>
+  );
+}
+
 function LearnPageInner() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const courseId = params?.courseId as string;
+  const requestedModuleId = searchParams?.get("module") || null;
   const { firebaseUser } = useAuth();
 
   const [course, setCourse] = useState<CourseData | null>(null);
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
-  const [activeModule, setActiveModule] = useState<ModuleFull | null>(null);
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [expandedModuleIds, setExpandedModuleIds] = useState<Set<string>>(new Set());
   const [courseLoading, setCourseLoading] = useState(true);
-  const [moduleLoading, setModuleLoading] = useState(false);
   const [marking, setMarking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,6 +232,23 @@ function LearnPageInner() {
       ),
     [course]
   );
+
+  const lessonsByModuleId = useMemo(() => {
+    const map = new Map<string, Lesson[]>();
+    sortedModules.forEach((m) => map.set(m.id, buildLessons(m)));
+    return map;
+  }, [sortedModules]);
+
+  const activeModule = useMemo(
+    () => sortedModules.find((m) => m.id === activeModuleId) || null,
+    [sortedModules, activeModuleId]
+  );
+
+  const activeLessons = activeModule
+    ? lessonsByModuleId.get(activeModule.id) || []
+    : [];
+  const activeLesson =
+    activeLessons.find((l) => l.id === activeLessonId) || activeLessons[0] || null;
 
   const loadCourse = useCallback(async () => {
     if (!firebaseUser || !courseId) return;
@@ -107,16 +270,27 @@ function LearnPageInner() {
       }
 
       setCourse(c);
-      const first = [...(c.modules || [])].sort(
+
+      // Pick the first module to show: deep-link param > resume pointer > index 0.
+      const sorted = [...(c.modules || [])].sort(
         (a, b) => (a.index ?? 0) - (b.index ?? 0)
-      )[0];
-      if (first) setActiveModuleId(first.id);
+      );
+      const fromQuery =
+        requestedModuleId && sorted.find((m) => m.id === requestedModuleId);
+      const fromResume = sorted.find(
+        (m) => m.index === (c.enrollment?.lastModuleIndex ?? 0)
+      );
+      const initial = fromQuery || fromResume || sorted[0];
+      if (initial) {
+        setActiveModuleId(initial.id);
+        setExpandedModuleIds(new Set([initial.id]));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load course");
     } finally {
       setCourseLoading(false);
     }
-  }, [firebaseUser, courseId, router]);
+  }, [firebaseUser, courseId, router, requestedModuleId]);
 
   const loadProgress = useCallback(async () => {
     if (!firebaseUser || !courseId) return;
@@ -144,34 +318,37 @@ function LearnPageInner() {
     loadProgress();
   }, [loadProgress]);
 
+  // When the active module changes, reset lesson selection to its first lesson.
   useEffect(() => {
-    const fetchModule = async () => {
-      if (!firebaseUser || !activeModuleId) return;
-      try {
-        setModuleLoading(true);
-        setActiveModule(null);
-        const token = await firebaseUser.getIdToken();
-        const res = await fetch(`/api/modules/${activeModuleId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) {
-          throw new Error("Failed to load module");
-        }
-        const data = await res.json();
-        setActiveModule(data.module);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load module");
-      } finally {
-        setModuleLoading(false);
-      }
-    };
-    fetchModule();
-  }, [firebaseUser, activeModuleId]);
+    if (!activeModule) return;
+    const lessons = lessonsByModuleId.get(activeModule.id) || [];
+    setActiveLessonId(lessons[0]?.id ?? null);
+  }, [activeModule, lessonsByModuleId]);
+
+  const handleSelectLesson = (moduleId: string, lessonId: string) => {
+    setActiveModuleId(moduleId);
+    setActiveLessonId(lessonId);
+    setExpandedModuleIds((prev) => {
+      const next = new Set(prev);
+      next.add(moduleId);
+      return next;
+    });
+  };
+
+  const handleToggleExpand = (moduleId: string) => {
+    setExpandedModuleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) next.delete(moduleId);
+      else next.add(moduleId);
+      return next;
+    });
+  };
 
   const handleMarkComplete = async () => {
     if (!firebaseUser || !activeModule || !course) return;
     try {
       setMarking(true);
+      setError(null);
       const token = await firebaseUser.getIdToken();
       const res = await fetch("/api/progress", {
         method: "POST",
@@ -187,16 +364,27 @@ function LearnPageInner() {
         }),
       });
       if (!res.ok) {
-        throw new Error("Failed to mark complete");
+        const data = await res.json().catch(() => ({}));
+        if (data?.code === "gating_requirement_not_met") {
+          throw new Error(
+            data.message || "A required questionnaire must be completed first."
+          );
+        }
+        throw new Error(data?.message || "Failed to mark complete");
       }
       setCompletedIds((prev) => new Set(prev).add(activeModule.id));
 
-      // Auto-advance to the next module
-      const currentIdx = sortedModules.findIndex(
-        (m) => m.id === activeModule.id
-      );
+      // Auto-advance to the next module's first lesson.
+      const currentIdx = sortedModules.findIndex((m) => m.id === activeModule.id);
       const next = sortedModules[currentIdx + 1];
-      if (next) setActiveModuleId(next.id);
+      if (next) {
+        setActiveModuleId(next.id);
+        setExpandedModuleIds((prev) => {
+          const ns = new Set(prev);
+          ns.add(next.id);
+          return ns;
+        });
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update progress");
     } finally {
@@ -218,14 +406,14 @@ function LearnPageInner() {
     );
   }
 
-  if (error && !course) {
+  if (!course) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <h2
           className="text-xl font-semibold mb-4"
           style={{ color: "var(--secondary)" }}
         >
-          {error}
+          {error || "Course unavailable"}
         </h2>
         <Link
           href={`/courses/${courseId}`}
@@ -241,8 +429,6 @@ function LearnPageInner() {
     );
   }
 
-  if (!course) return null;
-
   const completedCount = sortedModules.filter((m) =>
     completedIds.has(m.id)
   ).length;
@@ -250,11 +436,10 @@ function LearnPageInner() {
     sortedModules.length > 0
       ? Math.floor((completedCount / sortedModules.length) * 100)
       : 0;
-  const embedUrl = toEmbedUrl(activeModule?.contentUrl);
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1
             className="text-2xl font-bold"
@@ -266,6 +451,18 @@ function LearnPageInner() {
             {completedCount} of {sortedModules.length} modules complete (
             {progressPct}%)
           </p>
+          <div
+            className="mt-2 h-2 w-64 rounded-full"
+            style={{ backgroundColor: "var(--muted)" }}
+          >
+            <div
+              className="h-2 rounded-full transition-all duration-300"
+              style={{
+                backgroundColor: "var(--primary)",
+                width: `${progressPct}%`,
+              }}
+            />
+          </div>
         </div>
         <Link
           href={`/courses/${courseId}`}
@@ -277,7 +474,7 @@ function LearnPageInner() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
+        {/* Sidebar: modules with nested lessons */}
         <aside
           className="lg:col-span-1 rounded-xl p-4"
           style={{
@@ -290,30 +487,32 @@ function LearnPageInner() {
             className="font-semibold mb-3"
             style={{ color: "var(--secondary)" }}
           >
-            Modules
+            Course content
           </h2>
           {sortedModules.length === 0 ? (
-            <p
-              className="text-sm"
-              style={{ color: "var(--muted-foreground)" }}
-            >
+            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
               No published modules yet.
             </p>
           ) : (
-            <ul className="space-y-1">
+            <ul className="space-y-2">
               {sortedModules.map((m) => {
-                const isActive = m.id === activeModuleId;
+                const isOpen = expandedModuleIds.has(m.id);
+                const isActiveModule = m.id === activeModuleId;
                 const isDone = completedIds.has(m.id);
+                const lessons = lessonsByModuleId.get(m.id) || [];
                 return (
                   <li key={m.id}>
                     <button
-                      onClick={() => setActiveModuleId(m.id)}
+                      onClick={() => {
+                        handleToggleExpand(m.id);
+                        setActiveModuleId(m.id);
+                      }}
                       className="w-full text-left px-3 py-2 rounded-lg flex items-start gap-2 transition-colors hover:opacity-90"
                       style={{
-                        backgroundColor: isActive
+                        backgroundColor: isActiveModule
                           ? "var(--primary-10)"
                           : "transparent",
-                        color: isActive
+                        color: isActiveModule
                           ? "var(--primary)"
                           : "var(--secondary)",
                       }}
@@ -336,10 +535,67 @@ function LearnPageInner() {
                           className="block text-xs"
                           style={{ color: "var(--muted-foreground)" }}
                         >
-                          {m.estMinutes} min · {m.contentType}
+                          {lessons.length}{" "}
+                          {lessons.length === 1 ? "lesson" : "lessons"} ·{" "}
+                          {m.estMinutes} min
                         </span>
                       </span>
+                      <i
+                        className={`fa-solid text-xs mt-1 ${
+                          isOpen ? "fa-chevron-down" : "fa-chevron-right"
+                        }`}
+                        style={{ color: "var(--muted-foreground)" }}
+                      ></i>
                     </button>
+                    {isOpen && lessons.length > 0 && (
+                      <ul className="mt-1 ml-7 space-y-1">
+                        {lessons.map((lesson) => {
+                          const isActiveLesson =
+                            isActiveModule && lesson.id === activeLesson?.id;
+                          return (
+                            <li key={lesson.id}>
+                              <button
+                                onClick={() =>
+                                  handleSelectLesson(m.id, lesson.id)
+                                }
+                                className="w-full text-left px-2 py-1 rounded text-sm flex items-center gap-2 hover:opacity-90"
+                                style={{
+                                  backgroundColor: isActiveLesson
+                                    ? "var(--primary-10)"
+                                    : "transparent",
+                                  color: isActiveLesson
+                                    ? "var(--primary)"
+                                    : "var(--muted-foreground)",
+                                }}
+                              >
+                                <i
+                                  className={`fa-solid text-xs ${
+                                    lesson.kind === "video"
+                                      ? "fa-play"
+                                      : lesson.kind === "pdf"
+                                      ? "fa-file-pdf"
+                                      : lesson.kind === "image"
+                                      ? "fa-image"
+                                      : lesson.kind === "link"
+                                      ? "fa-link"
+                                      : "fa-file-lines"
+                                  }`}
+                                ></i>
+                                <span className="truncate">{lesson.title}</span>
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                    {isOpen && lessons.length === 0 && (
+                      <p
+                        className="mt-1 ml-7 text-xs italic"
+                        style={{ color: "var(--muted-foreground)" }}
+                      >
+                        No lessons in this module yet.
+                      </p>
+                    )}
                   </li>
                 );
               })}
@@ -347,7 +603,7 @@ function LearnPageInner() {
           )}
         </aside>
 
-        {/* Main content */}
+        {/* Main pane: active lesson */}
         <main
           className="lg:col-span-3 rounded-xl p-6"
           style={{
@@ -356,21 +612,12 @@ function LearnPageInner() {
               "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
           }}
         >
-          {moduleLoading || !activeModule ? (
-            <div className="py-20 text-center">
-              <div
-                className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto"
-                style={{ borderColor: "var(--primary)" }}
-              ></div>
-              <p
-                className="mt-3 text-sm"
-                style={{ color: "var(--muted-foreground)" }}
-              >
-                Loading module…
-              </p>
-            </div>
-          ) : (
-            <>
+          {!activeModule ? (
+            <p style={{ color: "var(--muted-foreground)" }}>
+              Select a module to begin.
+            </p>
+          ) : !activeLesson ? (
+            <div>
               <header className="mb-6">
                 <h2
                   className="text-2xl font-bold mb-2"
@@ -384,64 +631,64 @@ function LearnPageInner() {
                   </p>
                 )}
               </header>
-
-              <section className="mb-6">
-                {activeModule.contentType === "video" && embedUrl && (
-                  <div
-                    className="relative w-full"
-                    style={{ paddingBottom: "56.25%" }}
-                  >
-                    <iframe
-                      src={embedUrl}
-                      title={activeModule.title}
-                      className="absolute inset-0 w-full h-full rounded-lg"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  </div>
-                )}
-
-                {activeModule.contentType === "text" && (
-                  <div data-color-mode="light" className="prose max-w-none">
-                    <MarkdownPreview source={activeModule.body || ""} />
-                  </div>
-                )}
-
-                {activeModule.contentType === "pdf" &&
-                  activeModule.contentUrl && (
-                    <iframe
-                      src={activeModule.contentUrl}
-                      title={activeModule.title}
-                      className="w-full rounded-lg border"
-                      style={{ height: "75vh" }}
-                    />
-                  )}
-
-                {activeModule.contentType === "link" &&
-                  activeModule.contentUrl && (
-                    <a
-                      href={activeModule.contentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-4 py-2 rounded-lg font-medium"
-                      style={{
-                        backgroundColor: "var(--primary)",
-                        color: "var(--primary-foreground)",
-                      }}
-                    >
-                      Open resource
-                      <i className="fa-solid fa-arrow-up-right-from-square ml-2"></i>
-                    </a>
-                  )}
-              </section>
-
-              <footer className="flex items-center justify-between border-t pt-4">
-                <span
-                  className="text-sm"
+              <p style={{ color: "var(--muted-foreground)" }}>
+                This module has no lessons yet. Ask an admin to add primary
+                content or assets.
+              </p>
+            </div>
+          ) : (
+            <>
+              <header className="mb-6">
+                <p
+                  className="text-xs uppercase tracking-wide mb-1"
                   style={{ color: "var(--muted-foreground)" }}
                 >
-                  Module {activeModule.index + 1} of {sortedModules.length}
-                </span>
+                  Module {activeModule.index + 1}: {activeModule.title}
+                </p>
+                <h2
+                  className="text-2xl font-bold mb-2"
+                  style={{ color: "var(--secondary)" }}
+                >
+                  {activeLesson.title}
+                </h2>
+                {activeLesson.isPrimary && activeModule.summary && (
+                  <p style={{ color: "var(--muted-foreground)" }}>
+                    {activeModule.summary}
+                  </p>
+                )}
+              </header>
+
+              <section className="mb-6">
+                <LessonViewer lesson={activeLesson} />
+              </section>
+
+              <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                <div className="flex items-center gap-2 text-sm">
+                  {activeLessons.map((l, idx) => (
+                    <button
+                      key={l.id}
+                      onClick={() => handleSelectLesson(activeModule.id, l.id)}
+                      className="w-2.5 h-2.5 rounded-full"
+                      title={l.title}
+                      style={{
+                        backgroundColor:
+                          l.id === activeLesson.id
+                            ? "var(--primary)"
+                            : "var(--muted)",
+                      }}
+                      aria-label={`Lesson ${idx + 1}: ${l.title}`}
+                    />
+                  ))}
+                  <span
+                    className="ml-2 text-xs"
+                    style={{ color: "var(--muted-foreground)" }}
+                  >
+                    Lesson{" "}
+                    {activeLessons.findIndex((l) => l.id === activeLesson.id) +
+                      1}{" "}
+                    of {activeLessons.length}
+                  </span>
+                </div>
                 <button
                   onClick={handleMarkComplete}
                   disabled={marking || completedIds.has(activeModule.id)}
@@ -452,10 +699,10 @@ function LearnPageInner() {
                   }}
                 >
                   {completedIds.has(activeModule.id)
-                    ? "Completed ✓"
+                    ? "Module completed ✓"
                     : marking
                     ? "Saving…"
-                    : "Mark Complete"}
+                    : "Mark module complete"}
                 </button>
               </footer>
             </>
@@ -463,7 +710,7 @@ function LearnPageInner() {
         </main>
       </div>
 
-      {error && course && (
+      {error && (
         <p
           className="mt-4 text-sm text-center"
           style={{ color: "var(--destructive)" }}

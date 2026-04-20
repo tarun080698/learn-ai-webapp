@@ -15,12 +15,14 @@ import {
   useAuthenticatedMutation,
 } from "@/hooks/useAuthenticatedFetch";
 import { useFileUpload } from "@/hooks/useFileUpload";
-import { ModuleDoc, CourseDoc } from "@/types/models";
+import { ModuleDoc, CourseDoc, ModuleAsset } from "@/types/models";
 import { QuestionnaireAssignmentModal } from "@/components/admin/QuestionnaireAssignmentModal";
 
 interface Module extends ModuleDoc {
   id: string;
 }
+
+type AssetKind = "pdf" | "video" | "image" | "link";
 
 interface Course extends CourseDoc {
   id: string;
@@ -57,6 +59,9 @@ export default function AdminModulesPage() {
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
+  const [openAssetsModuleId, setOpenAssetsModuleId] = useState<string | null>(
+    null
+  );
 
   // Form state
   const [formData, setFormData] = useState<ModuleFormData>({
@@ -243,6 +248,83 @@ export default function AdminModulesPage() {
     }
   };
 
+  // Archive (soft-delete) a module
+  const handleDeleteModule = async (module: Module) => {
+    if (
+      !window.confirm(
+        `Archive module "${module.title}"? Learners will no longer see it.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await authenticatedFetch("/api/admin/module.archive", {
+        method: "POST",
+        body: JSON.stringify({ moduleId: module.id, archived: true }),
+      });
+      if (!res.ok) throw new Error("Archive failed");
+      await reloadModules();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to archive module");
+    }
+  };
+
+  // Add asset to a module
+  const handleAddAsset = async (
+    moduleId: string,
+    payload: { type: AssetKind; title: string; url: string; description?: string }
+  ) => {
+    const res = await authenticatedFetch("/api/admin/asset.add", {
+      method: "POST",
+      body: JSON.stringify({ moduleId, ...payload }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data?.message || "Failed to add asset");
+    }
+    await reloadModules();
+  };
+
+  const handleRemoveAsset = async (moduleId: string, assetId: string) => {
+    if (!window.confirm("Remove this asset?")) return;
+    try {
+      const res = await authenticatedFetch("/api/admin/asset.remove", {
+        method: "POST",
+        body: JSON.stringify({ moduleId, assetId }),
+      });
+      if (!res.ok) throw new Error("Remove failed");
+      await reloadModules();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove asset");
+    }
+  };
+
+  const handleReorderAsset = async (
+    module: Module,
+    assetId: string,
+    direction: "up" | "down"
+  ) => {
+    const sorted = [...(module.assets || [])].sort(
+      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+    );
+    const idx = sorted.findIndex((a) => a.id === assetId);
+    const swapWith = direction === "up" ? idx - 1 : idx + 1;
+    if (idx < 0 || swapWith < 0 || swapWith >= sorted.length) return;
+    const next = [...sorted];
+    [next[idx], next[swapWith]] = [next[swapWith], next[idx]];
+    const order = next.map((a, i) => ({ assetId: a.id, order: i }));
+    try {
+      const res = await authenticatedFetch("/api/admin/asset.reorder", {
+        method: "POST",
+        body: JSON.stringify({ moduleId: module.id, order }),
+      });
+      if (!res.ok) throw new Error("Reorder failed");
+      await reloadModules();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reorder assets");
+    }
+  };
+
   if (!firebaseUser) {
     return (
       <div className="p-6">
@@ -335,52 +417,86 @@ export default function AdminModulesPage() {
               </div>
             ) : (
               <div className="divide-y divide-black">
-                {modules.map((module, index) => (
-                  <div key={module.id} className="p-4 hover:bg-white">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
-                        <div className="shrink-0 w-8 h-8 bg-white text-black border border-black rounded-full flex items-center justify-center  font-medium">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-black">
-                            {module.title}
-                          </h3>
-                          <p className=" text-black mt-1">{module.summary}</p>
-                          <div className="flex items-center gap-4 mt-2 text-xs text-black">
-                            <span className="capitalize">
-                              {module.contentType}
-                            </span>
-                            <span>{module.estMinutes}min</span>
-                            {module.published && (
-                              <span className="text-black">Published</span>
-                            )}
+                {modules.map((module, index) => {
+                  const assetCount = (module.assets || []).length;
+                  const showAssets = openAssetsModuleId === module.id;
+                  return (
+                    <div key={module.id} className="p-4 hover:bg-white">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-3">
+                          <div className="shrink-0 w-8 h-8 bg-white text-black border border-black rounded-full flex items-center justify-center  font-medium">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-medium text-black">
+                              {module.title}
+                            </h3>
+                            <p className=" text-black mt-1">{module.summary}</p>
+                            <div className="flex items-center gap-4 mt-2 text-xs text-black">
+                              <span className="capitalize">
+                                {module.contentType}
+                              </span>
+                              <span>{module.estMinutes}min</span>
+                              <span>
+                                {assetCount} asset{assetCount === 1 ? "" : "s"}
+                              </span>
+                              {module.published && (
+                                <span className="text-black">Published</span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              setOpenAssetsModuleId(
+                                showAssets ? null : module.id
+                              )
+                            }
+                            className="text-black hover:text-black border-b border-black "
+                          >
+                            {showAssets ? "Hide assets" : "Assets"}
+                          </button>
+                          <button
+                            onClick={() => handleEdit(module)}
+                            className="text-black hover:text-black border-b border-black "
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedModuleId(module.id);
+                              setShowQuestionnaireModal(true);
+                            }}
+                            className="text-black hover:text-black border-b border-black "
+                          >
+                            Questionnaire
+                          </button>
+                          <button
+                            onClick={() => handleDeleteModule(module)}
+                            className="text-black hover:text-black border-b border-black "
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleEdit(module)}
-                          className="text-black hover:text-black border-b border-black "
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedModuleId(module.id);
-                            setShowQuestionnaireModal(true);
-                          }}
-                          className="text-black hover:text-black border-b border-black "
-                        >
-                          Questionnaire
-                        </button>
-                        <button className="text-black hover:text-black border-b border-black ">
-                          Delete
-                        </button>
-                      </div>
+                      {showAssets && (
+                        <AssetsPanel
+                          module={module}
+                          onAdd={(payload) =>
+                            handleAddAsset(module.id, payload)
+                          }
+                          onRemove={(assetId) =>
+                            handleRemoveAsset(module.id, assetId)
+                          }
+                          onReorder={(assetId, direction) =>
+                            handleReorderAsset(module, assetId, direction)
+                          }
+                        />
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -604,6 +720,215 @@ export default function AdminModulesPage() {
           existingAssignments={[]} // TODO: Load module assignments
         />
       )}
+    </div>
+  );
+}
+
+interface AssetsPanelProps {
+  module: Module;
+  onAdd: (payload: {
+    type: AssetKind;
+    title: string;
+    url: string;
+    description?: string;
+  }) => Promise<void>;
+  onRemove: (assetId: string) => Promise<void>;
+  onReorder: (assetId: string, direction: "up" | "down") => Promise<void>;
+}
+
+function AssetsPanel({ module, onAdd, onRemove, onReorder }: AssetsPanelProps) {
+  const { uploadFile, isUploading, progress, error: uploadError } =
+    useFileUpload();
+  const [type, setType] = useState<AssetKind>("link");
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const sortedAssets = [...(module.assets || [])].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const result = await uploadFile(
+        file,
+        "asset",
+        `Asset for module ${module.title}`
+      );
+      setUrl(result.url);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Upload failed");
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    if (!title.trim() || !url.trim()) {
+      setFormError("Title and URL are required.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await onAdd({
+        type,
+        title: title.trim(),
+        url: url.trim(),
+        description: description.trim() || undefined,
+      });
+      setTitle("");
+      setUrl("");
+      setDescription("");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to add asset");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 ml-11 border-l-2 border-black pl-4">
+      <h4 className="font-medium text-black mb-2">Lessons (assets)</h4>
+      {sortedAssets.length === 0 ? (
+        <p className="text-sm text-black mb-3">
+          No assets yet. The module&apos;s primary content is the only lesson.
+        </p>
+      ) : (
+        <ul className="space-y-2 mb-3">
+          {sortedAssets.map((asset: ModuleAsset, idx) => (
+            <li
+              key={asset.id}
+              className="flex items-center justify-between gap-3 p-2 border border-black rounded-lg"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-black truncate">
+                  {idx + 1}. {asset.title || `${asset.kind} asset`}
+                </div>
+                <div className="text-xs text-black truncate">
+                  <span className="capitalize mr-2">{asset.kind}</span>
+                  <a
+                    href={asset.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline break-all"
+                  >
+                    {asset.url}
+                  </a>
+                </div>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  onClick={() => onReorder(asset.id, "up")}
+                  disabled={idx === 0}
+                  className="px-2 py-1 border border-black rounded disabled:opacity-40"
+                  aria-label="Move up"
+                >
+                  ↑
+                </button>
+                <button
+                  onClick={() => onReorder(asset.id, "down")}
+                  disabled={idx === sortedAssets.length - 1}
+                  className="px-2 py-1 border border-black rounded disabled:opacity-40"
+                  aria-label="Move down"
+                >
+                  ↓
+                </button>
+                <button
+                  onClick={() => onRemove(asset.id)}
+                  className="px-2 py-1 border border-black rounded text-black hover:bg-white"
+                >
+                  Remove
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-2 p-3 border border-black rounded-lg bg-white"
+      >
+        <div className="font-medium text-black text-sm">Add a new asset</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value as AssetKind);
+              setUrl("");
+            }}
+            className="px-2 py-1 border border-black rounded"
+          >
+            <option value="link">Link</option>
+            <option value="pdf">PDF</option>
+            <option value="video">Video</option>
+            <option value="image">Image</option>
+          </select>
+          <input
+            type="text"
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="px-2 py-1 border border-black rounded sm:col-span-2"
+          />
+        </div>
+        <input
+          type="url"
+          placeholder={
+            type === "link"
+              ? "https://example.com"
+              : "URL (or upload a file below)"
+          }
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="w-full px-2 py-1 border border-black rounded"
+        />
+        {(type === "pdf" || type === "image" || type === "video") && (
+          <div>
+            <input
+              type="file"
+              accept={
+                type === "pdf"
+                  ? "application/pdf"
+                  : type === "image"
+                  ? "image/*"
+                  : "video/*"
+              }
+              onChange={handleFile}
+              className="w-full text-xs"
+            />
+            {isUploading && (
+              <div className="text-xs text-black mt-1">
+                Uploading… {progress ? Math.round(progress.percentage) : 0}%
+              </div>
+            )}
+            {uploadError && (
+              <div className="text-xs text-black mt-1">
+                Upload error: {uploadError.message}
+              </div>
+            )}
+          </div>
+        )}
+        <input
+          type="text"
+          placeholder="Description (optional)"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full px-2 py-1 border border-black rounded"
+        />
+        {formError && <div className="text-xs text-black">{formError}</div>}
+        <button
+          type="submit"
+          disabled={submitting || isUploading}
+          className="px-3 py-1 border border-black rounded bg-white hover:bg-white disabled:opacity-50"
+        >
+          {submitting ? "Adding…" : "Add asset"}
+        </button>
+      </form>
     </div>
   );
 }

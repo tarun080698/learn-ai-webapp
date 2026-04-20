@@ -44,9 +44,6 @@ export default function CourseDetailsPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<string[]>([
-    "section-1",
-  ]);
 
   useEffect(() => {
     if (courseId) {
@@ -78,14 +75,6 @@ export default function CourseDetailsPage() {
     }
   };
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections((prev) =>
-      prev.includes(sectionId)
-        ? prev.filter((id) => id !== sectionId)
-        : [...prev, sectionId]
-    );
-  };
-
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
@@ -93,31 +82,6 @@ export default function CourseDetailsPage() {
       return `${hours}h ${mins}m`;
     }
     return `${mins}m`;
-  };
-
-  // Group modules into sections (every 5 modules)
-  const groupModulesIntoSections = (modules: Module[]) => {
-    const sections = [];
-    const moduleGroups = [];
-
-    for (let i = 0; i < modules.length; i += 5) {
-      moduleGroups.push(modules.slice(i, i + 5));
-    }
-
-    moduleGroups.forEach((group, index) => {
-      const totalDuration = group.reduce(
-        (sum, module) => sum + module.estMinutes,
-        0
-      );
-      sections.push({
-        id: `section-${index + 1}`,
-        title: `Section ${index + 1}: ${group[0]?.title || "Course Content"}`,
-        modules: group,
-        totalDuration,
-      });
-    });
-
-    return sections;
   };
 
   if (loading) {
@@ -171,7 +135,10 @@ export default function CourseDetailsPage() {
     );
   }
 
-  const sections = groupModulesIntoSections(course.modules || []);
+  const isEnrolled = course.enrollment?.status === "enrolled";
+  const orderedModules = [...(course.modules || [])].sort(
+    (a, b) => (a.index ?? 0) - (b.index ?? 0)
+  );
 
   return (
     <PublicLayout showPromoBanner={false}>
@@ -432,7 +399,7 @@ export default function CourseDetailsPage() {
       </section>
 
       {/* Course Content/Curriculum */}
-      {sections.length > 0 && (
+      {orderedModules.length > 0 && (
         <section className="py-16" style={{ backgroundColor: "var(--muted)" }}>
           <div className="container mx-auto px-4">
             <div className="max-w-7xl mx-auto">
@@ -447,145 +414,95 @@ export default function CourseDetailsPage() {
                   className="text-xl"
                   style={{ color: "var(--muted-foreground)" }}
                 >
-                  {course.modules?.length || 0} lessons •{" "}
+                  {orderedModules.length} modules •{" "}
                   {formatDuration(course.durationMinutes)} total length
                 </p>
               </div>
 
-              <div className="space-y-4">
-                {sections.map((section) => (
-                  <div
-                    key={section.id}
-                    className="rounded-xl overflow-hidden"
-                    style={{
-                      backgroundColor: "var(--card)",
-                      boxShadow:
-                        "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
-                    }}
-                  >
-                    <div
-                      className="p-6 border-b"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <button
-                            onClick={() => toggleSection(section.id)}
-                            className="transition-colors"
-                            style={{ color: "var(--primary)" }}
-                          >
-                            <i
-                              className={`fa-solid ${
-                                expandedSections.includes(section.id)
-                                  ? "fa-chevron-down"
-                                  : "fa-chevron-right"
-                              }`}
-                            ></i>
-                          </button>
-                          <h3
-                            className="text-lg font-semibold"
+              <div
+                className="rounded-xl overflow-hidden divide-y"
+                style={{
+                  backgroundColor: "var(--card)",
+                  boxShadow:
+                    "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+                  borderColor: "var(--border)",
+                }}
+              >
+                {orderedModules.map((module, index) => {
+                  const unlocked = isEnrolled || index === 0;
+                  const rowContent = (
+                    <div className="flex items-center justify-between p-4">
+                      <div className="flex items-center space-x-4">
+                        <i
+                          className={`fa-solid ${
+                            unlocked ? "fa-play-circle" : "fa-lock"
+                          }`}
+                          style={{
+                            color: unlocked
+                              ? "var(--primary)"
+                              : "var(--muted-foreground)",
+                          }}
+                        ></i>
+                        <div>
+                          <h4
+                            className="font-medium"
                             style={{ color: "var(--secondary)" }}
                           >
-                            {section.title}
-                          </h3>
+                            {index + 1}. {module.title}
+                          </h4>
+                          {module.summary && (
+                            <p
+                              style={{ color: "var(--muted-foreground)" }}
+                            >
+                              {module.summary}
+                            </p>
+                          )}
                         </div>
-                        <div
-                          className=""
-                          style={{ color: "var(--muted-foreground)" }}
-                        >
-                          {section.modules.length} lessons •{" "}
-                          {formatDuration(section.totalDuration)}
-                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span style={{ color: "var(--muted-foreground)" }}>
+                          {formatDuration(module.estMinutes)}
+                        </span>
+                        {!isEnrolled && index === 0 && (
+                          <span
+                            className="px-2 py-1 rounded text-xs"
+                            style={{
+                              backgroundColor: "var(--primary)",
+                              color: "var(--primary-foreground)",
+                            }}
+                          >
+                            Preview
+                          </span>
+                        )}
                       </div>
                     </div>
-                    {expandedSections.includes(section.id) && (
-                      <div
-                        className="divide-y"
-                        style={{ borderColor: "var(--border)" }}
-                      >
-                        {section.modules.map((module, index) => (
-                          <div
-                            key={module.id}
-                            className="p-4 transition-colors cursor-pointer hover:opacity-80"
-                            style={{ backgroundColor: "var(--card)" }}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-4">
-                                <i
-                                  className={`fa-solid ${
-                                    index === 0 ? "fa-play-circle" : "fa-lock"
-                                  }`}
-                                  style={{
-                                    color:
-                                      index === 0
-                                        ? "var(--primary)"
-                                        : "var(--muted-foreground)",
-                                  }}
-                                ></i>
-                                <div>
-                                  <h4
-                                    className="font-medium"
-                                    style={{ color: "var(--secondary)" }}
-                                  >
-                                    {index + 1}. {module.title}
-                                  </h4>
-                                  {module.summary && (
-                                    <p
-                                      className=""
-                                      style={{
-                                        color: "var(--muted-foreground)",
-                                      }}
-                                    >
-                                      {module.summary}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-4">
-                                <span
-                                  className=""
-                                  style={{ color: "var(--muted-foreground)" }}
-                                >
-                                  {formatDuration(module.estMinutes)}
-                                </span>
-                                {index === 0 && (
-                                  <span
-                                    className="px-2 py-1 rounded text-xs"
-                                    style={{
-                                      backgroundColor: "var(--primary)",
-                                      color: "var(--primary-foreground)",
-                                      // opacity: 0.1,
-                                    }}
-                                  >
-                                    Preview
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  );
 
-              <div className="text-center mt-8">
-                <button
-                  className="font-semibold"
-                  style={{ color: "var(--primary)" }}
-                  onClick={() => {
-                    const allSectionIds = sections.map((s) => s.id);
-                    setExpandedSections((prev) =>
-                      prev.length === allSectionIds.length ? [] : allSectionIds
+                  if (isEnrolled) {
+                    return (
+                      <Link
+                        key={module.id}
+                        href={`/courses/${courseId}/learn?module=${module.id}`}
+                        className="block transition-colors hover:opacity-80"
+                        style={{ backgroundColor: "var(--card)" }}
+                      >
+                        {rowContent}
+                      </Link>
                     );
-                  }}
-                >
-                  {expandedSections.length === sections.length
-                    ? "Collapse all sections"
-                    : "Expand all sections"}
-                  <i className="fa-solid fa-chevron-down ml-2"></i>
-                </button>
+                  }
+
+                  return (
+                    <div
+                      key={module.id}
+                      className={
+                        unlocked ? "transition-colors hover:opacity-80" : ""
+                      }
+                      style={{ backgroundColor: "var(--card)" }}
+                    >
+                      {rowContent}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
