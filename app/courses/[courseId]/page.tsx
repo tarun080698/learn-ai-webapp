@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { PublicLayout } from "@/components/PublicLayout";
 import Link from "next/link";
 import { useAuth } from "@/app/(auth)/AuthProvider";
-import { generateIdempotencyKey } from "@/utils/uuid";
+import { THINKIFIC_COURSE_URL } from "@/lib/thinkificRedirect";
 
 interface Module {
   id: string;
@@ -323,45 +323,9 @@ export default function CourseDetailsPage() {
                         >
                           Continue Learning
                         </Link>
-                      ) : firebaseUser ? (
-                        <button
-                          onClick={async () => {
-                            try {
-                              const token = await firebaseUser.getIdToken();
-                              const idempotencyKey = generateIdempotencyKey();
-
-                              const response = await fetch("/api/enroll", {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                  Authorization: `Bearer ${token}`,
-                                  "x-idempotency-key": idempotencyKey,
-                                },
-                                body: JSON.stringify({ courseId }),
-                              });
-
-                              if (response.ok) {
-                                // Refresh course data to show enrollment
-                                await fetchCourseDetails();
-                              } else {
-                                const errorData = await response.json();
-                                console.error("Enrollment failed:", errorData);
-                              }
-                            } catch (error) {
-                              console.error("Enrollment error:", error);
-                            }
-                          }}
-                          className="w-full py-3 px-6 rounded-lg font-semibold text-lg transition-colors hover:opacity-90"
-                          style={{
-                            backgroundColor: "var(--primary)",
-                            color: "var(--primary-foreground)",
-                          }}
-                        >
-                          Enroll Now
-                        </button>
                       ) : (
-                        <Link
-                          href={`/login?redirect=/courses/${courseId}`}
+                        <a
+                          href={THINKIFIC_COURSE_URL}
                           className="w-full py-3 px-6 rounded-lg font-semibold text-lg text-center block transition-colors hover:opacity-90"
                           style={{
                             backgroundColor: "var(--primary)",
@@ -369,7 +333,7 @@ export default function CourseDetailsPage() {
                           }}
                         >
                           Enroll Now
-                        </Link>
+                        </a>
                       )}
                       <button
                         className="hidden w-full py-3 px-6 rounded-lg font-semibold text-center transition-colors"
@@ -654,8 +618,8 @@ export default function CourseDetailsPage() {
             and start learning today!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/login"
+            <a
+              href={THINKIFIC_COURSE_URL}
               className="px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
               style={{
                 backgroundColor: "var(--card)",
@@ -663,7 +627,7 @@ export default function CourseDetailsPage() {
               }}
             >
               Enroll Now - Free
-            </Link>
+            </a>
             <button
               className="px-8 py-4 rounded-lg font-semibold text-lg border-2 transition-colors"
               style={{

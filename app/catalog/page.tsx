@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PublicLayout } from "@/components/PublicLayout";
 import { CourseCard, CourseCardData } from "@/components/ui/CourseCard";
+import { THINKIFIC_COURSE_URL } from "@/lib/thinkificRedirect";
 
 // Force dynamic rendering for fresh course data
 export const dynamic = "force-dynamic";
@@ -161,7 +162,9 @@ export default async function CatalogPage() {
                           label: course.enrolled
                             ? "Continue Learning"
                             : "Enroll Now",
-                          href: `/courses/${course.id}`,
+                          href: course.enrolled
+                            ? `/courses/${course.id}`
+                            : THINKIFIC_COURSE_URL,
                           variant: "primary",
                         },
                         {

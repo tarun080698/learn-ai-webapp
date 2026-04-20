@@ -8,6 +8,7 @@ import {
   CourseCardData,
   CourseCardAction,
 } from "@/components/ui/CourseCard";
+import { THINKIFIC_COURSE_URL } from "@/lib/thinkificRedirect";
 
 interface FeaturedCourse {
   id: string;
@@ -85,10 +86,8 @@ export function FeaturedCourses() {
         variant: "secondary",
       },
       {
-        label: firebaseUser ? "Enroll Now" : "Enroll Now",
-        href: firebaseUser
-          ? `/courses/${course.id}`
-          : `/login?redirect=/courses/${course.id}`,
+        label: "Enroll Now",
+        href: THINKIFIC_COURSE_URL,
         variant: "primary",
       },
     ];

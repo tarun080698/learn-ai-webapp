@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { THINKIFIC_COURSE_URL } from "@/lib/thinkificRedirect";
 
 // Types for the course card component
 export interface CourseCardData {
@@ -115,7 +116,9 @@ export function CourseCard({
       : [
           {
             label: course.enrolled ? "Continue Learning" : "Enroll Now",
-            href: `/courses/${course.id}`,
+            href: course.enrolled
+              ? `/courses/${course.id}`
+              : THINKIFIC_COURSE_URL,
             variant: "primary",
           },
           {

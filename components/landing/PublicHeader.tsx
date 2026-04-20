@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/app/(auth)/AuthProvider";
+import { THINKIFIC_COURSE_URL } from "@/lib/thinkificRedirect";
 
 export function PublicHeader() {
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -191,8 +192,8 @@ export function PublicHeader() {
                 >
                   Sign In
                 </Link>
-                <Link
-                  href="/login"
+                <a
+                  href={THINKIFIC_COURSE_URL}
                   className="px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90"
                   style={{
                     backgroundColor: "var(--primary)",
@@ -200,7 +201,7 @@ export function PublicHeader() {
                   }}
                 >
                   Sign Up
-                </Link>
+                </a>
               </>
             )}
           </div>

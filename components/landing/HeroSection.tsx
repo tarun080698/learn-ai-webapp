@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { THINKIFIC_COURSE_URL } from "@/lib/thinkificRedirect";
 
 export function HeroSection() {
   return (
@@ -59,8 +60,8 @@ export function HeroSection() {
                 <i className="fa-solid fa-rocket mr-2"></i>
                 Browse Catalog
               </Link>
-              <Link
-                href="/login"
+              <a
+                href={THINKIFIC_COURSE_URL}
                 className="px-8 py-4 rounded-lg transition-all duration-200 font-semibold text-center"
                 style={{
                   boxShadow:
@@ -71,7 +72,7 @@ export function HeroSection() {
               >
                 <i className="fa-solid fa-user mr-2"></i>
                 Sign Up
-              </Link>
+              </a>
             </div>
           </div>
           <div className="relative">
