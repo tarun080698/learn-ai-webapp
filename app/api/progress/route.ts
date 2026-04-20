@@ -143,19 +143,75 @@ export async function POST(req: NextRequest) {
         }
 
         return await adminDb!.runTransaction(async (transaction) => {
-          // 1. Read progress document
+          // Firestore transactions require all reads before any writes.
           const progId = progressId(user.uid, parsed.courseId, parsed.moduleId);
           const progressRef = adminDb!.collection(COL.progress).doc(progId);
+          const enrollId = enrollmentId(user.uid, parsed.courseId);
+          const enrollRef = adminDb!.collection(COL.enrollments).doc(enrollId);
+          const courseRef = adminDb!
+            .collection(COL.courses)
+            .doc(parsed.courseId);
+
+          // === ALL READS ===
           const progressDoc = await transaction.get(progressRef);
+          const enrollDoc = await transaction.get(enrollRef);
+          const courseDoc = await transaction.get(courseRef);
 
-          let wasAlreadyCompleted = false;
-
-          if (progressDoc.exists) {
-            const progressData = progressDoc.data()!;
-            wasAlreadyCompleted = progressData.completed || false;
+          if (!courseDoc.exists) {
+            throw Object.assign(new Error("Course not found"), {
+              status: 404,
+              code: "course_not_found",
+            });
           }
 
-          // 2. Set/merge progress completion (idempotent)
+          // Derive state from reads
+          const wasAlreadyCompleted = progressDoc.exists
+            ? !!progressDoc.data()?.completed
+            : false;
+
+          const enrollData = enrollDoc.exists
+            ? enrollDoc.data()!
+            : {
+                uid: user.uid,
+                courseId: parsed.courseId,
+                enrolledAt: new Date(),
+                completed: false,
+                lastModuleIndex: 0,
+                completedCount: 0,
+                progressPct: 0,
+              };
+
+          const courseData = courseDoc.data()!;
+          const totalModules = courseData.moduleCount || 0;
+
+          // Compute new enrollment values
+          let newCompletedCount = enrollData.completedCount || 0;
+          if (!wasAlreadyCompleted) newCompletedCount += 1;
+
+          const newProgressPct =
+            totalModules > 0
+              ? Math.min(
+                  100,
+                  Math.floor((newCompletedCount / totalModules) * 100)
+                )
+              : 0;
+
+          const newLastModuleIndex = Math.max(
+            enrollData.lastModuleIndex || 0,
+            parsed.moduleIndex + 1
+          );
+          const clampedLastModuleIndex = Math.min(
+            newLastModuleIndex,
+            totalModules
+          );
+
+          const newCompleted =
+            newCompletedCount >= totalModules && totalModules > 0;
+
+          const wasEnrollmentCompleted = enrollData.completed || false;
+          const isFirstTimeCompleted = newCompleted && !wasEnrollmentCompleted;
+
+          // === ALL WRITES ===
           if (!wasAlreadyCompleted) {
             transaction.set(
               progressRef,
@@ -170,78 +226,6 @@ export async function POST(req: NextRequest) {
             );
           }
 
-          // 3. Read enrollment document (create defensively if missing)
-          const enrollId = enrollmentId(user.uid, parsed.courseId);
-          const enrollRef = adminDb!.collection(COL.enrollments).doc(enrollId);
-          const enrollDoc = await transaction.get(enrollRef);
-
-          let enrollData;
-          if (!enrollDoc.exists) {
-            // Defensive: create enrollment if missing
-            enrollData = {
-              uid: user.uid,
-              courseId: parsed.courseId,
-              enrolledAt: new Date(),
-              completed: false,
-              lastModuleIndex: 0,
-              completedCount: 0,
-              progressPct: 0,
-            };
-          } else {
-            enrollData = enrollDoc.data()!;
-          }
-
-          // 4. Read course to get moduleCount
-          const courseRef = adminDb!
-            .collection(COL.courses)
-            .doc(parsed.courseId);
-          const courseDoc = await transaction.get(courseRef);
-          if (!courseDoc.exists) {
-            throw Object.assign(new Error("Course not found"), {
-              status: 404,
-              code: "course_not_found",
-            });
-          }
-          const courseData = courseDoc.data()!;
-          const totalModules = courseData.moduleCount || 0;
-
-          // 5. Compute new enrollment values
-          let newCompletedCount = enrollData.completedCount || 0;
-
-          // Only increment if this progress was not already completed
-          if (!wasAlreadyCompleted) {
-            newCompletedCount += 1;
-          }
-
-          // Calculate progress percentage (0-100)
-          const newProgressPct =
-            totalModules > 0
-              ? Math.min(
-                  100,
-                  Math.floor((newCompletedCount / totalModules) * 100)
-                )
-              : 0;
-
-          // Update last module index (resume pointer)
-          const newLastModuleIndex = Math.max(
-            enrollData.lastModuleIndex || 0,
-            parsed.moduleIndex + 1
-          );
-          // Clamp to total module count
-          const clampedLastModuleIndex = Math.min(
-            newLastModuleIndex,
-            totalModules
-          );
-
-          // Course completed when all modules done
-          const newCompleted =
-            newCompletedCount >= totalModules && totalModules > 0;
-
-          // Check if this is the first time the enrollment is being completed
-          const wasEnrollmentCompleted = enrollData.completed || false;
-          const isFirstTimeCompleted = newCompleted && !wasEnrollmentCompleted;
-
-          // 6. Update enrollment
           const updatedEnrollData = {
             ...enrollData,
             completedCount: newCompletedCount,
@@ -249,12 +233,8 @@ export async function POST(req: NextRequest) {
             lastModuleIndex: clampedLastModuleIndex,
             completed: newCompleted,
           };
-
           transaction.set(enrollRef, updatedEnrollData, { merge: true });
 
-          // 7. Increment course completion counter if enrollment completed for first time
-          // Idempotency: only increment when enrollment.completed flips from false to true
-          // Multiple progress completions won't inflate the counter
           if (isFirstTimeCompleted) {
             const currentCompletionCount = courseData.completionCount || 0;
             transaction.update(courseRef, {

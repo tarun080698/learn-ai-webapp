@@ -9,13 +9,14 @@ import { useAuth } from "@/app/(auth)/AuthProvider";
 import { RouteGuard } from "@/app/components/RouteGuard";
 import { PublicLayout } from "@/components/PublicLayout";
 import { generateIdempotencyKey } from "@/utils/uuid";
+import { QuestionnaireRunner } from "@/components/QuestionnaireRunner";
 
 const MarkdownPreview = dynamic(
   () => import("@uiw/react-md-editor").then((m) => m.default.Markdown),
   { ssr: false }
 );
 
-type LessonKind = "video" | "pdf" | "image" | "link" | "text";
+type LessonKind = "video" | "pdf" | "image" | "link" | "text" | "quiz";
 
 interface Lesson {
   id: string;
@@ -24,6 +25,9 @@ interface Lesson {
   url?: string | null;
   body?: string;
   isPrimary: boolean;
+  // For quiz lessons:
+  assignmentId?: string;
+  timing?: "pre" | "post";
 }
 
 interface ModuleAsset {
@@ -57,9 +61,47 @@ interface CourseData {
   };
 }
 
-function buildLessons(module: ModuleData): Lesson[] {
-  const lessons: Lesson[] = [];
+interface ContextEntry {
+  assignmentId: string;
+  completed: boolean;
+}
 
+interface ContextResponse {
+  preCourse?: ContextEntry;
+  postCourse?: ContextEntry;
+  preModule?: ContextEntry;
+  postModule?: ContextEntry;
+}
+
+const lessonsStorageKey = (courseId: string) => `learn:${courseId}:lessons`;
+
+function readLessonProgress(courseId: string): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(lessonsStorageKey(courseId));
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return new Set(parsed.map(String));
+  } catch {
+    // ignore
+  }
+  return new Set();
+}
+
+function writeLessonProgress(courseId: string, ids: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      lessonsStorageKey(courseId),
+      JSON.stringify(Array.from(ids))
+    );
+  } catch {
+    // ignore
+  }
+}
+
+function buildContentLessons(module: ModuleData): Lesson[] {
+  const lessons: Lesson[] = [];
   const hasPrimary = !!(module.body && module.body.trim()) || !!module.contentUrl;
   if (hasPrimary) {
     lessons.push({
@@ -71,7 +113,6 @@ function buildLessons(module: ModuleData): Lesson[] {
       isPrimary: true,
     });
   }
-
   const assets = [...(module.assets ?? [])].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
   );
@@ -85,7 +126,35 @@ function buildLessons(module: ModuleData): Lesson[] {
       isPrimary: false,
     });
   });
+  return lessons;
+}
 
+function buildModuleLessons(
+  module: ModuleData,
+  ctx: ContextResponse | undefined
+): Lesson[] {
+  const lessons: Lesson[] = [];
+  if (ctx?.preModule) {
+    lessons.push({
+      id: `${module.id}:pre-quiz`,
+      title: "Pre-module quiz",
+      kind: "quiz",
+      isPrimary: false,
+      assignmentId: ctx.preModule.assignmentId,
+      timing: "pre",
+    });
+  }
+  lessons.push(...buildContentLessons(module));
+  if (ctx?.postModule) {
+    lessons.push({
+      id: `${module.id}:post-quiz`,
+      title: "Post-module quiz",
+      kind: "quiz",
+      isPrimary: false,
+      assignmentId: ctx.postModule.assignmentId,
+      timing: "post",
+    });
+  }
   return lessons;
 }
 
@@ -106,7 +175,7 @@ function toEmbedUrl(url: string | null | undefined): string | null {
       if (id) return `https://player.vimeo.com/video/${id}`;
     }
   } catch {
-    // fall through
+    /* fall through */
   }
   return url;
 }
@@ -208,6 +277,23 @@ function LessonViewer({ lesson }: { lesson: Lesson }) {
   );
 }
 
+function lessonIcon(kind: LessonKind): string {
+  switch (kind) {
+    case "video":
+      return "fa-play";
+    case "pdf":
+      return "fa-file-pdf";
+    case "image":
+      return "fa-image";
+    case "link":
+      return "fa-link";
+    case "quiz":
+      return "fa-clipboard-question";
+    default:
+      return "fa-file-lines";
+  }
+}
+
 function LearnPageInner() {
   const params = useParams();
   const router = useRouter();
@@ -220,10 +306,23 @@ function LearnPageInner() {
   const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [expandedModuleIds, setExpandedModuleIds] = useState<Set<string>>(new Set());
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [expandedModuleIds, setExpandedModuleIds] = useState<Set<string>>(
+    new Set()
+  );
   const [courseLoading, setCourseLoading] = useState(true);
   const [marking, setMarking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [courseCtx, setCourseCtx] = useState<ContextResponse>({});
+  const [moduleCtxByModuleId, setModuleCtxByModuleId] = useState<
+    Record<string, ContextResponse>
+  >({});
+  const [showCourseQuiz, setShowCourseQuiz] = useState<"pre" | "post" | null>(
+    null
+  );
 
   const sortedModules = useMemo(
     () =>
@@ -233,11 +332,14 @@ function LearnPageInner() {
     [course]
   );
 
+  // Build the lesson list per module, mixing in pre/post-module quizzes from context.
   const lessonsByModuleId = useMemo(() => {
     const map = new Map<string, Lesson[]>();
-    sortedModules.forEach((m) => map.set(m.id, buildLessons(m)));
+    sortedModules.forEach((m) => {
+      map.set(m.id, buildModuleLessons(m, moduleCtxByModuleId[m.id]));
+    });
     return map;
-  }, [sortedModules]);
+  }, [sortedModules, moduleCtxByModuleId]);
 
   const activeModule = useMemo(
     () => sortedModules.find((m) => m.id === activeModuleId) || null,
@@ -250,6 +352,11 @@ function LearnPageInner() {
   const activeLesson =
     activeLessons.find((l) => l.id === activeLessonId) || activeLessons[0] || null;
 
+  // Post-course quiz appears once every module is complete.
+  const allModulesComplete =
+    sortedModules.length > 0 &&
+    sortedModules.every((m) => completedIds.has(m.id));
+
   const loadCourse = useCallback(async () => {
     if (!firebaseUser || !courseId) return;
     try {
@@ -258,9 +365,7 @@ function LearnPageInner() {
       const res = await fetch(`/api/courses/${courseId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        throw new Error("Failed to load course");
-      }
+      if (!res.ok) throw new Error("Failed to load course");
       const data = await res.json();
       const c: CourseData = data.course;
 
@@ -270,8 +375,8 @@ function LearnPageInner() {
       }
 
       setCourse(c);
+      setCompletedLessonIds(readLessonProgress(courseId));
 
-      // Pick the first module to show: deep-link param > resume pointer > index 0.
       const sorted = [...(c.modules || [])].sort(
         (a, b) => (a.index ?? 0) - (b.index ?? 0)
       );
@@ -310,6 +415,65 @@ function LearnPageInner() {
     }
   }, [firebaseUser, courseId]);
 
+  const fetchCtx = useCallback(
+    async (moduleId?: string): Promise<ContextResponse | null> => {
+      if (!firebaseUser || !courseId) return null;
+      try {
+        const token = await firebaseUser.getIdToken();
+        const url = moduleId
+          ? `/api/questionnaires/context?courseId=${courseId}&moduleId=${moduleId}`
+          : `/api/questionnaires/context?courseId=${courseId}`;
+        const res = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          console.warn(
+            "[learn] questionnaire context fetch failed",
+            res.status,
+            url
+          );
+          return null;
+        }
+        const data = (await res.json()) as ContextResponse;
+        console.log("[learn] questionnaire context", {
+          scope: moduleId ? `module:${moduleId}` : "course",
+          data,
+        });
+        return data;
+      } catch (err) {
+        console.warn("[learn] questionnaire context error", err);
+        return null;
+      }
+    },
+    [firebaseUser, courseId]
+  );
+
+  const refreshCourseCtx = useCallback(async () => {
+    const data = await fetchCtx();
+    if (data) {
+      setCourseCtx({
+        preCourse: data.preCourse,
+        postCourse: data.postCourse,
+      });
+    }
+  }, [fetchCtx]);
+
+  const refreshModuleCtx = useCallback(
+    async (moduleId: string) => {
+      const data = await fetchCtx(moduleId);
+      if (data) {
+        setModuleCtxByModuleId((prev) => ({
+          ...prev,
+          [moduleId]: {
+            preModule: data.preModule,
+            postModule: data.postModule,
+          },
+        }));
+      }
+    },
+    [fetchCtx]
+  );
+
   useEffect(() => {
     loadCourse();
   }, [loadCourse]);
@@ -318,6 +482,19 @@ function LearnPageInner() {
     loadProgress();
   }, [loadProgress]);
 
+  useEffect(() => {
+    if (course) refreshCourseCtx();
+  }, [course, refreshCourseCtx]);
+
+  // Prefetch module-level context for every module after course loads.
+  useEffect(() => {
+    if (!course) return;
+    sortedModules.forEach((m) => {
+      if (!moduleCtxByModuleId[m.id]) refreshModuleCtx(m.id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course, sortedModules.length]);
+
   // When the active module changes, reset lesson selection to its first lesson.
   useEffect(() => {
     if (!activeModule) return;
@@ -325,7 +502,13 @@ function LearnPageInner() {
     setActiveLessonId(lessons[0]?.id ?? null);
   }, [activeModule, lessonsByModuleId]);
 
+  const persistLessons = (next: Set<string>) => {
+    setCompletedLessonIds(next);
+    writeLessonProgress(courseId, next);
+  };
+
   const handleSelectLesson = (moduleId: string, lessonId: string) => {
+    setShowCourseQuiz(null);
     setActiveModuleId(moduleId);
     setActiveLessonId(lessonId);
     setExpandedModuleIds((prev) => {
@@ -342,6 +525,18 @@ function LearnPageInner() {
       else next.add(moduleId);
       return next;
     });
+  };
+
+  const handleMarkLessonComplete = () => {
+    if (!activeModule || !activeLesson) return;
+    const next = new Set(completedLessonIds);
+    next.add(activeLesson.id);
+    persistLessons(next);
+
+    // Auto-advance to next lesson within the module.
+    const idx = activeLessons.findIndex((l) => l.id === activeLesson.id);
+    const nextLesson = activeLessons[idx + 1];
+    if (nextLesson) setActiveLessonId(nextLesson.id);
   };
 
   const handleMarkComplete = async () => {
@@ -374,8 +569,15 @@ function LearnPageInner() {
       }
       setCompletedIds((prev) => new Set(prev).add(activeModule.id));
 
-      // Auto-advance to the next module's first lesson.
-      const currentIdx = sortedModules.findIndex((m) => m.id === activeModule.id);
+      // Drop this module's lesson markers from local storage to keep it bounded.
+      const nextLessons = new Set(completedLessonIds);
+      activeLessons.forEach((l) => nextLessons.delete(l.id));
+      persistLessons(nextLessons);
+
+      // Advance to the next module.
+      const currentIdx = sortedModules.findIndex(
+        (m) => m.id === activeModule.id
+      );
       const next = sortedModules[currentIdx + 1];
       if (next) {
         setActiveModuleId(next.id);
@@ -390,6 +592,32 @@ function LearnPageInner() {
     } finally {
       setMarking(false);
     }
+  };
+
+  const handleQuizComplete = async () => {
+    if (showCourseQuiz === "pre") {
+      await refreshCourseCtx();
+      setShowCourseQuiz(null);
+      // Move to first module after pre-course quiz completion
+      const first = sortedModules[0];
+      if (first) setActiveModuleId(first.id);
+      return;
+    }
+    if (showCourseQuiz === "post") {
+      await refreshCourseCtx();
+      setShowCourseQuiz(null);
+      return;
+    }
+    if (!activeModule || !activeLesson) return;
+    // Mark this quiz lesson done in localStorage too so the sidebar shows ✓.
+    const nextLessons = new Set(completedLessonIds);
+    nextLessons.add(activeLesson.id);
+    persistLessons(nextLessons);
+    await refreshModuleCtx(activeModule.id);
+    // Auto-advance.
+    const idx = activeLessons.findIndex((l) => l.id === activeLesson.id);
+    const next = activeLessons[idx + 1];
+    if (next) setActiveLessonId(next.id);
   };
 
   if (courseLoading) {
@@ -437,6 +665,40 @@ function LearnPageInner() {
       ? Math.floor((completedCount / sortedModules.length) * 100)
       : 0;
 
+  // Module-complete gating: all lessons (content + quizzes) must be done.
+  const moduleCtx = activeModule
+    ? moduleCtxByModuleId[activeModule.id]
+    : undefined;
+  const postModuleQuizPending =
+    !!moduleCtx?.postModule && moduleCtx.postModule.completed === false;
+  const isLessonDone = (l: Lesson) => {
+    if (l.kind === "quiz") {
+      const flag =
+        l.timing === "pre"
+          ? moduleCtx?.preModule?.completed
+          : moduleCtx?.postModule?.completed;
+      return !!flag;
+    }
+    return completedLessonIds.has(l.id);
+  };
+  const allLessonsDone =
+    activeLessons.length > 0 && activeLessons.every(isLessonDone);
+  const moduleAlreadyComplete =
+    !!activeModule && completedIds.has(activeModule.id);
+  const moduleCompleteDisabled =
+    marking ||
+    !activeModule ||
+    moduleAlreadyComplete ||
+    !allLessonsDone ||
+    postModuleQuizPending;
+  const moduleCompleteHelp = moduleAlreadyComplete
+    ? null
+    : postModuleQuizPending
+    ? "Complete the post-module quiz first."
+    : !allLessonsDone
+    ? "Mark every lesson in this module complete first."
+    : null;
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -474,7 +736,7 @@ function LearnPageInner() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar: modules with nested lessons */}
+        {/* Sidebar */}
         <aside
           className="lg:col-span-1 rounded-xl p-4"
           style={{
@@ -489,12 +751,29 @@ function LearnPageInner() {
           >
             Course content
           </h2>
+
+          {/* Pre-course quiz row */}
+          {courseCtx.preCourse && (
+            <CourseQuizRow
+              label="Intro quiz"
+              completed={courseCtx.preCourse.completed}
+              active={showCourseQuiz === "pre"}
+              onClick={() => {
+                setShowCourseQuiz("pre");
+                setActiveModuleId(null);
+              }}
+            />
+          )}
+
           {sortedModules.length === 0 ? (
-            <p className="text-sm" style={{ color: "var(--muted-foreground)" }}>
+            <p
+              className="text-sm mt-2"
+              style={{ color: "var(--muted-foreground)" }}
+            >
               No published modules yet.
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="space-y-2 mt-2">
               {sortedModules.map((m) => {
                 const isOpen = expandedModuleIds.has(m.id);
                 const isActiveModule = m.id === activeModuleId;
@@ -505,6 +784,7 @@ function LearnPageInner() {
                     <button
                       onClick={() => {
                         handleToggleExpand(m.id);
+                        setShowCourseQuiz(null);
                         setActiveModuleId(m.id);
                       }}
                       className="w-full text-left px-3 py-2 rounded-lg flex items-start gap-2 transition-colors hover:opacity-90"
@@ -552,6 +832,14 @@ function LearnPageInner() {
                         {lessons.map((lesson) => {
                           const isActiveLesson =
                             isActiveModule && lesson.id === activeLesson?.id;
+                          const lessonDone = completedLessonIds.has(lesson.id);
+                          const ctxFlag =
+                            lesson.kind === "quiz"
+                              ? lesson.timing === "pre"
+                                ? moduleCtxByModuleId[m.id]?.preModule?.completed
+                                : moduleCtxByModuleId[m.id]?.postModule?.completed
+                              : undefined;
+                          const isQuizDone = lesson.kind === "quiz" && !!ctxFlag;
                           return (
                             <li key={lesson.id}>
                               <button
@@ -570,16 +858,15 @@ function LearnPageInner() {
                               >
                                 <i
                                   className={`fa-solid text-xs ${
-                                    lesson.kind === "video"
-                                      ? "fa-play"
-                                      : lesson.kind === "pdf"
-                                      ? "fa-file-pdf"
-                                      : lesson.kind === "image"
-                                      ? "fa-image"
-                                      : lesson.kind === "link"
-                                      ? "fa-link"
-                                      : "fa-file-lines"
+                                    lessonDone || isQuizDone
+                                      ? "fa-circle-check"
+                                      : lessonIcon(lesson.kind)
                                   }`}
+                                  style={
+                                    lessonDone || isQuizDone
+                                      ? { color: "var(--primary)" }
+                                      : undefined
+                                  }
                                 ></i>
                                 <span className="truncate">{lesson.title}</span>
                               </button>
@@ -601,9 +888,24 @@ function LearnPageInner() {
               })}
             </ul>
           )}
+
+          {/* Post-course quiz row, only after every module is complete */}
+          {courseCtx.postCourse && allModulesComplete && (
+            <div className="mt-3">
+              <CourseQuizRow
+                label="Wrap-up quiz"
+                completed={courseCtx.postCourse.completed}
+                active={showCourseQuiz === "post"}
+                onClick={() => {
+                  setShowCourseQuiz("post");
+                  setActiveModuleId(null);
+                }}
+              />
+            </div>
+          )}
         </aside>
 
-        {/* Main pane: active lesson */}
+        {/* Main pane */}
         <main
           className="lg:col-span-3 rounded-xl p-6"
           style={{
@@ -612,7 +914,51 @@ function LearnPageInner() {
               "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
           }}
         >
-          {!activeModule ? (
+          {showCourseQuiz === "pre" && courseCtx.preCourse ? (
+            <>
+              <header className="mb-4">
+                <p
+                  className="text-xs uppercase tracking-wide mb-1"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  Course quiz
+                </p>
+                <h2
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--secondary)" }}
+                >
+                  Intro quiz
+                </h2>
+              </header>
+              <QuestionnaireRunner
+                assignmentId={courseCtx.preCourse.assignmentId}
+                onComplete={handleQuizComplete}
+                embedded
+              />
+            </>
+          ) : showCourseQuiz === "post" && courseCtx.postCourse ? (
+            <>
+              <header className="mb-4">
+                <p
+                  className="text-xs uppercase tracking-wide mb-1"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  Course quiz
+                </p>
+                <h2
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--secondary)" }}
+                >
+                  Wrap-up quiz
+                </h2>
+              </header>
+              <QuestionnaireRunner
+                assignmentId={courseCtx.postCourse.assignmentId}
+                onComplete={handleQuizComplete}
+                embedded
+              />
+            </>
+          ) : !activeModule ? (
             <p style={{ color: "var(--muted-foreground)" }}>
               Select a module to begin.
             </p>
@@ -659,7 +1005,15 @@ function LearnPageInner() {
               </header>
 
               <section className="mb-6">
-                <LessonViewer lesson={activeLesson} />
+                {activeLesson.kind === "quiz" && activeLesson.assignmentId ? (
+                  <QuestionnaireRunner
+                    assignmentId={activeLesson.assignmentId}
+                    onComplete={handleQuizComplete}
+                    embedded
+                  />
+                ) : (
+                  <LessonViewer lesson={activeLesson} />
+                )}
               </section>
 
               <footer className="flex flex-wrap items-center justify-between gap-3 border-t pt-4">
@@ -667,7 +1021,9 @@ function LearnPageInner() {
                   {activeLessons.map((l, idx) => (
                     <button
                       key={l.id}
-                      onClick={() => handleSelectLesson(activeModule.id, l.id)}
+                      onClick={() =>
+                        handleSelectLesson(activeModule.id, l.id)
+                      }
                       className="w-2.5 h-2.5 rounded-full"
                       title={l.title}
                       style={{
@@ -689,21 +1045,57 @@ function LearnPageInner() {
                     of {activeLessons.length}
                   </span>
                 </div>
-                <button
-                  onClick={handleMarkComplete}
-                  disabled={marking || completedIds.has(activeModule.id)}
-                  className="px-5 py-2 rounded-lg font-semibold disabled:opacity-60"
-                  style={{
-                    backgroundColor: "var(--primary)",
-                    color: "var(--primary-foreground)",
-                  }}
-                >
-                  {completedIds.has(activeModule.id)
-                    ? "Module completed ✓"
-                    : marking
-                    ? "Saving…"
-                    : "Mark module complete"}
-                </button>
+
+                <div className="flex flex-col items-end gap-2">
+                  {activeLesson.kind === "quiz" ? (
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      Submit the quiz above to mark it complete.
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleMarkLessonComplete}
+                      disabled={completedLessonIds.has(activeLesson.id)}
+                      className="px-4 py-2 rounded-lg font-medium disabled:opacity-60"
+                      style={{
+                        backgroundColor: "var(--card)",
+                        color: "var(--secondary)",
+                        boxShadow:
+                          "0 1px 2px rgba(38,70,83,0.06), 0 8px 24px rgba(38,70,83,0.08)",
+                      }}
+                    >
+                      {completedLessonIds.has(activeLesson.id)
+                        ? "Lesson completed ✓"
+                        : "Mark lesson complete"}
+                    </button>
+                  )}
+
+                  <button
+                    onClick={handleMarkComplete}
+                    disabled={moduleCompleteDisabled}
+                    className="px-5 py-2 rounded-lg font-semibold disabled:opacity-60"
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
+                    }}
+                  >
+                    {moduleAlreadyComplete
+                      ? "Module completed ✓"
+                      : marking
+                      ? "Saving…"
+                      : "Mark module complete"}
+                  </button>
+                  {moduleCompleteHelp && (
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--muted-foreground)" }}
+                    >
+                      {moduleCompleteHelp}
+                    </span>
+                  )}
+                </div>
               </footer>
             </>
           )}
@@ -719,6 +1111,34 @@ function LearnPageInner() {
         </p>
       )}
     </div>
+  );
+}
+
+interface CourseQuizRowProps {
+  label: string;
+  completed: boolean;
+  active: boolean;
+  onClick: () => void;
+}
+
+function CourseQuizRow({ label, completed, active, onClick }: CourseQuizRowProps) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors hover:opacity-90"
+      style={{
+        backgroundColor: active ? "var(--primary-10)" : "transparent",
+        color: active ? "var(--primary)" : "var(--secondary)",
+      }}
+    >
+      <i
+        className={`fa-solid ${
+          completed ? "fa-circle-check" : "fa-clipboard-question"
+        }`}
+        style={completed ? { color: "var(--primary)" } : undefined}
+      ></i>
+      <span className="text-sm font-medium">{label}</span>
+    </button>
   );
 }
 

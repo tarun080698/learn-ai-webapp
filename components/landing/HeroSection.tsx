@@ -12,8 +12,8 @@ export function HeroSection() {
           "linear-gradient(135deg, var(--background) 0%, var(--muted) 30%, var(--background) 100%)",
       }}
     >
-      <div className="absolute inset-0 opacity-5"></div>
-      <div className="container mx-auto px-4">
+      <div className="absolute inset-0 opacity-5 pointer-events-none"></div>
+      <div className="container mx-auto px-4 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div className="space-y-4">
@@ -57,7 +57,7 @@ export function HeroSection() {
                 }}
               >
                 <i className="fa-solid fa-rocket mr-2"></i>
-                Browse Courses
+                Browse Catalog
               </Link>
               <Link
                 href="/login"
@@ -70,7 +70,7 @@ export function HeroSection() {
                 }}
               >
                 <i className="fa-solid fa-user mr-2"></i>
-                Get Started
+                Sign Up
               </Link>
             </div>
           </div>

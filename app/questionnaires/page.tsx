@@ -1,14 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/app/(auth)/AuthProvider";
 import { RouteGuard } from "@/app/components/RouteGuard";
 import { Navigation } from "@/app/components/Navigation";
-import {
-  useAuthenticatedApi,
-  useAuthenticatedMutation,
-} from "@/hooks/useAuthenticatedFetch";
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useAuthenticatedMutation } from "@/hooks/useAuthenticatedFetch";
+import { QuestionnaireRunner } from "@/components/QuestionnaireRunner";
 
 interface QuestionnaireAssignment {
   assignmentId: string;
@@ -18,83 +16,27 @@ interface QuestionnaireAssignment {
   completed: boolean;
 }
 
-interface QuestionnaireQuestion {
-  id: string;
-  type: "single" | "multi" | "scale" | "text";
-  prompt: string;
-  options?: { id: string; label: string }[];
-  scale?: { min: number; max: number; labels?: Record<number, string> };
-  required: boolean;
-}
-
-interface QuestionnaireTemplate {
-  id: string;
-  title: string;
-  purpose: "survey" | "quiz" | "mixed";
-  questions: QuestionnaireQuestion[];
-  version: number;
-}
-
-interface StartedQuestionnaire {
-  assignment: {
-    id: string;
-    questionnaireId: string;
-    questionnaireVersion: number;
-    scope: { type: "course" | "module"; courseId: string; moduleId?: string };
-    timing: "pre" | "post";
-    active: boolean;
-  };
-  questionnaire: QuestionnaireTemplate;
-}
-
 interface QuestionnaireContextResponse {
-  preCourse?: {
-    assignmentId: string;
-    completed: boolean;
-  };
-  postCourse?: {
-    assignmentId: string;
-    completed: boolean;
-  };
-  preModule?: {
-    assignmentId: string;
-    completed: boolean;
-  };
-  postModule?: {
-    assignmentId: string;
-    completed: boolean;
-  };
-}
-
-interface SubmissionResponse {
-  score?: {
-    earned: number;
-    total: number;
-  };
+  preCourse?: { assignmentId: string; completed: boolean };
+  postCourse?: { assignmentId: string; completed: boolean };
+  preModule?: { assignmentId: string; completed: boolean };
+  postModule?: { assignmentId: string; completed: boolean };
 }
 
 export default function QuestionnairePage() {
   const { firebaseUser, loading } = useAuth();
   const [assignments, setAssignments] = useState<QuestionnaireAssignment[]>([]);
-  const [currentQuestionnaire, setCurrentQuestionnaire] =
-    useState<StartedQuestionnaire | null>(null);
-  const [answers, setAnswers] = useState<
-    Record<string, string | number | string[]>
-  >({});
-  const [result, setResult] = useState<string>("");
-
-  // Test course and module IDs for demonstration
+  const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(
+    null
+  );
+  const [message, setMessage] = useState<string>("");
   const [testCourseId, setTestCourseId] = useState("course-intro-ai");
   const [testModuleId, setTestModuleId] = useState("module-1");
 
-  // Authenticated API hooks
   const loadAssignmentsApi = useAuthenticatedMutation();
-  const startQuestionnaireApi = useAuthenticatedMutation();
-  const submitQuestionnaireApi = useAuthenticatedMutation();
 
   const loadAssignments = async () => {
     if (!firebaseUser) return;
-
     try {
       const data = (await loadAssignmentsApi.mutate(
         "/api/questionnaires/context",
@@ -104,244 +46,68 @@ export default function QuestionnairePage() {
         }
       )) as QuestionnaireContextResponse;
 
-      setAssignments([
-        ...(data.preCourse
-          ? [
-              {
-                assignmentId: data.preCourse.assignmentId,
-                questionnaireTitle: "Pre-Course Survey",
-                scope: { type: "course" as const, courseId: testCourseId },
-                timing: "pre" as const,
-                completed: data.preCourse.completed,
-              },
-            ]
-          : []),
-        ...(data.postCourse
-          ? [
-              {
-                assignmentId: data.postCourse.assignmentId,
-                questionnaireTitle: "Post-Course Survey",
-                scope: { type: "course" as const, courseId: testCourseId },
-                timing: "post" as const,
-                completed: data.postCourse.completed,
-              },
-            ]
-          : []),
-        ...(data.preModule
-          ? [
-              {
-                assignmentId: data.preModule.assignmentId,
-                questionnaireTitle: "Pre-Module Survey",
-                scope: {
-                  type: "module" as const,
-                  courseId: testCourseId,
-                  moduleId: testModuleId,
-                },
-                timing: "pre" as const,
-                completed: data.preModule.completed,
-              },
-            ]
-          : []),
-        ...(data.postModule
-          ? [
-              {
-                assignmentId: data.postModule.assignmentId,
-                questionnaireTitle: "Post-Module Survey",
-                scope: {
-                  type: "module" as const,
-                  courseId: testCourseId,
-                  moduleId: testModuleId,
-                },
-                timing: "post" as const,
-                completed: data.postModule.completed,
-              },
-            ]
-          : []),
-      ]);
+      const list: QuestionnaireAssignment[] = [];
+      if (data.preCourse) {
+        list.push({
+          assignmentId: data.preCourse.assignmentId,
+          questionnaireTitle: "Pre-Course",
+          scope: { type: "course", courseId: testCourseId },
+          timing: "pre",
+          completed: data.preCourse.completed,
+        });
+      }
+      if (data.postCourse) {
+        list.push({
+          assignmentId: data.postCourse.assignmentId,
+          questionnaireTitle: "Post-Course",
+          scope: { type: "course", courseId: testCourseId },
+          timing: "post",
+          completed: data.postCourse.completed,
+        });
+      }
+      if (data.preModule) {
+        list.push({
+          assignmentId: data.preModule.assignmentId,
+          questionnaireTitle: "Pre-Module",
+          scope: {
+            type: "module",
+            courseId: testCourseId,
+            moduleId: testModuleId,
+          },
+          timing: "pre",
+          completed: data.preModule.completed,
+        });
+      }
+      if (data.postModule) {
+        list.push({
+          assignmentId: data.postModule.assignmentId,
+          questionnaireTitle: "Post-Module",
+          scope: {
+            type: "module",
+            courseId: testCourseId,
+            moduleId: testModuleId,
+          },
+          timing: "post",
+          completed: data.postModule.completed,
+        });
+      }
+      setAssignments(list);
     } catch (error) {
       console.error("Error loading assignments:", error);
     }
   };
 
   useEffect(() => {
-    if (firebaseUser) {
-      loadAssignments();
-    }
-  }, [firebaseUser]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Reload when test parameters change
-  useEffect(() => {
-    if (firebaseUser) {
-      loadAssignments();
-    }
-  }, [testCourseId, testModuleId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const startQuestionnaire = async (assignmentId: string) => {
-    if (!firebaseUser) return;
-
-    try {
-      const data = await startQuestionnaireApi.mutate(
-        "/api/questionnaires/start",
-        {
-          assignmentId,
-        }
-      );
-      setCurrentQuestionnaire(data as StartedQuestionnaire);
-      setAnswers({});
-      setResult("");
-    } catch (error) {
-      setResult(`❌ Error: ${error}`);
-    }
-  };
-
-  const updateAnswer = (
-    questionId: string,
-    value: string | number | string[]
-  ) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: value }));
-  };
-
-  const submitQuestionnaire = async () => {
-    if (!firebaseUser || !currentQuestionnaire) return;
-
-    try {
-      // Convert answers to API format
-      const formattedAnswers = Object.entries(answers).map(
-        ([questionId, value]) => {
-          if (Array.isArray(value)) {
-            return { questionId, values: value };
-          } else {
-            return { questionId, value };
-          }
-        }
-      );
-
-      const data = (await submitQuestionnaireApi.mutate(
-        "/api/questionnaires/submit",
-        {
-          assignmentId: currentQuestionnaire.assignment.id,
-          answers: formattedAnswers,
-        }
-      )) as SubmissionResponse;
-
-      setResult(
-        `✅ Questionnaire submitted successfully! ${
-          data.score ? `Score: ${data.score.earned}/${data.score.total}` : ""
-        }`
-      );
-      setCurrentQuestionnaire(null);
-      setAnswers({});
-      loadAssignments(); // Refresh to show completion status
-    } catch (error) {
-      setResult(`❌ Error: ${error}`);
-    }
-  };
-
-  const renderQuestion = (question: QuestionnaireQuestion) => {
-    switch (question.type) {
-      case "single":
-        return (
-          <div className="space-y-2">
-            {question.options?.map((option) => (
-              <label key={option.id} className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name={question.id}
-                  value={option.id}
-                  checked={answers[question.id] === option.id}
-                  onChange={(e) => updateAnswer(question.id, e.target.value)}
-                  className="text-primary"
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-        );
-
-      case "multi":
-        return (
-          <div className="space-y-2">
-            {question.options?.map((option) => (
-              <label key={option.id} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={
-                    Array.isArray(answers[question.id]) &&
-                    (answers[question.id] as string[]).includes(option.id)
-                  }
-                  onChange={(e) => {
-                    const currentValues = Array.isArray(answers[question.id])
-                      ? (answers[question.id] as string[])
-                      : [];
-                    if (e.target.checked) {
-                      updateAnswer(question.id, [...currentValues, option.id]);
-                    } else {
-                      updateAnswer(
-                        question.id,
-                        currentValues.filter((v) => v !== option.id)
-                      );
-                    }
-                  }}
-                  className="text-primary"
-                />
-                <span>{option.label}</span>
-              </label>
-            ))}
-          </div>
-        );
-
-      case "scale":
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <span className="">
-                {question.scale?.labels?.[question.scale.min] ||
-                  question.scale?.min}
-              </span>
-              <input
-                type="range"
-                min={question.scale?.min || 1}
-                max={question.scale?.max || 5}
-                step={1}
-                value={answers[question.id] || question.scale?.min || 1}
-                onChange={(e) =>
-                  updateAnswer(question.id, parseInt(e.target.value))
-                }
-                className="flex-1"
-              />
-              <span className="">
-                {question.scale?.labels?.[question.scale.max] ||
-                  question.scale?.max}
-              </span>
-            </div>
-            <div className="text-center font-semibold">
-              Selected: {answers[question.id] || question.scale?.min || 1}
-            </div>
-          </div>
-        );
-
-      case "text":
-        return (
-          <textarea
-            value={answers[question.id] || ""}
-            onChange={(e) => updateAnswer(question.id, e.target.value)}
-            placeholder="Enter your response..."
-            className="w-full p-3 border rounded-lg resize-vertical min-h-[100px]"
-            rows={4}
-          />
-        );
-
-      default:
-        return <div>Unsupported question type</div>;
-    }
-  };
+    if (firebaseUser) loadAssignments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser, testCourseId, testModuleId]);
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading...</p>
+          <p>Loading…</p>
         </div>
       </div>
     );
@@ -352,9 +118,6 @@ export default function QuestionnairePage() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold">Authentication Required</h1>
-          <p className="text-muted-foreground">
-            Please sign in to access questionnaires.
-          </p>
           <Link
             href="/login"
             className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
@@ -386,30 +149,25 @@ export default function QuestionnairePage() {
             </Link>
           </div>
 
-          {/* Test Controls */}
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h3 className="font-semibold mb-2">Test Configuration</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block  font-medium mb-1">Course ID:</label>
+                <label className="block font-medium mb-1">Course ID:</label>
                 <input
                   type="text"
                   value={testCourseId}
                   onChange={(e) => setTestCourseId(e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="Enter course ID"
                 />
               </div>
               <div>
-                <label className="block  font-medium mb-1">
-                  Module ID (optional):
-                </label>
+                <label className="block font-medium mb-1">Module ID:</label>
                 <input
                   type="text"
                   value={testModuleId}
                   onChange={(e) => setTestModuleId(e.target.value)}
                   className="w-full p-2 border rounded"
-                  placeholder="Enter module ID"
                 />
               </div>
             </div>
@@ -417,153 +175,71 @@ export default function QuestionnairePage() {
               onClick={loadAssignments}
               className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
             >
-              Load Assignments
+              Reload
             </button>
           </div>
 
-          {result && (
+          {message && (
             <div className="mb-6 p-4 border rounded-lg bg-muted">
-              <pre className=" whitespace-pre-wrap">{result}</pre>
+              <pre className="whitespace-pre-wrap">{message}</pre>
             </div>
           )}
 
-          {/* Current Questionnaire */}
-          {currentQuestionnaire && (
+          {activeAssignmentId ? (
             <div className="mb-8 p-6 border rounded-lg bg-white shadow-sm">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold">
-                    {currentQuestionnaire.questionnaire.title}
-                  </h2>
-                  <p className="text-muted-foreground">
-                    {currentQuestionnaire.questionnaire.purpose === "survey"
-                      ? "📊 Survey"
-                      : currentQuestionnaire.questionnaire.purpose === "quiz"
-                      ? "🧪 Quiz"
-                      : "📝 Mixed"}
-                    {" • "}Version {currentQuestionnaire.questionnaire.version}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setCurrentQuestionnaire(null)}
-                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/90 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              <div className="space-y-8">
-                {currentQuestionnaire.questionnaire.questions.map(
-                  (question, index) => (
-                    <div key={question.id} className="space-y-4">
-                      <div className="flex items-start space-x-2">
-                        <span className="shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center  font-semibold">
-                          {index + 1}
-                        </span>
-                        <div className="flex-1">
-                          <h3 className="font-semibold mb-2">
-                            {question.prompt}
-                            {question.required && (
-                              <span className="text-red-500 ml-1">*</span>
-                            )}
-                          </h3>
-                          {renderQuestion(question)}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-
-              <div className="mt-8 flex justify-end">
-                <button
-                  onClick={submitQuestionnaire}
-                  disabled={submitQuestionnaireApi.loading}
-                  className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitQuestionnaireApi.loading
-                    ? "Submitting..."
-                    : "Submit Questionnaire"}
-                </button>
-              </div>
+              <QuestionnaireRunner
+                assignmentId={activeAssignmentId}
+                onCancel={() => setActiveAssignmentId(null)}
+                onComplete={(result) => {
+                  setMessage(
+                    result.score
+                      ? `Submitted. Score: ${result.score.earned}/${result.score.total}`
+                      : "Submitted."
+                  );
+                  setActiveAssignmentId(null);
+                  loadAssignments();
+                }}
+              />
             </div>
-          )}
-
-          {/* Available Assignments */}
-          {!currentQuestionnaire && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Available Questionnaires</h2>
-                <button
-                  onClick={loadAssignments}
-                  disabled={loadAssignmentsApi.loading}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
-                >
-                  {loadAssignmentsApi.loading ? "Loading..." : "Refresh"}
-                </button>
-              </div>
-
+          ) : (
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold">Available Questionnaires</h2>
               {loadAssignmentsApi.loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p>Loading assignments...</p>
-                </div>
+                <p>Loading assignments…</p>
               ) : assignments.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>
-                    No questionnaires available for the specified course/module.
-                  </p>
-                  <p className=" mt-2">
-                    Try creating sample data in the admin panel first.
-                  </p>
-                </div>
+                <p className="text-muted-foreground">
+                  No questionnaires for that course / module combo.
+                </p>
               ) : (
-                <div className="grid gap-4">
-                  {assignments.map((assignment) => (
-                    <div
-                      key={assignment.assignmentId}
-                      className="border rounded-lg p-6"
+                <ul className="grid gap-3">
+                  {assignments.map((a) => (
+                    <li
+                      key={a.assignmentId}
+                      className="border rounded-lg p-4 flex items-center justify-between"
                     >
-                      <div className="flex justify-between items-start mb-4">
-                        <div>
-                          <h3 className="font-semibold text-lg">
-                            {assignment.questionnaireTitle}
-                          </h3>
-                          <p className="text-muted-foreground">
-                            {assignment.scope.type === "course"
-                              ? "📚 Course-level"
-                              : "📖 Module-level"}{" "}
-                            •
-                            {assignment.timing === "pre"
-                              ? " Pre-completion"
-                              : " Post-completion"}{" "}
-                            survey
-                          </p>
+                      <div>
+                        <div className="font-semibold">
+                          {a.questionnaireTitle}
                         </div>
-                        <span
-                          className={`px-3 py-1  rounded-full ${
-                            assignment.completed
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {assignment.completed ? "Completed ✓" : "Pending"}
-                        </span>
+                        <div className="text-sm text-muted-foreground">
+                          {a.scope.type} · {a.timing}
+                        </div>
                       </div>
-
-                      {!assignment.completed && (
+                      {a.completed ? (
+                        <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">
+                          Completed ✓
+                        </span>
+                      ) : (
                         <button
-                          onClick={() =>
-                            startQuestionnaire(assignment.assignmentId)
-                          }
-                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                          onClick={() => setActiveAssignmentId(a.assignmentId)}
+                          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
                         >
-                          Start Questionnaire
+                          Start
                         </button>
                       )}
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </div>
           )}

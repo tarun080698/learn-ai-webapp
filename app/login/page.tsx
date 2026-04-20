@@ -44,8 +44,8 @@ function LoginContent() {
               "linear-gradient(135deg, var(--background) 0%, var(--muted) 30%, var(--background) 100%)",
           }}
         >
-          <div className="absolute inset-0 opacity-5"></div>
-          <div className="container mx-auto px-4 py-20">
+          <div className="absolute inset-0 opacity-5 pointer-events-none"></div>
+          <div className="container mx-auto px-4 py-20 relative z-10">
             <div className="max-w-7xl mx-auto">
               <div className="grid lg:grid-cols-2 gap-16 items-center">
                 {/* Left Side - Welcome Content */}

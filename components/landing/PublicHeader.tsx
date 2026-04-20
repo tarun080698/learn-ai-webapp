@@ -178,6 +178,13 @@ export function PublicHeader() {
               // Not logged in - show login options
               <>
                 <Link
+                  href="/admin/login"
+                  className="hidden sm:inline font-medium transition-colors hover:opacity-80"
+                  style={{ color: "var(--muted-foreground)" }}
+                >
+                  Admin
+                </Link>
+                <Link
                   href="/login"
                   className="font-medium transition-colors hover:opacity-80"
                   style={{ color: "var(--primary)" }}
@@ -185,14 +192,14 @@ export function PublicHeader() {
                   Sign In
                 </Link>
                 <Link
-                  href="/admin/login"
+                  href="/login"
                   className="px-4 py-2 rounded-lg font-medium transition-all hover:opacity-90"
                   style={{
                     backgroundColor: "var(--primary)",
                     color: "var(--primary-foreground)",
                   }}
                 >
-                  Admin
+                  Sign Up
                 </Link>
               </>
             )}
